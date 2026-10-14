@@ -56,6 +56,8 @@ import "@skyscribe-sdk/styles";
 | Syntax tokens | `.scribe-content .token.keyword` etc. |
 | Images | `.scribe-content img` |
 | Blockquotes | `.scribe-content blockquote` |
+| Horizontal rules | `.scribe-content hr` |
+| Tables | `.scribe-content table`, `th`, `td` |
 | Ordered / unordered lists | `.scribe-content ul`, `.scribe-content ol` |
 | Checklists | `.scribe-content li[role="checkbox"]` |
 
@@ -76,6 +78,9 @@ Override any custom property on `.scribe-content` (or a parent) to customise the
   --scribe-token-variable: #9cdcfe;
   --scribe-blockquote-border: #444;
   --scribe-blockquote-color: #aaa;
+  --scribe-hr-color: #444;
+  --scribe-table-border: #555;
+  --scribe-table-header-bg: rgba(255, 255, 255, 0.06);
 }
 ```
 
@@ -90,6 +95,9 @@ Override any custom property on `.scribe-content` (or a parent) to customise the
 | `--scribe-inline-code-bg` | `rgba(0,0,0,0.06)` | Inline code background |
 | `--scribe-blockquote-border` | `#ccc` | Blockquote left border colour |
 | `--scribe-blockquote-color` | `#666` | Blockquote text colour |
+| `--scribe-hr-color` | `#ddd` | Horizontal rule colour |
+| `--scribe-table-border` | `#ccc` | Table cell borders |
+| `--scribe-table-header-bg` | `rgba(0,0,0,0.04)` | Table header row background |
 | `--scribe-checkbox-size` | `1em` | Checklist checkbox size |
 | `--scribe-checkbox-border` | `#aaa` | Unchecked checkbox border |
 | `--scribe-checkbox-checked-bg` | `#333` | Checked checkbox fill |

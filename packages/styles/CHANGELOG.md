@@ -1,5 +1,11 @@
 # @skyscribe-sdk/styles
 
+## 1.2.0
+
+### Minor Changes
+
+- Style horizontal rules and tables. SkyScribe's editor can now write both, and imported documents keep them. Browsers draw tables with no cell borders by default, so `.scribe-content` now styles `hr`, `table`, `th` and `td`: bordered cells, a shaded header row, and wide tables that scroll sideways instead of stretching the page. Three new custom properties theme them: `--scribe-hr-color`, `--scribe-table-border` and `--scribe-table-header-bg`.
+
 ## 1.1.4
 
 ### Patch Changes

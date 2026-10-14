@@ -18,6 +18,11 @@
   --scribe-blockquote-border: #ccc;
   --scribe-blockquote-color: #666;
 
+  /* Horizontal rules & tables */
+  --scribe-hr-color: #ddd;
+  --scribe-table-border: #ccc;
+  --scribe-table-header-bg: rgba(0, 0, 0, 0.04);
+
   /* Checklists */
   --scribe-checkbox-size: 1em;
   --scribe-checkbox-border: #aaa;
@@ -154,6 +159,44 @@
   padding: 0.5em 1.2em;
   color: var(--scribe-blockquote-color);
   font-style: italic;
+}
+
+/* ── Horizontal rules ───────────────────────────────────────────────────────── */
+
+.scribe-content hr {
+  border: none;
+  border-top: 2px solid var(--scribe-hr-color);
+  margin: 1.5em 0;
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────────────── */
+
+/* Wide tables scroll sideways rather than stretching the page. */
+.scribe-content table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 0.75em 0;
+}
+
+.scribe-content th,
+.scribe-content td {
+  border: 1px solid var(--scribe-table-border);
+  padding: 0.4em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.scribe-content th {
+  background: var(--scribe-table-header-bg);
+  font-weight: 700;
+}
+
+/* The editor puts each cell's text in a paragraph. */
+.scribe-content td p,
+.scribe-content th p {
+  margin: 0;
 }
 
 /* ── Lists ──────────────────────────────────────────────────────────────────── */
