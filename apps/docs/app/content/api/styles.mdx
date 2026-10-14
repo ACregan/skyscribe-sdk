@@ -42,6 +42,8 @@ Without React, add the class to whatever element you render the HTML into:
 | Syntax tokens | `.scribe-content .token.keyword` etc. |
 | Images | `.scribe-content img` |
 | Blockquotes | `.scribe-content blockquote` |
+| Horizontal rules | `.scribe-content hr` |
+| Tables | `.scribe-content table`, `th`, `td` |
 | Ordered / unordered lists | `.scribe-content ul`, `.scribe-content ol` |
 | Checklists | `.scribe-content li[role="checkbox"]` |
 
@@ -60,6 +62,9 @@ Override any `--scribe-*` custom property on `.scribe-content` (or a parent elem
   --scribe-inline-code-bg: rgba(255, 255, 255, 0.08);
   --scribe-blockquote-border: #555;
   --scribe-blockquote-color: #aaa;
+  --scribe-hr-color: #444;
+  --scribe-table-border: #555;
+  --scribe-table-header-bg: rgba(255, 255, 255, 0.06);
 
   /* VS Code dark+ palette */
   --scribe-token-keyword:     #569cd6;
@@ -91,6 +96,14 @@ Override any `--scribe-*` custom property on `.scribe-content` (or a parent elem
 | -------- | ------- | ----------- |
 | `--scribe-blockquote-border` | `#ccc` | Left border colour |
 | `--scribe-blockquote-color` | `#666` | Text colour |
+
+**Horizontal rules and tables**
+
+| Property | Default | Description |
+| -------- | ------- | ----------- |
+| `--scribe-hr-color` | `#ddd` | Horizontal rule colour |
+| `--scribe-table-border` | `#ccc` | Table cell borders |
+| `--scribe-table-header-bg` | `rgba(0,0,0,0.04)` | Header row background |
 
 **Checklists**
 
