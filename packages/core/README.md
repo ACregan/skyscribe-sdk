@@ -122,6 +122,21 @@ slugFromUri("at://did:plc:abc/site.standard.document/3mp4hfovqib2h"); // → "3m
 flattenArticles(site.groups); // → ArticleRef[] across all groups
 ```
 
+### Embeds
+
+SkyScribe stores videos, music, code pens, Bluesky posts and link cards in an article's HTML as links marked with their kind (`<figure data-embed="youtube"><a href="…">…</a></figure>`). `renderEmbeds` turns them into players: lazy iframes built only from the parts of each link that match its provider's pattern. Anything else is left as it is.
+
+```ts
+import { renderEmbeds, listenForEmbedResize, EMBED_FRAME_HOSTS } from "@skyscribe-sdk/core";
+
+const html = renderEmbeds(article.content);
+
+// In the browser, so Bluesky posts grow to their real height:
+const stop = listenForEmbedResize(window);
+```
+
+Kinds: link card, Bluesky post, YouTube, Spotify, Bandcamp, Vimeo, CodePen, SoundCloud. If your site sends a Content-Security-Policy, allow `EMBED_FRAME_HOSTS` in `frame-src`. `ScribeContent` from `@skyscribe-sdk/react` does all of this for you.
+
 ### Feed & Sitemap
 
 Generate an RSS 2.0 feed or an XML sitemap from a fetched `Site` object. Both functions are pure — they produce a string and make no network requests.
