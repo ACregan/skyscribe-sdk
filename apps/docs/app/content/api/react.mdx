@@ -11,10 +11,13 @@ function ScribeContent(props: ScribeContentProps): JSX.Element
 
 type ScribeContentProps = Omit<HTMLAttributes<HTMLDivElement>, "dangerouslySetInnerHTML"> & {
   html: string;
+  embeds?: boolean; // default true
 };
 ```
 
-A thin `<div>` that renders article HTML. It adds the `scribe-content` class, so `@skyscribe-sdk/styles` applies. It accepts all standard `div` attributes, and `className` is added to `scribe-content` rather than replacing it. It renders the HTML as-is: sanitise it first if you show accounts you don't control.
+A thin `<div>` that renders article HTML. It adds the `scribe-content` class, so `@skyscribe-sdk/styles` applies. It accepts all standard `div` attributes, and `className` is added to `scribe-content` rather than replacing it. Apart from Embeds, it renders the HTML as-is: sanitise it first if you show accounts you don't control.
+
+It shows [Embeds](/api/core#embeds) (videos, music, code pens, Bluesky posts and link cards) as their players, through `renderEmbeds`, and lets Bluesky posts grow to their real height. Pass `embeds={false}` to leave them as the links they're stored as.
 
 ```tsx
 import { ScribeContent } from "@skyscribe-sdk/react";

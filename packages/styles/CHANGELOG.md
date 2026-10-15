@@ -1,5 +1,11 @@
 # @skyscribe-sdk/styles
 
+## 1.3.0
+
+### Minor Changes
+
+- Embeds: spacing for every Embed (`.scribe-content figure[data-embed]`), rounded players, and link cards drawn as a card with image, title and description. New custom properties: `--scribe-embed-border`, `--scribe-embed-radius` and `--scribe-embed-muted`.
+
 ## 1.2.0
 
 ### Minor Changes

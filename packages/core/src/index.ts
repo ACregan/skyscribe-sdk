@@ -22,3 +22,5 @@ export type { Profile, ProfileAssociated, ProfileVerification, ProfileStatus } f
 export { NotFoundError, PdsFetchError, PdsUnreachableError } from "./errors.js";
 export { withRetry } from "./retry.js";
 export type { RetryOptions } from "./retry.js";
+export { renderEmbeds, listenForEmbedResize, EMBED_KINDS, EMBED_FRAME_HOSTS } from "./embeds.js";
+export type { EmbedKind, EmbedWindow } from "./embeds.js";

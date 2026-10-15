@@ -1,5 +1,19 @@
 # @skyscribe-sdk/react
 
+## 2.3.0
+
+### Minor Changes
+
+- Embeds. SkyScribe Documents can now contain Embeds: videos, music, code pens, Bluesky posts and link cards. Each is stored as a link marked with its kind (`<figure data-embed="youtube"><a href="…">…</a></figure>`), so anything that doesn't know about Embeds still shows a working link.
+
+  - `@skyscribe-sdk/core`: `renderEmbeds(html)` turns each Embed into its provider's player, a lazy iframe built only from the parts of the stored link that match that provider's pattern. Supported kinds are link card, Bluesky post, YouTube (played from youtube-nocookie.com), Spotify, Bandcamp, Vimeo, CodePen and SoundCloud, listed in `EMBED_KINDS`. `listenForEmbedResize(window)` lets Bluesky posts grow to their real height. `EMBED_FRAME_HOSTS` lists the hosts a Content-Security-Policy's `frame-src` must allow.
+  - `@skyscribe-sdk/react`: `ScribeContent` renders Embeds by default; pass `embeds={false}` to keep them as links. It now needs `@skyscribe-sdk/core` 3.12 or later.
+
+### Patch Changes
+
+- Updated dependencies
+  - @skyscribe-sdk/core@3.12.0
+
 ## 2.2.0
 
 ### Minor Changes

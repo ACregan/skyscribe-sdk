@@ -15,6 +15,20 @@ npm install @skyscribe-sdk/react
 
 ## Usage
 
+### `ScribeContent`
+
+Renders an article's HTML in a `<div class="scribe-content">` (so `@skyscribe-sdk/styles` applies), with Embeds (videos, music, code pens, Bluesky posts and link cards) shown as their players.
+
+```tsx
+import { ScribeContent } from "@skyscribe-sdk/react";
+import "@skyscribe-sdk/styles";
+
+<ScribeContent html={article.content} />
+
+// Keep Embeds as the links they're stored as
+<ScribeContent html={article.content} embeds={false} />
+```
+
 ### `useSite`
 
 ```tsx

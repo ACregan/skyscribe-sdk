@@ -60,6 +60,7 @@ import "@skyscribe-sdk/styles";
 | Tables | `.scribe-content table`, `th`, `td` |
 | Ordered / unordered lists | `.scribe-content ul`, `.scribe-content ol` |
 | Checklists | `.scribe-content li[role="checkbox"]` |
+| Embeds and link cards | `.scribe-content figure[data-embed]` |
 
 Token classes (`token keyword`, `token string`, …) are the Prism-compatible class names that the SkyScribe editor emits when it serialises article content.
 
@@ -81,6 +82,8 @@ Override any custom property on `.scribe-content` (or a parent) to customise the
   --scribe-hr-color: #444;
   --scribe-table-border: #555;
   --scribe-table-header-bg: rgba(255, 255, 255, 0.06);
+  --scribe-embed-border: #444;
+  --scribe-embed-muted: #aaa;
 }
 ```
 
@@ -98,6 +101,14 @@ Override any custom property on `.scribe-content` (or a parent) to customise the
 | `--scribe-hr-color` | `#ddd` | Horizontal rule colour |
 | `--scribe-table-border` | `#ccc` | Table cell borders |
 | `--scribe-table-header-bg` | `rgba(0,0,0,0.04)` | Table header row background |
+
+**Embeds**
+
+| Property | Default | Description |
+| -------- | ------- | ----------- |
+| `--scribe-embed-border` | `#ddd` | Link card border |
+| `--scribe-embed-radius` | `8px` | Corner radius of players and link cards |
+| `--scribe-embed-muted` | `#666` | Link card description, and its border on hover |
 | `--scribe-checkbox-size` | `1em` | Checklist checkbox size |
 | `--scribe-checkbox-border` | `#aaa` | Unchecked checkbox border |
 | `--scribe-checkbox-checked-bg` | `#333` | Checked checkbox fill |

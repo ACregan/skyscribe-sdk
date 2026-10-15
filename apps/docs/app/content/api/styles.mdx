@@ -46,6 +46,7 @@ Without React, add the class to whatever element you render the HTML into:
 | Tables | `.scribe-content table`, `th`, `td` |
 | Ordered / unordered lists | `.scribe-content ul`, `.scribe-content ol` |
 | Checklists | `.scribe-content li[role="checkbox"]` |
+| Embeds and link cards | `.scribe-content figure[data-embed]` |
 
 The syntax token classes (`token keyword`, `token string`, …) are the Prism-compatible class names the SkyScribe editor puts on highlighted code. The default colours match Prism's light theme.
 
@@ -65,6 +66,8 @@ Override any `--scribe-*` custom property on `.scribe-content` (or a parent elem
   --scribe-hr-color: #444;
   --scribe-table-border: #555;
   --scribe-table-header-bg: rgba(255, 255, 255, 0.06);
+  --scribe-embed-border: #444;
+  --scribe-embed-muted: #aaa;
 
   /* VS Code dark+ palette */
   --scribe-token-keyword:     #569cd6;
@@ -104,6 +107,14 @@ Override any `--scribe-*` custom property on `.scribe-content` (or a parent elem
 | `--scribe-hr-color` | `#ddd` | Horizontal rule colour |
 | `--scribe-table-border` | `#ccc` | Table cell borders |
 | `--scribe-table-header-bg` | `rgba(0,0,0,0.04)` | Header row background |
+
+**Embeds**
+
+| Property | Default | Description |
+| -------- | ------- | ----------- |
+| `--scribe-embed-border` | `#ddd` | Link card border |
+| `--scribe-embed-radius` | `8px` | Corner radius of players and link cards |
+| `--scribe-embed-muted` | `#666` | Link card description, and its border on hover |
 
 **Checklists**
 

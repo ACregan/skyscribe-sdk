@@ -444,6 +444,79 @@ const ref = await crossPostToBluesky(agent, {
 
 ---
 
+## Embeds
+
+An Embed is a video, a piece of music, a code pen, a Bluesky post or a link card in an article. SkyScribe stores each one in the article's HTML as a working link, marked with its kind:
+
+```html
+<figure data-embed="youtube">
+  <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Never Gonna Give You Up</a>
+</figure>
+```
+
+Rendered as it is, that's a link. To show the player, run the HTML through `renderEmbeds`. [`ScribeContent`](/api/react#scribecontent) does this for you.
+
+### `renderEmbeds`
+
+```ts
+function renderEmbeds(html: string): string
+```
+
+Returns the HTML with every Embed turned into its provider's player: a lazy-loading, full-width iframe. Link cards keep their stored card (image, title and description) and gain the `scribe-embed` classes; [`@skyscribe-sdk/styles`](/api/styles) draws them as cards. Everything else in the HTML is returned unchanged.
+
+The stored HTML is never trusted to say what to load. Each kind has a strict pattern for its link, and the player's address is built only from the parts that match. An Embed whose link doesn't match, or whose kind this version doesn't know, is left as its link.
+
+| Kind | `data-embed` | Player |
+| ---- | ------------ | ------ |
+| Link card | `link` | The stored card |
+| Bluesky post | `bluesky` | Bluesky's official embed, from the post's `at://` URI in `data-embed-ref` |
+| YouTube | `youtube` | `youtube-nocookie.com`, keeping a start time |
+| Spotify | `spotify` | Track, album, playlist, episode, show or artist |
+| Bandcamp | `bandcamp` | From the album or track number in `data-embed-ref` |
+| Vimeo | `vimeo` | With Do Not Track on |
+| CodePen | `codepen` | The pen's result |
+| SoundCloud | `soundcloud` | Track or playlist |
+
+It's a pure string function, so it runs anywhere: on the server, in a Worker or in the browser. Frameworks without a `ScribeContent` component call it themselves:
+
+```vue
+<script setup lang="ts">
+import { renderEmbeds } from "@skyscribe-sdk/core";
+const props = defineProps<{ html: string }>();
+</script>
+
+<template>
+  <div class="scribe-content" v-html="renderEmbeds(props.html)" />
+</template>
+```
+
+### `listenForEmbedResize`
+
+```ts
+function listenForEmbedResize(target: Window): () => void
+```
+
+Bluesky's player reports its real height to the page. Call this once in the browser so Bluesky post Embeds grow to fit; it returns a function that stops listening. Without it, a Bluesky Embed stays 400px tall. `ScribeContent` calls it for you.
+
+```ts
+useEffect(() => listenForEmbedResize(window), []);
+```
+
+### `EMBED_KINDS` and `EMBED_FRAME_HOSTS`
+
+```ts
+const EMBED_KINDS: readonly EmbedKind[];
+const EMBED_FRAME_HOSTS: readonly string[];
+```
+
+`EMBED_KINDS` lists the kinds above. `EMBED_FRAME_HOSTS` lists the hosts players load from. If your site sends a Content-Security-Policy, add them to its `frame-src`:
+
+```ts
+const csp = `frame-src ${EMBED_FRAME_HOSTS.join(" ")}`;
+```
+
+---
+
 ## Errors
 
 ### `NotFoundError`
