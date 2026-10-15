@@ -132,4 +132,32 @@ describe("getSitemapEntries", () => {
     const entries = getSitemapEntries(mockSite, { baseUrl: "https://norobots.blog" });
     expect(entries.every(e => !e.url.includes("draft"))).toBe(true);
   });
+
+  it("leaves out an article whose canonical URL is another site's", () => {
+    const site: Site = {
+      ...mockSite,
+      groups: [
+        {
+          ...mockSite.groups[0],
+          articles: [
+            ...mockSite.groups[0].articles,
+            {
+              uri: "at://did:plc:abc/site.standard.document/imported",
+              title: "Imported",
+              slug: "imported",
+              splashImageUrl: null,
+              createdAt: "2024-03-01T00:00:00Z",
+              canonicalElsewhere: true,
+            },
+          ],
+        },
+      ],
+    };
+    const urls = getSitemapEntries(site, { baseUrl: "https://norobots.blog" }).map((e) => e.url);
+    expect(urls).not.toContain("https://norobots.blog/blog/essays/imported");
+    expect(urls).toContain("https://norobots.blog/blog/essays/first-post");
+    // The Group page stays.
+    expect(urls).toContain("https://norobots.blog/blog/essays");
+  });
 });
+

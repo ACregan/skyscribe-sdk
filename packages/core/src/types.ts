@@ -15,6 +15,11 @@ export interface ArticleRef {
   createdAt: string;
   publishedAt?: string;
   updatedAt?: string;
+  /** The article's canonical URL is another site's: it was imported into
+   * SkyScribe and its author chose to keep the original as canonical.
+   * Sitemaps leave it out (getSitemapEntries does). Absent means this
+   * site's own URL is canonical. */
+  canonicalElsewhere?: true;
 }
 
 export interface SiteGroup {

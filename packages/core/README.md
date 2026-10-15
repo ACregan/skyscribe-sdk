@@ -165,7 +165,7 @@ Only published articles (from `site.groups`) are included. Draft articles in `si
 
 #### Sitemap entries
 
-`getSitemapEntries` returns structured data — not XML — so you can merge Scribe URLs into your own framework's sitemap generator alongside non-Scribe pages (portfolio, contact, etc.).
+`getSitemapEntries` returns structured data — not XML — so you can merge Scribe URLs into your own framework's sitemap generator alongside non-Scribe pages (portfolio, contact, etc.). Articles marked `canonicalElsewhere` (imported into SkyScribe with the original kept as canonical) are left out, so search engines index the original.
 
 ```ts
 import { fetchSite, getSitemapEntries } from "@skyscribe-sdk/core";

@@ -1,5 +1,11 @@
 # @skyscribe-sdk/core
 
+## 3.13.0
+
+### Minor Changes
+
+- `ArticleRef` gains an optional `canonicalElsewhere: true`, set by SkyScribe on an article imported from another app whose author kept the original as the canonical URL. `getSitemapEntries` leaves those articles out, so search engines index the original rather than your copy. Articles without the flag are unchanged.
+
 ## 3.12.0
 
 ### Minor Changes
