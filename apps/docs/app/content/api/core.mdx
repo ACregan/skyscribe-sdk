@@ -270,7 +270,7 @@ function getSitemapEntries(
 ): SitemapEntry[]
 ```
 
-Returns sitemap entries for the home page, the path-prefix root (if any), each Group page and each published article.
+Returns sitemap entries for the home page, the path-prefix root (if any), each Group page and each published article. Articles marked [`canonicalElsewhere`](#articleref) are left out: their canonical URL is the original's, on another site.
 
 **`GetSitemapEntriesOptions`**
 
@@ -593,8 +593,11 @@ interface ArticleRef {
   createdAt: string;      // ISO 8601
   publishedAt?: string;   // ISO 8601
   updatedAt?: string;     // ISO 8601
+  canonicalElsewhere?: true; // Canonical URL is another site's; see below
 }
 ```
+
+`canonicalElsewhere` is set on an article that was imported into SkyScribe from another app (Leaflet, pckt, …) when its author chose to keep the original as the canonical URL. Your copy still renders as normal, but search engines should index the original: `getSitemapEntries` leaves these articles out.
 
 ### `Article`
 

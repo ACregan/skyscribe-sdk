@@ -44,6 +44,10 @@ export function getSitemapEntries(
     entries.push({ url: groupUrl(options.baseUrl, prefix, group.slug) });
 
     for (const article of group.articles) {
+      // Its canonical URL is another site's (an imported article whose
+      // author kept the original as canonical): this site's copy isn't
+      // the page to offer search engines.
+      if (article.canonicalElsewhere) continue;
       const url = articleUrl(options.baseUrl, prefix, group.slug, article.slug ?? "");
       const lastmod =
         article.updatedAt && article.updatedAt.length > 0
