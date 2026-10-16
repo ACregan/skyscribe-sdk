@@ -124,18 +124,18 @@ flattenArticles(site.groups); // → ArticleRef[] across all groups
 
 ### Embeds
 
-SkyScribe stores videos, music, code pens, Bluesky posts and link cards in an article's HTML as links marked with their kind (`<figure data-embed="youtube"><a href="…">…</a></figure>`). `renderEmbeds` turns them into players: lazy iframes built only from the parts of each link that match its provider's pattern. Anything else is left as it is.
+SkyScribe stores videos, music, code pens, Bluesky posts and link cards in an article's HTML as links marked with their kind (`<figure data-embed="youtube"><a href="…">…</a></figure>`). `renderEmbeds` turns videos, music and pens into Posters (thumbnail, title, Play) that load their player only when clicked, and Bluesky posts into their player. Players are built only from the parts of each link that match its provider's pattern; anything else is left as it is.
 
 ```ts
-import { renderEmbeds, listenForEmbedResize, EMBED_FRAME_HOSTS } from "@skyscribe-sdk/core";
+import { renderEmbeds, enhanceEmbeds, EMBED_FRAME_HOSTS } from "@skyscribe-sdk/core";
 
-const html = renderEmbeds(article.content);
+const html = renderEmbeds(article.content); // or { clickToLoad: false } for players straight away
 
-// In the browser, so Bluesky posts grow to their real height:
-const stop = listenForEmbedResize(window);
+// Once, in the browser: Posters load their player on click, Bluesky posts grow to fit.
+const stop = enhanceEmbeds(window);
 ```
 
-Kinds: link card, Bluesky post, YouTube, Spotify, Bandcamp, Vimeo, CodePen, SoundCloud. If your site sends a Content-Security-Policy, allow `EMBED_FRAME_HOSTS` in `frame-src`. `ScribeContent` from `@skyscribe-sdk/react` does all of this for you.
+Kinds: link card, Bluesky post, YouTube, Spotify, Bandcamp, Vimeo, CodePen, SoundCloud. If your site sends a Content-Security-Policy, allow `EMBED_FRAME_HOSTS` in `frame-src` and `https:` in `img-src`. `ScribeContent` from `@skyscribe-sdk/react` does all of this for you.
 
 ### Feed & Sitemap
 

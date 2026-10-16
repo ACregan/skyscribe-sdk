@@ -171,6 +171,32 @@ const PLAYERS: Record<Exclude<EmbedKind, "link">, (url: URL, ref: string | null,
   bluesky,
 };
 
+// What a Poster calls each kind, and what its button does (ADR 0080: the
+// kinds that can start from the click say Play).
+const POSTER_KIND: Record<Exclude<EmbedKind, "link" | "bluesky">, { label: string; autoplay: boolean }> = {
+  youtube: { label: "YouTube", autoplay: true },
+  vimeo: { label: "Vimeo", autoplay: true },
+  soundcloud: { label: "SoundCloud", autoplay: true },
+  spotify: { label: "Spotify", autoplay: false },
+  bandcamp: { label: "Bandcamp", autoplay: false },
+  codepen: { label: "CodePen", autoplay: false },
+};
+
+function hasPoster(kind: string): kind is keyof typeof POSTER_KIND {
+  return kind in POSTER_KIND;
+}
+
+// The player as loaded by a click on its Poster: started, where the
+// provider allows it.
+function autoplaying(kind: string, player: Player): Player {
+  const param =
+    kind === "youtube" || kind === "vimeo" ? "autoplay=1" : kind === "soundcloud" ? "auto_play=true" : null;
+  if (!param) return player;
+  const src = `${player.src}${player.src.includes("?") ? "&" : "?"}${param}`;
+  const allow = player.allow ? `autoplay; ${player.allow.replace(/^autoplay;\s*/, "")}` : "autoplay";
+  return { ...player, src, allow };
+}
+
 // ── Reading the stored HTML ─────────────────────────────────────────────
 
 const FIGURE = /<figure\b([^>]*)>([\s\S]*?)<\/figure>/gi;
@@ -233,26 +259,127 @@ function iframe(kind: string, player: Player, title: string): string {
   return `<figure class="scribe-embed scribe-embed-${kind}" data-embed="${kind}"><iframe ${attrs.join(" ")}></iframe></figure>`;
 }
 
+// The stored link's thumbnail: its first image, if it's https. A YouTube
+// Embed without one (some imports) uses the video's own.
+function thumbnailOf(inner: string, kind: string, player: Player): string | null {
+  const img = inner.match(/<img\b[^>]*?\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
+  if (img) {
+    try {
+      const url = new URL(decodeEntities(img[1] ?? img[2] ?? ""));
+      if (url.protocol === "https:") return url.href;
+    } catch {
+      // Not a URL: fall through.
+    }
+  }
+  const youtubeId = kind === "youtube" ? player.src.match(/\/embed\/([A-Za-z0-9_-]{11})/)?.[1] : null;
+  return youtubeId ? `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg` : null;
+}
+
+function sizeStyle(player: Player): string {
+  return "aspectRatio" in player.size
+    ? `aspect-ratio:${player.size.aspectRatio}`
+    : `height:${player.size.height}px`;
+}
+
+// Music and pens show their thumbnail square, as tall as the player; the
+// styles place the text beside it.
+function squareThumbnail(player: Player, thumbnail: string | null): string {
+  return thumbnail && "height" in player.size ? `;--scribe-embed-poster-image-width:${player.size.height}px` : "";
+}
+
+function figureAttributes(kind: string, ref: string | null): string {
+  return `class="scribe-embed scribe-embed-${kind}" data-embed="${kind}"${
+    ref ? ` data-embed-ref="${escapeAttribute(ref)}"` : ""
+  }`;
+}
+
+// A Poster (ADR 0080): the stored link, the player's size, with the
+// thumbnail, kind, title and a button. listenForEmbedClicks swaps it for
+// the player; without that script it opens the media's page.
+function poster(kind: keyof typeof POSTER_KIND, player: Player, title: string, url: URL, ref: string | null, thumbnail: string | null): string {
+  const { label, autoplay } = POSTER_KIND[kind];
+  const action = autoplay ? "Play" : "Load player";
+  return [
+    `<figure ${figureAttributes(kind, ref)}>`,
+    `<a class="scribe-embed-poster" href="${escapeAttribute(url.href)}" aria-label="${escapeAttribute(`${action}: ${title} (${label})`)}" style="display:block;position:relative;width:100%;${sizeStyle(player)}${squareThumbnail(player, thumbnail)}">`,
+    thumbnail ? `<img class="scribe-embed-poster-image" src="${escapeAttribute(thumbnail)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : "",
+    `<span class="scribe-embed-poster-text"><span class="scribe-embed-poster-kind">${label}</span>`,
+    `<span class="scribe-embed-poster-title">${escapeAttribute(title)}</span></span>`,
+    `<span class="scribe-embed-poster-button">${action}</span>`,
+    `</a></figure>`,
+  ].join("");
+}
+
+interface ParsedEmbed {
+  kind: Exclude<EmbedKind, "link">;
+  url: URL;
+  ref: string | null;
+  inner: string;
+}
+
+// A stored Embed that has a player, or null (a link card, an unknown kind,
+// or a link that doesn't match its kind's pattern).
+function parse(attrs: string, inner: string): ParsedEmbed | null {
+  const kind = attribute(attrs, "data-embed");
+  if (!kind || kind === "link" || !(EMBED_KINDS as readonly string[]).includes(kind)) return null;
+  const url = pageUrl(inner);
+  if (!url) return null;
+  return { kind: kind as ParsedEmbed["kind"], url, ref: attribute(attrs, "data-embed-ref"), inner };
+}
+
+function playerOf(embed: ParsedEmbed, id: string): Player | null {
+  return PLAYERS[embed.kind](embed.url, embed.ref, id);
+}
+
+export interface RenderEmbedsOptions {
+  /** Show media Embeds as Posters that load their player when clicked
+   * (ADR 0080). Default true. Needs `enhanceEmbeds(window)` (or
+   * `listenForEmbedClicks`) in the browser; without it a Poster is a link
+   * to the media's page. false renders every player straight away. */
+  clickToLoad?: boolean;
+}
+
 /**
- * Turns every Embed in a Document's HTML into its kind's player (a lazy
- * iframe from the provider). A link card keeps its stored card, with the
- * `scribe-embed` classes added. Anything that isn't a valid Embed of a
- * known kind is left exactly as it was.
+ * Turns every Embed in a Document's HTML into its kind's player: a Poster
+ * that loads the player when clicked (the default), or the player itself
+ * (`clickToLoad: false`). Bluesky posts are always the live player, and a
+ * link card keeps its stored card, with the `scribe-embed` classes added.
+ * Anything that isn't a valid Embed of a known kind is left exactly as it
+ * was.
  */
-export function renderEmbeds(html: string): string {
+export function renderEmbeds(html: string, options: RenderEmbedsOptions = {}): string {
   if (!html.includes("data-embed")) return html;
+  const clickToLoad = options.clickToLoad ?? true;
   let count = 0;
   return html.replace(FIGURE, (whole, attrs: string, inner: string) => {
+    // Already rendered (a Poster is a link too, so it would be rebuilt).
+    if (attribute(attrs, "class")?.split(/\s+/).includes("scribe-embed")) return whole;
     const kind = attribute(attrs, "data-embed");
-    if (!kind || !(EMBED_KINDS as readonly string[]).includes(kind)) return whole;
     if (kind === "link") {
       return `<figure class="scribe-embed scribe-embed-link" data-embed="link">${inner}</figure>`;
     }
-    const url = pageUrl(inner);
-    if (!url) return whole;
-    const player = PLAYERS[kind as Exclude<EmbedKind, "link">](url, attribute(attrs, "data-embed-ref"), `scribe-embed-${++count}`);
-    return player ? iframe(kind, player, titleOf(inner) || kind) : whole;
+    const embed = parse(attrs, inner);
+    if (!embed) return whole;
+    const player = playerOf(embed, `scribe-embed-${++count}`);
+    if (!player) return whole;
+    const title = titleOf(inner) || embed.kind;
+    if (clickToLoad && hasPoster(embed.kind)) {
+      return poster(embed.kind, player, title, embed.url, embed.ref, thumbnailOf(inner, embed.kind, player));
+    }
+    return iframe(embed.kind, player, title);
   });
+}
+
+/** Whether a stored Embed (its `<figure data-embed>` HTML) shows a player:
+ * a known media or Bluesky kind whose link (and ref) match its pattern.
+ * false for link cards and for anything renderEmbeds would leave as the
+ * link. */
+export function hasEmbedPlayer(html: string): boolean {
+  for (const match of html.matchAll(FIGURE)) {
+    const embed = parse(match[1], match[2]);
+    if (embed && playerOf(embed, "scribe-embed-check")) return true;
+  }
+  return false;
 }
 
 // The parts of a browser window listenForEmbedResize uses. Typed here
@@ -290,4 +417,85 @@ export function listenForEmbedResize(target: EmbedWindow): () => void {
   };
   target.addEventListener("message", onMessage);
   return () => target.removeEventListener("message", onMessage);
+}
+
+// The parts of the DOM listenForEmbedClicks uses, typed here for the same
+// reason as EmbedWindow.
+interface PosterElement {
+  closest(selector: string): PosterElement | null;
+  getAttribute(name: string): string | null;
+  outerHTML: string;
+  innerHTML: string;
+  querySelector(selector: string): { focus(): void; textContent: string | null } | null;
+}
+
+interface PosterClick {
+  target: unknown;
+  button: number;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+  defaultPrevented: boolean;
+  preventDefault(): void;
+}
+
+export interface EmbedClickWindow {
+  document: {
+    addEventListener(type: "click", listener: (event: PosterClick) => void): void;
+    removeEventListener(type: "click", listener: (event: PosterClick) => void): void;
+  };
+}
+
+/**
+ * Makes Posters load their players (ADR 0080): a click on one swaps it
+ * for the player, started where the provider allows it, and moves focus
+ * into it. The player is built again from the Embed's kind and link with
+ * the same strict patterns as renderEmbeds, never from anything else in
+ * the page. A click with a modifier key (open in a new tab) is left to the
+ * browser. Call once in the browser with `window`; returns a function that
+ * stops listening.
+ */
+export function listenForEmbedClicks(target: EmbedClickWindow): () => void {
+  let count = 0;
+  const onClick = (event: PosterClick) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const start = event.target as PosterElement | null;
+    const link = typeof start?.closest === "function" ? start.closest("a.scribe-embed-poster") : null;
+    const figure = link?.closest("figure[data-embed]");
+    if (!link || !figure) return;
+    const kind = figure.getAttribute("data-embed") ?? "";
+    if (!hasPoster(kind)) return;
+    let url: URL;
+    try {
+      url = new URL(link.getAttribute("href") ?? "");
+    } catch {
+      return;
+    }
+    const embed: ParsedEmbed = { kind, url, ref: figure.getAttribute("data-embed-ref"), inner: "" };
+    const player = playerOf(embed, `scribe-embed-click-${++count}`);
+    if (!player) return;
+    event.preventDefault();
+    const title = link.querySelector(".scribe-embed-poster-title")?.textContent?.trim() || kind;
+    figure.innerHTML = iframe(kind, autoplaying(kind, player), title).replace(/^<figure[^>]*>|<\/figure>$/g, "");
+    figure.querySelector("iframe")?.focus();
+  };
+  target.document.addEventListener("click", onClick);
+  return () => target.document.removeEventListener("click", onClick);
+}
+
+/**
+ * Everything a page with Embeds needs in the browser: Posters load their
+ * players when clicked (listenForEmbedClicks) and Bluesky posts grow to
+ * their height (listenForEmbedResize). Call once with `window`; returns a
+ * function that stops both.
+ */
+export function enhanceEmbeds(target: EmbedWindow & EmbedClickWindow): () => void {
+  const stopClicks = listenForEmbedClicks(target);
+  const stopResize = listenForEmbedResize(target);
+  return () => {
+    stopClicks();
+    stopResize();
+  };
 }

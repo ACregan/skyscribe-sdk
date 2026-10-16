@@ -454,35 +454,47 @@ An Embed is a video, a piece of music, a code pen, a Bluesky post or a link card
 </figure>
 ```
 
-Rendered as it is, that's a link. To show the player, run the HTML through `renderEmbeds`. [`ScribeContent`](/api/react#scribecontent) does this for you.
+Rendered as it is, that's a link. To show the player, run the HTML through `renderEmbeds`, and call `enhanceEmbeds` once in the browser. [`ScribeContent`](/api/react#scribecontent) does both for you.
 
 ### `renderEmbeds`
 
 ```ts
-function renderEmbeds(html: string): string
+function renderEmbeds(html: string, options?: { clickToLoad?: boolean }): string
 ```
 
-Returns the HTML with every Embed turned into its provider's player: a lazy-loading, full-width iframe. Link cards keep their stored card (image, title and description) and gain the `scribe-embed` classes; [`@skyscribe-sdk/styles`](/api/styles) draws them as cards. Everything else in the HTML is returned unchanged.
+Returns the HTML with every Embed ready to show:
 
-The stored HTML is never trusted to say what to load. Each kind has a strict pattern for its link, and the player's address is built only from the parts that match. An Embed whose link doesn't match, or whose kind this version doesn't know, is left as its link.
+- **Videos, music and code pens** become a **Poster**: the Embed's thumbnail, title and a Play (or Load player) button, the exact size of the player. No player loads until the reader clicks; [`enhanceEmbeds`](#enhanceembeds) then swaps the Poster for the player, already playing where the provider allows it. A Poster is a link to the media's page, so without the script a click opens it there.
+- **Bluesky posts** become Bluesky's player straight away.
+- **Link cards** keep their stored card (image, title and description) and gain the `scribe-embed` classes; [`@skyscribe-sdk/styles`](/api/styles) draws them as cards.
 
-| Kind | `data-embed` | Player |
-| ---- | ------------ | ------ |
-| Link card | `link` | The stored card |
-| Bluesky post | `bluesky` | Bluesky's official embed, from the post's `at://` URI in `data-embed-ref` |
-| YouTube | `youtube` | `youtube-nocookie.com`, keeping a start time |
-| Spotify | `spotify` | Track, album, playlist, episode, show or artist |
-| Bandcamp | `bandcamp` | From the album or track number in `data-embed-ref` |
-| Vimeo | `vimeo` | With Do Not Track on |
-| CodePen | `codepen` | The pen's result |
-| SoundCloud | `soundcloud` | Track or playlist |
+Pass `{ clickToLoad: false }` to load every player with the page instead of Posters: lazy-loading, full-width iframes. Everything else in the HTML is returned unchanged.
 
-It's a pure string function, so it runs anywhere: on the server, in a Worker or in the browser. Frameworks without a `ScribeContent` component call it themselves:
+The stored HTML is never trusted to say what to load. Each kind has a strict pattern for its link, and the player's address is built only from the parts that match, both here and when a Poster is clicked. An Embed whose link doesn't match, or whose kind this version doesn't know, is left as its link.
+
+| Kind | `data-embed` | Player | Poster button |
+| ---- | ------------ | ------ | ------------- |
+| Link card | `link` | The stored card | None |
+| Bluesky post | `bluesky` | Bluesky's official embed, from the post's `at://` URI in `data-embed-ref` | None: always the player |
+| YouTube | `youtube` | `youtube-nocookie.com`, keeping a start time | Play |
+| Spotify | `spotify` | Track, album, playlist, episode, show or artist | Load player |
+| Bandcamp | `bandcamp` | From the album or track number in `data-embed-ref` | Load player |
+| Vimeo | `vimeo` | With Do Not Track on | Play |
+| CodePen | `codepen` | The pen's result | Load player |
+| SoundCloud | `soundcloud` | Track or playlist | Play |
+
+A Poster's thumbnail is the first `https:` image in the stored link; a YouTube Embed without one uses the video's own thumbnail. Kinds with no thumbnail show a plain tile.
+
+It's a pure string function, so it runs anywhere: on the server, in a Worker or in the browser. Frameworks without a `ScribeContent` component call it themselves, and call `enhanceEmbeds` once the HTML is on the page:
 
 ```vue
 <script setup lang="ts">
-import { renderEmbeds } from "@skyscribe-sdk/core";
+import { onMounted, onUnmounted } from "vue";
+import { enhanceEmbeds, renderEmbeds } from "@skyscribe-sdk/core";
 const props = defineProps<{ html: string }>();
+let stop = () => {};
+onMounted(() => (stop = enhanceEmbeds(window)));
+onUnmounted(() => stop());
 </script>
 
 <template>
@@ -490,17 +502,29 @@ const props = defineProps<{ html: string }>();
 </template>
 ```
 
-### `listenForEmbedResize`
+### `enhanceEmbeds`
 
 ```ts
-function listenForEmbedResize(target: Window): () => void
+function enhanceEmbeds(target: Window): () => void
 ```
 
-Bluesky's player reports its real height to the page. Call this once in the browser so Bluesky post Embeds grow to fit; it returns a function that stops listening. Without it, a Bluesky Embed stays 400px tall. `ScribeContent` calls it for you.
+Everything a page with Embeds needs in the browser: Posters load their player when clicked, and Bluesky posts grow to their real height. Call it once; it returns a function that stops both. It listens on the document, so Embeds added to the page later work too. `ScribeContent` calls it for you.
+
+A click on a Poster swaps it for the player, rebuilt from the Embed's kind and link (never from anything else on the page), and moves focus into it. A click with a modifier key, to open the link in a new tab, is left to the browser.
 
 ```ts
-useEffect(() => listenForEmbedResize(window), []);
+useEffect(() => enhanceEmbeds(window), []);
 ```
+
+`listenForEmbedClicks(window)` and `listenForEmbedResize(window)` are the two halves, if you only want one. Without `listenForEmbedResize`, a Bluesky Embed stays 400px tall.
+
+### `hasEmbedPlayer`
+
+```ts
+function hasEmbedPlayer(html: string): boolean
+```
+
+Whether a stored Embed (its `<figure data-embed>` HTML) shows a player: `true` for a known media kind or Bluesky post whose link matches its pattern, `false` for a link card or anything `renderEmbeds` would leave as its link. Useful when creating Embeds, to warn that a link will only show as a link.
 
 ### `EMBED_KINDS` and `EMBED_FRAME_HOSTS`
 
@@ -509,10 +533,10 @@ const EMBED_KINDS: readonly EmbedKind[];
 const EMBED_FRAME_HOSTS: readonly string[];
 ```
 
-`EMBED_KINDS` lists the kinds above. `EMBED_FRAME_HOSTS` lists the hosts players load from. If your site sends a Content-Security-Policy, add them to its `frame-src`:
+`EMBED_KINDS` lists the kinds above. `EMBED_FRAME_HOSTS` lists the hosts players load from. If your site sends a Content-Security-Policy, add them to its `frame-src`, and allow `https:` images for Posters' thumbnails:
 
 ```ts
-const csp = `frame-src ${EMBED_FRAME_HOSTS.join(" ")}`;
+const csp = `frame-src ${EMBED_FRAME_HOSTS.join(" ")}; img-src 'self' https:`;
 ```
 
 ---
