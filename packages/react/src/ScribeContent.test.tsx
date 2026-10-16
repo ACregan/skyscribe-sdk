@@ -25,9 +25,24 @@ describe("ScribeContent", () => {
     expect(div?.getAttribute("data-testid")).toBe("content");
   });
 
-  it("shows Embeds as players by default", () => {
-    const { container } = render(
+  it("shows a video Embed as a Poster that loads its player when clicked", () => {
+    const { container, unmount } = render(
       <ScribeContent html='<figure data-embed="youtube"><a href="https://youtu.be/dQw4w9WgXcQ">Video</a></figure>' />,
+    );
+    expect(container.querySelector("iframe")).toBeNull();
+    container.querySelector<HTMLAnchorElement>("a.scribe-embed-poster")!.click();
+    expect(container.querySelector("iframe")?.getAttribute("src")).toBe(
+      "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1",
+    );
+    unmount();
+  });
+
+  it("loads players with the page with clickToLoad={false}", () => {
+    const { container } = render(
+      <ScribeContent
+        clickToLoad={false}
+        html='<figure data-embed="youtube"><a href="https://youtu.be/dQw4w9WgXcQ">Video</a></figure>'
+      />,
     );
     expect(container.querySelector("iframe")?.getAttribute("src")).toBe(
       "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",

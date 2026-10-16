@@ -27,6 +27,11 @@
   --scribe-embed-border: #ddd;
   --scribe-embed-radius: 8px;
   --scribe-embed-muted: #666;
+  /* A Poster (click-to-load player, ADR 0080) with no thumbnail, and its button */
+  --scribe-embed-poster-bg: #1f1f1f;
+  --scribe-embed-poster-fg: #fff;
+  --scribe-embed-poster-button-bg: #fff;
+  --scribe-embed-poster-button-fg: #111;
 
   /* Checklists */
   --scribe-checkbox-size: 1em;
@@ -288,6 +293,113 @@
 
 .scribe-content figure[data-embed] iframe {
   border-radius: var(--scribe-embed-radius);
+}
+
+/* A Poster: the player's box (its size is set inline by renderEmbeds),
+   showing the thumbnail, kind, title and a button until it's clicked.
+   Videos fill the box with their thumbnail; music and pens show it square
+   on the left, the way their players do. */
+.scribe-content a.scribe-embed-poster {
+  overflow: hidden;
+  border-radius: var(--scribe-embed-radius);
+  background: var(--scribe-embed-poster-bg);
+  color: var(--scribe-embed-poster-fg);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.scribe-content .scribe-embed-poster-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: var(--scribe-embed-poster-image-width, 100%);
+  max-width: 50%;
+  object-fit: cover;
+}
+
+.scribe-content .scribe-embed-youtube .scribe-embed-poster-image,
+.scribe-content .scribe-embed-vimeo .scribe-embed-poster-image {
+  max-width: none;
+}
+
+.scribe-content .scribe-embed-poster-text {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  padding: 2.5em 1em 0.9em;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  color: #fff;
+}
+
+/* Beside a square thumbnail, not over it, with the button on the
+   thumbnail like an album's play button. */
+.scribe-content a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"] .scribe-embed-poster-text {
+  inset: 0 0 0 min(var(--scribe-embed-poster-image-width), 50%);
+  justify-content: center;
+  background: none;
+  color: inherit;
+}
+
+.scribe-content a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"] .scribe-embed-poster-button {
+  left: calc(min(var(--scribe-embed-poster-image-width), 50%) / 2);
+}
+
+.scribe-content .scribe-embed-poster-kind {
+  font-size: 0.75em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.scribe-content .scribe-embed-poster-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scribe-content .scribe-embed-poster-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.6em 1.4em;
+  border-radius: 999px;
+  background: var(--scribe-embed-poster-button-bg);
+  color: var(--scribe-embed-poster-button-fg);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Bandcamp's player is a short strip: the button sits at the end. */
+.scribe-content .scribe-embed-bandcamp .scribe-embed-poster-button {
+  left: auto;
+  right: 1em;
+  transform: translateY(-50%);
+}
+
+.scribe-content .scribe-embed-bandcamp .scribe-embed-poster-text {
+  padding-right: 9em;
+}
+
+.scribe-content .scribe-embed-bandcamp a.scribe-embed-poster:hover .scribe-embed-poster-button,
+.scribe-content .scribe-embed-bandcamp a.scribe-embed-poster:focus-visible .scribe-embed-poster-button {
+  transform: translateY(-50%) scale(1.06);
+}
+
+.scribe-content a.scribe-embed-poster:hover .scribe-embed-poster-button,
+.scribe-content a.scribe-embed-poster:focus-visible .scribe-embed-poster-button {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.scribe-content a.scribe-embed-poster:focus-visible {
+  outline: 3px solid var(--scribe-embed-poster-button-bg);
+  outline-offset: 2px;
 }
 
 .scribe-content figure[data-embed="link"] > a {

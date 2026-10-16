@@ -60,7 +60,7 @@ import "@skyscribe-sdk/styles";
 | Tables | `.scribe-content table`, `th`, `td` |
 | Ordered / unordered lists | `.scribe-content ul`, `.scribe-content ol` |
 | Checklists | `.scribe-content li[role="checkbox"]` |
-| Embeds and link cards | `.scribe-content figure[data-embed]` |
+| Embeds, Posters and link cards | `.scribe-content figure[data-embed]` |
 
 Token classes (`token keyword`, `token string`, …) are the Prism-compatible class names that the SkyScribe editor emits when it serialises article content.
 
@@ -107,8 +107,12 @@ Override any custom property on `.scribe-content` (or a parent) to customise the
 | Property | Default | Description |
 | -------- | ------- | ----------- |
 | `--scribe-embed-border` | `#ddd` | Link card border |
-| `--scribe-embed-radius` | `8px` | Corner radius of players and link cards |
+| `--scribe-embed-radius` | `8px` | Corner radius of players, Posters and link cards |
 | `--scribe-embed-muted` | `#666` | Link card description, and its border on hover |
+| `--scribe-embed-poster-bg` | `#1f1f1f` | A Poster with no thumbnail |
+| `--scribe-embed-poster-fg` | `#fff` | Text on a Poster with no thumbnail |
+| `--scribe-embed-poster-button-bg` | `#fff` | A Poster's Play / Load player button, and its focus ring |
+| `--scribe-embed-poster-button-fg` | `#111` | The button's text |
 | `--scribe-checkbox-size` | `1em` | Checklist checkbox size |
 | `--scribe-checkbox-border` | `#aaa` | Unchecked checkbox border |
 | `--scribe-checkbox-checked-bg` | `#333` | Checked checkbox fill |

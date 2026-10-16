@@ -46,7 +46,7 @@ Without React, add the class to whatever element you render the HTML into:
 | Tables | `.scribe-content table`, `th`, `td` |
 | Ordered / unordered lists | `.scribe-content ul`, `.scribe-content ol` |
 | Checklists | `.scribe-content li[role="checkbox"]` |
-| Embeds and link cards | `.scribe-content figure[data-embed]` |
+| Embeds, Posters and link cards | `.scribe-content figure[data-embed]` |
 
 The syntax token classes (`token keyword`, `token string`, …) are the Prism-compatible class names the SkyScribe editor puts on highlighted code. The default colours match Prism's light theme.
 
@@ -113,8 +113,12 @@ Override any `--scribe-*` custom property on `.scribe-content` (or a parent elem
 | Property | Default | Description |
 | -------- | ------- | ----------- |
 | `--scribe-embed-border` | `#ddd` | Link card border |
-| `--scribe-embed-radius` | `8px` | Corner radius of players and link cards |
+| `--scribe-embed-radius` | `8px` | Corner radius of players, Posters and link cards |
 | `--scribe-embed-muted` | `#666` | Link card description, and its border on hover |
+| `--scribe-embed-poster-bg` | `#1f1f1f` | A Poster with no thumbnail |
+| `--scribe-embed-poster-fg` | `#fff` | Text on a Poster with no thumbnail |
+| `--scribe-embed-poster-button-bg` | `#fff` | A Poster's Play / Load player button, and its focus ring |
+| `--scribe-embed-poster-button-fg` | `#111` | The button's text |
 
 **Checklists**
 

@@ -1,5 +1,20 @@
 # @skyscribe-sdk/react
 
+## 3.0.0
+
+### Major Changes
+
+- Click-to-load Embeds (skyscribe-app ADR 0080). Videos, music and code pens now render as a **Poster** (thumbnail, title and a Play or Load player button, the player's exact size) and load their player only when the reader clicks, already playing where the provider allows it. Bluesky posts and link cards are unchanged.
+
+  - core: `renderEmbeds(html, { clickToLoad })` defaults to Posters; `{ clickToLoad: false }` gives the previous players. New `enhanceEmbeds(window)` (Poster clicks plus Bluesky resizing), `listenForEmbedClicks(window)` and `hasEmbedPlayer(html)`. **Breaking:** if you call `renderEmbeds` yourself, add `enhanceEmbeds(window)` once in the browser, or Posters stay links to the media's page. A strict Content-Security-Policy needs `img-src https:` for thumbnails.
+  - react: `ScribeContent` shows Posters and calls `enhanceEmbeds` for you; `clickToLoad={false}` loads players with the page.
+  - styles: Poster styles and four `--scribe-embed-poster-*` tokens.
+
+### Patch Changes
+
+- Updated dependencies
+  - @skyscribe-sdk/core@4.0.0
+
 ## 2.3.0
 
 ### Minor Changes

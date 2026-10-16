@@ -17,13 +17,16 @@ npm install @skyscribe-sdk/react
 
 ### `ScribeContent`
 
-Renders an article's HTML in a `<div class="scribe-content">` (so `@skyscribe-sdk/styles` applies), with Embeds (videos, music, code pens, Bluesky posts and link cards) shown as their players.
+Renders an article's HTML in a `<div class="scribe-content">` (so `@skyscribe-sdk/styles` applies), with Embeds (videos, music, code pens, Bluesky posts and link cards) shown as their players. Videos, music and pens show a Poster until clicked, so no player loads unasked.
 
 ```tsx
 import { ScribeContent } from "@skyscribe-sdk/react";
 import "@skyscribe-sdk/styles";
 
 <ScribeContent html={article.content} />
+
+// Load every player with the page instead of Posters
+<ScribeContent html={article.content} clickToLoad={false} />
 
 // Keep Embeds as the links they're stored as
 <ScribeContent html={article.content} embeds={false} />

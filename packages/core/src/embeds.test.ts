@@ -1,9 +1,18 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { renderEmbeds, listenForEmbedResize, EMBED_KINDS } from "./embeds.js";
+import {
+  renderEmbeds,
+  hasEmbedPlayer,
+  listenForEmbedResize,
+  listenForEmbedClicks,
+  enhanceEmbeds,
+  EMBED_KINDS,
+} from "./embeds.js";
 
 const embed = (kind: string, href: string, extra = "", text = "Title") =>
   `<figure data-embed="${kind}"${extra}><a href="${href}">${text}</a></figure>`;
+// The players themselves, as renderEmbeds made them before Posters.
+const players = (html: string) => renderEmbeds(html, { clickToLoad: false });
 const srcOf = (html: string) => html.match(/<iframe[^>]*\ssrc="([^"]*)"/)?.[1]?.replace(/&amp;/g, "&");
 
 describe("renderEmbeds", () => {
@@ -21,19 +30,19 @@ describe("renderEmbeds", () => {
       "https://www.youtube.com/shorts/dQw4w9WgXcQ",
       "https://www.youtube.com/embed/dQw4w9WgXcQ",
     ])("plays %s from youtube-nocookie", (href) => {
-      expect(srcOf(renderEmbeds(embed("youtube", href)))).toBe(
+      expect(srcOf(players(embed("youtube", href)))).toBe(
         "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
       );
     });
 
     it("keeps a start time", () => {
-      expect(srcOf(renderEmbeds(embed("youtube", "https://youtu.be/dQw4w9WgXcQ?t=1m30s")))).toBe(
+      expect(srcOf(players(embed("youtube", "https://youtu.be/dQw4w9WgXcQ?t=1m30s")))).toBe(
         "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=90",
       );
     });
 
     it("renders a lazy, full-width 16:9 player titled from the link", () => {
-      const html = renderEmbeds(embed("youtube", "https://youtu.be/dQw4w9WgXcQ", "", "Never &amp; Gonna"));
+      const html = players(embed("youtube", "https://youtu.be/dQw4w9WgXcQ", "", "Never &amp; Gonna"));
       expect(html).toContain('class="scribe-embed scribe-embed-youtube"');
       expect(html).toContain('loading="lazy"');
       expect(html).toContain('title="Never &amp; Gonna"');
@@ -67,11 +76,11 @@ describe("renderEmbeds", () => {
       "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fartist%2Fsets%2Fan-album&visual=false",
     ],
   ])("plays %s from %s", (kind, href, src) => {
-    expect(srcOf(renderEmbeds(embed(kind, href)))).toBe(src);
+    expect(srcOf(players(embed(kind, href)))).toBe(src);
   });
 
   it("plays Bandcamp from the album number in data-embed-ref", () => {
-    const html = renderEmbeds(
+    const html = players(
       embed("bandcamp", "https://artist.bandcamp.com/album/name", ' data-embed-ref="album=1234567"'),
     );
     expect(srcOf(html)).toBe(
@@ -120,10 +129,12 @@ describe("renderEmbeds", () => {
       ["no link at all", '<figure data-embed="youtube"><p>No link</p></figure>'],
     ])("leaves %s as it was", (_, html) => {
       expect(renderEmbeds(html)).toBe(html);
+      expect(players(html)).toBe(html);
+      expect(hasEmbedPlayer(html)).toBe(false);
     });
 
     it("escapes the title it copies from the link text", () => {
-      const html = renderEmbeds(embed("youtube", "https://youtu.be/dQw4w9WgXcQ", "", '"><script>x</script>'));
+      const html = players(embed("youtube", "https://youtu.be/dQw4w9WgXcQ", "", '"><script>x</script>'));
       expect(html).not.toContain("<script>");
       expect(html).toContain('title="&quot;&gt; x"');
     });
@@ -177,5 +188,162 @@ describe("listenForEmbedResize", () => {
     stop();
     post("https://embed.bsky.app", { id: "scribe-embed-1", height: 10 });
     expect(frame.style.height).toBe("400px");
+  });
+});
+
+describe("Posters (click-to-load, ADR 0080)", () => {
+  const youtube = embed(
+    "youtube",
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "",
+    '<img src="https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg" alt=""><strong>Never Gonna</strong>',
+  );
+
+  it("shows a media Embed as a Poster: a link to its page, the player's size", () => {
+    const html = renderEmbeds(youtube);
+    expect(html).not.toContain("<iframe");
+    expect(html).toContain('<a class="scribe-embed-poster" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"');
+    expect(html).toContain("aspect-ratio:16 / 9");
+    expect(html).toContain('<img class="scribe-embed-poster-image" src="https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"');
+    expect(html).toContain('<span class="scribe-embed-poster-kind">YouTube</span>');
+    expect(html).toContain('<span class="scribe-embed-poster-title">Never Gonna</span>');
+    expect(html).toContain('<span class="scribe-embed-poster-button">Play</span>');
+    expect(html).toContain('aria-label="Play: Never Gonna (YouTube)"');
+  });
+
+  it("says Load player for kinds that can't start from the click", () => {
+    const html = renderEmbeds(embed("spotify", "https://open.spotify.com/playlist/37i9dQZF1E39WlLD9wri6m"));
+    expect(html).toContain(">Load player</span>");
+    expect(html).toContain("height:352px");
+  });
+
+  it("keeps Bandcamp's ref on the figure, for the click", () => {
+    const html = renderEmbeds(
+      embed("bandcamp", "https://artist.bandcamp.com/album/name", ' data-embed-ref="album=1234567"'),
+    );
+    expect(html).toContain('data-embed-ref="album=1234567"');
+    expect(html).toContain("scribe-embed-poster");
+  });
+
+  it("keeps Bluesky posts live", () => {
+    const html = renderEmbeds(
+      embed("bluesky", "https://bsky.app/profile/x/post/3mxovjfvv4s2f", ' data-embed-ref="at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mxovjfvv4s2f"'),
+    );
+    expect(html).toContain("<iframe");
+    expect(html).not.toContain("scribe-embed-poster");
+  });
+
+  it("gives a YouTube Embed with no stored image the video's thumbnail", () => {
+    expect(renderEmbeds(embed("youtube", "https://youtu.be/dQw4w9WgXcQ"))).toContain(
+      'src="https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"',
+    );
+  });
+
+  it.each([
+    ["http", "http://example.com/a.jpg"],
+    ["javascript", "javascript:alert(1)"],
+    ["data", "data:image/png;base64,AAAA"],
+  ])("shows no image for a %s thumbnail", (_, src) => {
+    const html = renderEmbeds(embed("vimeo", "https://vimeo.com/76979871", "", `<img src="${src}"><strong>T</strong>`));
+    expect(html).not.toContain("<img");
+  });
+
+  it("escapes the title", () => {
+    const html = renderEmbeds(embed("vimeo", "https://vimeo.com/76979871", "", '"><script>x</script>'));
+    expect(html).not.toContain("<script>");
+  });
+
+  it("leaves an already rendered Embed alone", () => {
+    const once = renderEmbeds(youtube);
+    expect(renderEmbeds(once)).toBe(once);
+  });
+});
+
+describe("hasEmbedPlayer", () => {
+  it("is true for a media or Bluesky Embed whose link matches its kind", () => {
+    expect(hasEmbedPlayer(embed("youtube", "https://youtu.be/dQw4w9WgXcQ"))).toBe(true);
+    expect(
+      hasEmbedPlayer(embed("bandcamp", "https://a.bandcamp.com/album/x", ' data-embed-ref="album=1"')),
+    ).toBe(true);
+  });
+
+  it("is false for a link card or a link that doesn't match", () => {
+    expect(hasEmbedPlayer('<figure data-embed="link"><a href="https://example.com/">x</a></figure>')).toBe(false);
+    expect(hasEmbedPlayer(embed("vimeo", "https://vimeo.com/not-a-video"))).toBe(false);
+  });
+});
+
+describe("listenForEmbedClicks", () => {
+  // Clicks a link and reports whether listenForEmbedClicks took the click,
+  // then stops jsdom following the link (it can't navigate).
+  function clickWasTaken(link: Element, init: MouseEventInit = {}): boolean {
+    let taken = false;
+    const record = (event: Event) => {
+      taken = event.defaultPrevented;
+      event.preventDefault();
+    };
+    window.addEventListener("click", record);
+    link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ...init }));
+    window.removeEventListener("click", record);
+    return taken;
+  }
+
+  function setup(html: string) {
+    document.body.innerHTML = renderEmbeds(html);
+    const stop = listenForEmbedClicks(window);
+    const poster = document.querySelector<HTMLAnchorElement>("a.scribe-embed-poster")!;
+    return { stop, poster };
+  }
+
+  it("swaps a Poster for its player, started, and focuses it", () => {
+    const { stop, poster } = setup(embed("youtube", "https://youtu.be/dQw4w9WgXcQ", "", "<strong>Never Gonna</strong>"));
+    poster.querySelector("span")!.click();
+    const frame = document.querySelector("iframe")!;
+    expect(frame.getAttribute("src")).toBe("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1");
+    expect(frame.getAttribute("allow")).toMatch(/^autoplay; /);
+    expect(frame.getAttribute("title")).toBe("Never Gonna");
+    expect(document.activeElement).toBe(frame);
+    expect(document.querySelector("figure")!.getAttribute("data-embed")).toBe("youtube");
+    stop();
+  });
+
+  it("loads Spotify without autoplay", () => {
+    const { stop, poster } = setup(embed("spotify", "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT"));
+    poster.click();
+    expect(document.querySelector("iframe")!.getAttribute("src")).toBe(
+      "https://open.spotify.com/embed/track/4cOdK2wGLETKBW3PvgPWqT",
+    );
+    stop();
+  });
+
+  it("builds the player from the Embed's kind and link, never from the page", () => {
+    document.body.innerHTML =
+      '<figure data-embed="youtube"><a class="scribe-embed-poster" href="https://evil.example/watch?v=dQw4w9WgXcQ" data-src="https://evil.example/">x</a></figure>';
+    const stop = listenForEmbedClicks(window);
+    expect(clickWasTaken(document.querySelector("a")!)).toBe(false);
+    expect(document.querySelector("iframe")).toBeNull();
+    stop();
+  });
+
+  it("leaves a click with a modifier key (a new tab) to the browser", () => {
+    const { stop, poster } = setup(embed("youtube", "https://youtu.be/dQw4w9WgXcQ"));
+    expect(clickWasTaken(poster, { ctrlKey: true })).toBe(false);
+    expect(document.querySelector("iframe")).toBeNull();
+    stop();
+  });
+
+  it("stops listening", () => {
+    const { stop, poster } = setup(embed("youtube", "https://youtu.be/dQw4w9WgXcQ"));
+    stop();
+    expect(clickWasTaken(poster)).toBe(false);
+    expect(document.querySelector("iframe")).toBeNull();
+  });
+
+  it("enhanceEmbeds does clicks and Bluesky resizing, and stops both", () => {
+    document.body.innerHTML = renderEmbeds(embed("youtube", "https://youtu.be/dQw4w9WgXcQ"));
+    const stop = enhanceEmbeds(window);
+    document.querySelector<HTMLAnchorElement>("a.scribe-embed-poster")!.click();
+    expect(document.querySelector("iframe")).not.toBeNull();
+    stop();
   });
 });
