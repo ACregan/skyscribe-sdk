@@ -111,3 +111,16 @@ const article = await fetchArticle(did, rkey);
 ```
 
 If you render articles from accounts you don't control, sanitise `content` first (see [Rendering the HTML](/quickstart#3-fetch-an-article)).
+
+## Site Analytics
+
+Show the Publication's owner visit figures on its Insights tab in SkyScribe (free, cookie-free):
+
+```ts
+import { siteAnalyticsScriptTag, loadSiteAnalytics } from '@skyscribe-sdk/core';
+
+// Print siteAnalyticsScriptTag() into your page template before </body>,
+// or call loadSiteAnalytics() from a script that runs in the browser.
+```
+
+Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.

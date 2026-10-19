@@ -541,6 +541,41 @@ const csp = `frame-src ${EMBED_FRAME_HOSTS.join(" ")}; img-src 'self' https:`;
 
 ---
 
+## Site Analytics
+
+The beacon behind [Site Analytics](/guides/site-analytics). The framework packages wrap these; use them directly on other stacks.
+
+### `loadSiteAnalytics`
+
+```ts
+function loadSiteAnalytics(doc?: SiteAnalyticsDocument): void
+```
+
+Adds the beacon `<script>` to the page's `<head>`, once. Calling it again, or on a page that already has the tag from `siteAnalyticsScriptTag()`, does nothing. Call it in the browser: without a `document` (on the server) it does nothing.
+
+### `siteAnalyticsScriptTag`
+
+```ts
+function siteAnalyticsScriptTag(): string
+```
+
+The beacon as an HTML `<script>` tag, to print into a server-rendered template before `</body>`.
+
+### `siteAnalyticsScript`
+
+```ts
+function siteAnalyticsScript(): SiteAnalyticsScript
+
+interface SiteAnalyticsScript {
+  src: string;
+  attributes: { defer: true; "data-cf-beacon": string; "data-skyscribe-analytics": "" };
+}
+```
+
+The beacon as data, for frameworks that build head tags from objects. `SITE_ANALYTICS_SCRIPT_SRC` is its `src`.
+
+---
+
 ## Errors
 
 ### `NotFoundError`

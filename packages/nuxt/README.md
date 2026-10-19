@@ -129,9 +129,21 @@ useSeoMeta(siteSeoMeta(site));
 
 These functions are **not** auto-imported — use an explicit import from `@skyscribe-sdk/nuxt`.
 
+## Site Analytics
+
+Cookie-free visit figures for your SDK-driven website, shown to the Publication's owner on its Insights tab in SkyScribe (free). Call it once, in `app.vue`:
+
+```vue
+<script setup lang="ts">
+useSiteAnalytics();
+</script>
+```
+
+Figures appear once your site serves `/.well-known/site.standard.publication` with your Publication's AT URI. You're responsible for disclosing the analytics in your privacy policy. Guide: https://sdk.skyscribe.app/guides/site-analytics
+
 ## Auto-imports
 
-The composables are auto-imported: `useScribeSite`, `useScribeArticleBySlug`, `useScribeArticle`, `useScribePublicationUri` and `useScribeDocumentUri` (version 1.3.0 or later; earlier versions didn't ship them).
+The composables are auto-imported: `useScribeSite`, `useScribeArticleBySlug`, `useScribeArticle`, `useScribePublicationUri`, `useScribeDocumentUri` (version 1.3.0 or later; earlier versions didn't ship them) and `useSiteAnalytics` (1.4.0 or later).
 
 Utility functions and meta helpers require an explicit import:
 

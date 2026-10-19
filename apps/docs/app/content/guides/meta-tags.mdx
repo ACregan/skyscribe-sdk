@@ -192,5 +192,5 @@ The [`site.standard` spec](https://standard.site/docs/verification/) lets apps c
 
   In a React Router `meta` function that's `{ tagName: 'link', rel: 'site.standard.document', href: documentUri }`.
 
-- **The website** serves the Publication's AT URI at `/.well-known/site.standard.publication`. If the Site has a path prefix, the spec puts it after that path, e.g. `/.well-known/site.standard.publication/blog`. The [React Router](/frameworks/react-router#publication-verification-route) and [Next.js](/frameworks/next#publication-verification-route) packages have ready-made handlers.
+- **The website** serves the Publication's AT URI at `/.well-known/site.standard.publication`. A SkyScribe Publication's URL is a bare domain, so it's always at the root. [Site Analytics](/guides/site-analytics) needs it too. The [React Router](/frameworks/react-router#publication-verification-route) and [Next.js](/frameworks/next#publication-verification-route) packages have ready-made handlers.
 

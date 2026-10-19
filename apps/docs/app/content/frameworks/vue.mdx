@@ -100,6 +100,24 @@ const { uri } = useScribeDocumentUri(props.author, props.publicationUrl, props.s
 </template>
 ```
 
+## Site Analytics
+
+Show the Publication's owner visit figures on its Insights tab in SkyScribe (free, cookie-free):
+
+```vue
+<!-- Once, in App.vue -->
+<script setup lang="ts">
+import { SiteAnalytics } from '@skyscribe-sdk/vue';
+</script>
+
+<template>
+  <RouterView />
+  <SiteAnalytics />
+</template>
+```
+
+Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+
 ## TypeScript types
 
 The main types from `@skyscribe-sdk/core` are re-exported:

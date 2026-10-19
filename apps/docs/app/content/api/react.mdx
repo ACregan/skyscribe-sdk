@@ -34,6 +34,22 @@ See the [`@skyscribe-sdk/styles` reference](/api/styles) for theming and the ful
 
 ---
 
+### `SiteAnalytics`
+
+```tsx
+function SiteAnalytics(props: { disabled?: boolean }): null
+```
+
+Adds the [Site Analytics](/guides/site-analytics) beacon to the page after it renders. Render it once, in your root layout; it renders nothing itself and works with or without server rendering. `disabled` leaves the beacon out.
+
+```tsx
+import { SiteAnalytics } from "@skyscribe-sdk/react";
+
+<SiteAnalytics />
+```
+
+---
+
 ## Hooks
 
 ### `useSite`

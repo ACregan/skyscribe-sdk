@@ -4,6 +4,26 @@ Composables for Vue 3. Install with `npm install @skyscribe-sdk/vue`. See the [V
 
 All five composables take plain values, fetch once when called, and abort when the component unmounts. They don't re-fetch if the values change.
 
+## Components
+
+### `SiteAnalytics`
+
+```ts
+const SiteAnalytics: DefineComponent<{ disabled?: boolean }>
+```
+
+Adds the [Site Analytics](/guides/site-analytics) beacon to the page when mounted. Render it once, in `App.vue`; it renders nothing itself. `disabled` leaves the beacon out. On Nuxt, prefer [`useSiteAnalytics`](/api/nuxt#usesiteanalytics), which puts the tag in the server-rendered HTML.
+
+```vue
+<script setup lang="ts">
+import { SiteAnalytics } from "@skyscribe-sdk/vue";
+</script>
+
+<template>
+  <SiteAnalytics />
+</template>
+```
+
 ## Composables
 
 ### `useScribeSite`

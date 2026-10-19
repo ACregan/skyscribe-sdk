@@ -103,7 +103,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
 
 ## Publication verification route
 
-The [`site.standard` spec](https://standard.site/docs/verification/) lets apps confirm that a website really belongs to a Publication by requesting `/.well-known/site.standard.publication`, which should return the Publication's AT URI. `createWellKnownLoader` serves exactly that. (For a Site with a path prefix, the spec adds the prefix after it, e.g. `/.well-known/site.standard.publication/blog`.)
+The [`site.standard` spec](https://standard.site/docs/verification/) lets apps confirm that a website really belongs to a Publication by requesting `/.well-known/site.standard.publication`, which should return the Publication's AT URI. `createWellKnownLoader` serves exactly that. Add it even if you don't use [Site Analytics](/guides/site-analytics): readers and aggregators that show `site.standard` content check it, and Site Analytics only shows figures once it names your Publication. A SkyScribe Publication's URL is a bare domain, so the file is always at the root, even when your articles live under a path prefix.
 
 ```ts
 // app/routes.ts
@@ -114,6 +114,19 @@ import { createWellKnownLoader } from '@skyscribe-sdk/react-router-framework';
 
 export const loader = createWellKnownLoader('alice.bsky.social', 'https://alice.bsky.social');
 ```
+
+## Site Analytics
+
+Show the Publication's owner visit figures on its Insights tab in SkyScribe (free, cookie-free):
+
+```tsx
+// Once, in app/root.tsx
+import { SiteAnalytics } from '@skyscribe-sdk/react';
+
+<SiteAnalytics />
+```
+
+Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
 
 ## TypeScript types
 

@@ -85,6 +85,18 @@ function ArticlePage({ slug }: { slug: string }) {
 
 `useArticle(author, rkey)` fetches by record key instead, for when you already have an `ArticleRef`. Don't pass it a slug.
 
+### `SiteAnalytics`
+
+Cookie-free visit figures for your SDK-driven website, shown to the Publication's owner on its Insights tab in SkyScribe (free). Render it once, in your root layout:
+
+```tsx
+import { SiteAnalytics } from "@skyscribe-sdk/react";
+
+<SiteAnalytics />
+```
+
+Figures appear once your site serves `/.well-known/site.standard.publication` with your Publication's AT URI. You're responsible for disclosing the analytics in your privacy policy. Guide: https://sdk.skyscribe.app/guides/site-analytics
+
 ## TypeScript types
 
 All types from `@skyscribe-sdk/core` are re-exported so you only need one import:
