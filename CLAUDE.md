@@ -196,6 +196,7 @@ packages/core/src/
   errors.ts         — NotFoundError, PdsFetchError, PdsUnreachableError (exported) — see "Typed errors and retry" below
   retry.ts          — withRetry() (exported) — generic, opt-in retry-with-backoff wrapper
   http.ts           — pdsFetch() (internal) — every fetch() call site in this package goes through it
+  analytics.ts      — loadSiteAnalytics(), siteAnalyticsScriptTag(), siteAnalyticsScript() (exported) — the Site Analytics beacon; owns the shared Cloudflare token (skyscribe-app ADR 0086)
   index.ts          — re-exports everything public
 ```
 
@@ -229,6 +230,7 @@ Article rkeys are opaque TIDs, so **slug-based helpers are the default for artic
 packages/react/src/
   useSite.ts        — useSite(author, siteSlug) → { site, loading, error }
   useArticle.ts     — useArticle(author, articleSlug) → { article, loading, error }
+  SiteAnalytics.tsx — <SiteAnalytics /> — adds the beacon in an effect (React doesn't run client-created <script>s), renders nothing
   index.ts          — re-exports hooks and all types from core
 ```
 
@@ -285,6 +287,7 @@ Metadata is opinionated (complete OpenGraph by default). Uses `ArticleRef` snaps
 packages/vue/src/
   useScribeSite.ts    — useScribeSite(author, siteSlug) → { site, loading, error } (Refs)
   useScribeArticle.ts — useScribeArticle(author, articleSlug) → { article, loading, error } (Refs)
+  SiteAnalytics.ts    — <SiteAnalytics /> component — adds the beacon on mount, renders nothing
   index.ts            — re-exports composables and all types from core
 ```
 
@@ -298,6 +301,7 @@ packages/nuxt/src/
   composables/useScribeSite.ts     — wraps fetchSite with useAsyncData
   composables/useScribeArticle.ts  — wraps fetchArticle with useAsyncData
   composables/useScribeArticleBySlug.ts — wraps fetchArticleBySlug with useAsyncData (slug from the URL)
+  composables/useSiteAnalytics.ts  — puts the Site Analytics beacon in the head via useHead (server-rendered)
   index.ts                         — re-exports module and all types from core
 ```
 
