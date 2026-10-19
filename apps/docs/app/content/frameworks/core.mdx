@@ -93,6 +93,22 @@ controller.abort();
   The framework adapters wire up cancellation for you. You only manage signals yourself when using `@skyscribe-sdk/core` directly.
 </Callout>
 
+## Site Analytics
+
+Show the Publication's owner visit figures on its Insights tab in SkyScribe (free, cookie-free):
+
+```ts
+// In the browser, once per page
+import { loadSiteAnalytics } from '@skyscribe-sdk/core';
+
+loadSiteAnalytics();
+
+// Or print the tag into server-rendered HTML
+import { siteAnalyticsScriptTag } from '@skyscribe-sdk/core';
+```
+
+Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+
 ## TypeScript types
 
 ```ts

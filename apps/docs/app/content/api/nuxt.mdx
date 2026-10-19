@@ -98,6 +98,14 @@ Resolve just the AT URI of a Site or (by slug) an article, inside `useAsyncData`
 
 ---
 
+### `useSiteAnalytics`
+
+```ts
+function useSiteAnalytics(options?: { disabled?: boolean }): void
+```
+
+Puts the [Site Analytics](/guides/site-analytics) beacon in the page `<head>` through `useHead`, so it's in the server-rendered HTML. Call it once, in `app.vue`. Auto-imported. `disabled` leaves the beacon out.
+
 ## Meta helpers
 
 ### `articleSeoMeta`

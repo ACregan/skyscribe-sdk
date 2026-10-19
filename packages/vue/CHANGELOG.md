@@ -1,5 +1,16 @@
 # @skyscribe-sdk/vue
 
+## 1.2.0
+
+### Minor Changes
+
+- Site Analytics: cookie-free visit figures for an SDK-driven website, shown to the Publication's owner on its Insights tab in SkyScribe. Add `<SiteAnalytics />` (react, vue), `useSiteAnalytics()` (nuxt), or `loadSiteAnalytics()` / `siteAnalyticsScriptTag()` (core). Figures appear once the site serves `/.well-known/site.standard.publication`. Guide: https://sdk.skyscribe.app/guides/site-analytics
+
+### Patch Changes
+
+- Updated dependencies
+  - @skyscribe-sdk/core@4.1.0
+
 ## 1.1.0
 
 ### Minor Changes

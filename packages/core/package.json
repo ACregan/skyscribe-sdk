@@ -1,6 +1,6 @@
 {
   "name": "@skyscribe-sdk/core",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Pure TypeScript fetch functions, PDS resolution, and types for reading SkyScribe content from the AT Protocol.",
   "license": "MIT",
   "engines": {

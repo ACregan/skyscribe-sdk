@@ -98,6 +98,19 @@ All three hooks re-fetch when their arguments change, and abort the in-flight re
 
 `<ScribeContent>` renders article HTML inside a `scribe-content` wrapper, ready for [`@skyscribe-sdk/styles`](/frameworks/styles). If you render articles from accounts you don't control, sanitise the HTML first (see [Rendering the HTML](/quickstart#3-fetch-an-article)).
 
+## Site Analytics
+
+Show the Publication's owner visit figures on its Insights tab in SkyScribe (free, cookie-free):
+
+```tsx
+// Once, in your root layout
+import { SiteAnalytics } from '@skyscribe-sdk/react';
+
+<SiteAnalytics />
+```
+
+Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+
 ## TypeScript types
 
 The main types from `@skyscribe-sdk/core` are re-exported, so you rarely need to import from both packages:

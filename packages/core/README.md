@@ -250,6 +250,19 @@ const postRef = await crossPostToBluesky(agent, {
 
 `agent` can be any object with a `com.atproto.repo.createRecord` method — the `Agent` from `@atproto/api` satisfies this automatically.
 
+### Site Analytics
+
+Cookie-free visit figures for your SDK-driven website, shown to the Publication's owner on its Insights tab in SkyScribe (free):
+
+```ts
+import { loadSiteAnalytics, siteAnalyticsScriptTag } from "@skyscribe-sdk/core";
+
+loadSiteAnalytics();          // in the browser, once per page
+siteAnalyticsScriptTag();     // or print this tag into server-rendered HTML
+```
+
+Figures appear once your site serves `/.well-known/site.standard.publication` with your Publication's AT URI. You're responsible for disclosing the analytics in your privacy policy. Guide: https://sdk.skyscribe.app/guides/site-analytics
+
 ## TypeScript types
 
 ```ts

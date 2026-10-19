@@ -96,6 +96,19 @@ const { data: site } = await useScribeSite('alice.bsky.social', 'https://alice.b
 
 `articleSeoMeta(article, site)` and `siteSeoMeta(site)` return objects ready for Nuxt's `useSeoMeta`. `useSeoMeta` has no field for a canonical link or structured data, so add those with `useHead`, using the re-exported `buildCanonicalUrl` and `generateArticleJsonLd`. See the [meta tags guide](/guides/meta-tags).
 
+## Site Analytics
+
+Show the Publication's owner visit figures on its Insights tab in SkyScribe (free, cookie-free):
+
+```vue
+<!-- Once, in app.vue (auto-imported) -->
+<script setup lang="ts">
+useSiteAnalytics();
+</script>
+```
+
+Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+
 ## TypeScript types
 
 The main types from `@skyscribe-sdk/core` are re-exported:

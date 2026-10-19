@@ -1,0 +1,137 @@
+# Site Analytics
+
+Site Analytics shows a Publication's owner how many people visit its SDK-driven website: page views, visits, top pages, where readers came from, and which countries. The figures appear on the Publication's **Insights** tab in [SkyScribe](https://skyscribe.app), the same view SkyScribe Sites get. It's free.
+
+It needs two things on your website:
+
+1. **The analytics component**, which loads a small, cookie-free script (Cloudflare Web Analytics, run on SkyScribe's behalf).
+2. **The Publication verification file** at `/.well-known/site.standard.publication`, which SkyScribe checks before it shows anyone the figures.
+
+## 1. Add the component
+
+Add it once, somewhere every page renders, such as your root layout.
+
+<Tabs>
+  <Tab label="React / React Router / Next.js">
+    ```tsx
+    // app/root.tsx (React Router) or app/layout.tsx (Next.js)
+    import { SiteAnalytics } from '@skyscribe-sdk/react';
+
+    export default function Layout({ children }) {
+      return (
+        <>
+          {children}
+          <SiteAnalytics />
+        </>
+      );
+    }
+    ```
+
+    In the Next.js App Router, a layout is a server component, so either import it from a file marked `'use client'` or render it inside one of your existing client components.
+  </Tab>
+  <Tab label="Vue">
+    ```vue
+    <!-- App.vue -->
+    <script setup lang="ts">
+    import { SiteAnalytics } from '@skyscribe-sdk/vue';
+    </script>
+
+    <template>
+      <RouterView />
+      <SiteAnalytics />
+    </template>
+    ```
+  </Tab>
+  <Tab label="Nuxt">
+    ```vue
+    <!-- app.vue -->
+    <script setup lang="ts">
+    // Auto-imported by the @skyscribe-sdk/nuxt module.
+    useSiteAnalytics();
+    </script>
+    ```
+
+    `useSiteAnalytics` puts the script in the server-rendered `<head>`.
+  </Tab>
+  <Tab label="Angular">
+    ```ts
+    // app.component.ts
+    import { Component, PLATFORM_ID, inject } from '@angular/core';
+    import { isPlatformBrowser } from '@angular/common';
+    import { loadSiteAnalytics } from '@skyscribe-sdk/core';
+
+    @Component({ selector: 'app-root', templateUrl: './app.component.html' })
+    export class AppComponent {
+      constructor() {
+        if (isPlatformBrowser(inject(PLATFORM_ID))) loadSiteAnalytics();
+      }
+    }
+    ```
+  </Tab>
+  <Tab label="Anything else">
+    Print the tag from `siteAnalyticsScriptTag()` into your HTML template before `</body>`:
+
+    ```ts
+    import { siteAnalyticsScriptTag } from '@skyscribe-sdk/core';
+
+    const html = `…${siteAnalyticsScriptTag()}</body>`;
+    ```
+
+    Or call `loadSiteAnalytics()` from any script that runs in the browser.
+  </Tab>
+</Tabs>
+
+Client-side navigations count as page views too, so single-page apps don't need anything extra. Adding the component twice is harmless: the script is only loaded once.
+
+Always use the component rather than copying the script tag. SkyScribe may change how visits are collected, and when it does you'll get the change with `npm update`.
+
+## 2. Serve the Publication verification file
+
+Your website must answer `GET /.well-known/site.standard.publication` with your Publication's AT URI, as plain text:
+
+```
+at://did:plc:abc123/site.standard.publication/3lwafzkjqm25s
+```
+
+**Add this even if you never use Site Analytics.** It's part of the [`site.standard` spec](https://standard.site/docs/verification/): readers and aggregators that show `site.standard` content request it to confirm that your website really belongs to your Publication, and may treat a website without it as unverified.
+
+**Site Analytics needs it.** SkyScribe shows visit figures for an address only once that address's verification file names the Publication. Without the check, anyone could put your domain on their own Publication and read your traffic.
+
+The SDK serves it for you:
+
+- React Router: [`createWellKnownLoader`](/frameworks/react-router#publication-verification-route)
+- Next.js: [`createWellKnownHandler`](/frameworks/next#publication-verification-route)
+- Anything else: look the URI up with [`resolvePublicationUri`](/api/core#resolvepublicationuri) and return it from a route at that path with `Content-Type: text/plain`.
+
+A SkyScribe Publication's URL is a bare domain, so the file is always at the root, `/.well-known/site.standard.publication`, even when your articles live under a path such as `/blog`.
+
+SkyScribe checks the address in your Publication's settings, follows redirects, and also counts visits to `www.` plus that address. A successful check is remembered for a day. A failed one is retried after a minute, so once you've deployed the fix, reload the Insights tab.
+
+## Privacy
+
+The script sets no cookies and stores nothing on the reader's device. It reports the page address, the referrer, the browser, and the country (worked out from the IP address, which isn't kept), and SkyScribe never sees individual people. Even so, **you are responsible for telling your readers about it and for complying with the privacy law that applies to your website.** At a minimum, your privacy policy should say that the site uses Cloudflare Web Analytics on SkyScribe's behalf to show the Publication's owner visit figures.
+
+## Content Security Policy
+
+If your website sends a CSP, allow the script and the address it reports to:
+
+```
+script-src  https://static.cloudflareinsights.com
+connect-src https://cloudflareinsights.com
+```
+
+## What gets counted
+
+- **Every page view on your live address,** including your own. The figures are approximate: readers who block the script aren't counted, and busy periods are sampled.
+- **Not visits on other addresses.** Visits on `localhost` or a preview deployment (`*.vercel.app` and the like) are recorded under those hostnames, which never appear in anyone's Insights. So you don't need to turn the component off while developing. If you want to anyway (for example because of a strict CSP), pass `disabled`: `<SiteAnalytics disabled />`, `<SiteAnalytics :disabled="true" />`, or `useSiteAnalytics({ disabled: true })`.
+
+## Troubleshooting
+
+The Insights tab says what it found:
+
+| Insights shows | What to do |
+| -------------- | ---------- |
+| Not verified: the file returned 404 | Add the verification route (step 2) and deploy. |
+| Not verified: it names a different Publication | The route is set up for another Publication. Check the author and URL you pass to it. |
+| Couldn't check | Your website didn't answer in time. Try again in a minute. |
+| Verified, but no visits | Check that the component is on every page and that a CSP or ad blocker isn't blocking `static.cloudflareinsights.com`. New visits take a few minutes to appear. |

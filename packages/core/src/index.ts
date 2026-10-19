@@ -32,3 +32,10 @@ export {
   EMBED_FRAME_HOSTS,
 } from "./embeds.js";
 export type { EmbedKind, EmbedWindow, EmbedClickWindow, RenderEmbedsOptions } from "./embeds.js";
+export {
+  siteAnalyticsScript,
+  siteAnalyticsScriptTag,
+  loadSiteAnalytics,
+  SITE_ANALYTICS_SCRIPT_SRC,
+} from "./analytics.js";
+export type { SiteAnalyticsScript, SiteAnalyticsDocument } from "./analytics.js";

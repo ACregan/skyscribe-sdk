@@ -1,3 +1,4 @@
+export { SiteAnalytics } from "./SiteAnalytics.js";
 export { useScribeSite } from "./useScribeSite.js";
 export type { UseScribeSiteResult } from "./useScribeSite.js";
 export { useScribeArticle } from "./useScribeArticle.js";

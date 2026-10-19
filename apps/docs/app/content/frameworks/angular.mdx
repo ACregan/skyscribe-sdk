@@ -167,6 +167,21 @@ export class DocumentUriComponent {
 }
 ```
 
+## Site Analytics
+
+Show the Publication's owner visit figures on its Insights tab in SkyScribe (free, cookie-free):
+
+```ts
+// Once, in AppComponent's constructor
+import { PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { loadSiteAnalytics } from '@skyscribe-sdk/core';
+
+if (isPlatformBrowser(inject(PLATFORM_ID))) loadSiteAnalytics();
+```
+
+Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+
 ## TypeScript types
 
 The main types from `@skyscribe-sdk/core` are re-exported:

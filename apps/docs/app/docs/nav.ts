@@ -222,6 +222,12 @@ export const docsSections: DocsSection[] = [
           "Adding Like, Subscribe, and Share buttons with @skyscribe-sdk/social.",
       },
       {
+        slug: "guides/site-analytics",
+        title: "Site Analytics",
+        description:
+          "Visit figures on SkyScribe's Insights tab for your SDK-driven website: the component and the verification file.",
+      },
+      {
         slug: "guides/cross-posted-articles",
         title: "Cross-posted articles",
         description: "Linking an Article back to its Bluesky post via bskyPostRef.",
