@@ -84,6 +84,7 @@ import { ShareButton } from "@skyscribe-sdk/social";
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-share-button` class |
 | `children` | `ReactNode \| ((isShared: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Share"` / `"Shared ✓"` |
 | `onSuccess` | `() => void` | — | Called after a successful share |
+| `confirm` | `boolean` | — | `true` (the default) lets the reader write the post first. `false` posts the title and link straight after sign-in. Since 1.7.0 |
 
 #### Customising the label
 

@@ -1,6 +1,6 @@
 {
   "name": "@skyscribe-sdk/social",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "React components for Scribe social interactions (Like, Subscribe).",
   "license": "MIT",
   "engines": {
