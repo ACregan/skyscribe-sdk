@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useSocialAction } from "./useSocialAction.js";
+import { DEFAULT_SERVICE_URL } from "./config.js";
 
-const DEFAULT_SERVICE_URL = "https://social.scribe-atp.app";
 const SUCCESS_RESET_MS = 3000;
 
 export interface ShareButtonProps {

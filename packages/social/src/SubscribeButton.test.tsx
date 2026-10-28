@@ -3,7 +3,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { SubscribeButton } from "./SubscribeButton.js";
 
 const PUB_URI = "at://did:plc:abc/site.standard.publication/test-pub";
-const SERVICE_URL = "https://social.scribe-atp.app";
+const SERVICE_URL = "https://social.skyscribe.app";
 
 beforeEach(() => {
   localStorage.clear();
@@ -15,26 +15,26 @@ afterEach(() => {
 });
 
 describe("SubscribeButton", () => {
-  it("renders 'Subscribe' when not yet subscribed", () => {
+  it("renders 'Follow' when not yet following", () => {
     render(<SubscribeButton publicationUri={PUB_URI} title="My Site" />);
-    const btn = screen.getByRole("button", { name: "Subscribe" });
+    const btn = screen.getByRole("button", { name: "Follow" });
     expect(btn).toBeInTheDocument();
     expect(btn).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByText("Subscribe")).toBeInTheDocument();
+    expect(screen.getByText("Follow")).toBeInTheDocument();
   });
 
-  it("renders 'Subscribed ✓' and is pressed when localStorage indicates already subscribed", () => {
+  it("renders 'Following ✓' and is pressed when localStorage indicates already subscribed", () => {
     localStorage.setItem(`scribe:subscribed:${PUB_URI}`, "1");
     render(<SubscribeButton publicationUri={PUB_URI} title="My Site" />);
-    const btn = screen.getByRole("button", { name: "Unsubscribe" });
+    const btn = screen.getByRole("button", { name: "Unfollow" });
     expect(btn).toHaveAttribute("aria-pressed", "true");
     expect(btn).not.toBeDisabled();
-    expect(screen.getByText("Subscribed ✓")).toBeInTheDocument();
+    expect(screen.getByText("Following ✓")).toBeInTheDocument();
   });
 
   it("renders in pressed state immediately when defaultSubscribed is true", () => {
     render(<SubscribeButton publicationUri={PUB_URI} title="My Site" defaultSubscribed={true} />);
-    const btn = screen.getByRole("button", { name: "Unsubscribe" });
+    const btn = screen.getByRole("button", { name: "Unfollow" });
     expect(btn).toHaveAttribute("aria-pressed", "true");
     expect(btn).not.toBeDisabled();
   });
@@ -43,10 +43,17 @@ describe("SubscribeButton", () => {
     render(<SubscribeButton publicationUri={PUB_URI} title="My Site" serviceUrl={SERVICE_URL} />);
     fireEvent.click(screen.getByRole("button"));
     expect(window.open).toHaveBeenCalledWith(
-      expect.stringContaining("/subscribe?"),
+      expect.stringContaining("/follow?"),
       "scribe-social",
       expect.any(String),
     );
+  });
+
+  it("calls the SkyScribe Social service by default", () => {
+    render(<SubscribeButton publicationUri={PUB_URI} title="My Site" />);
+    fireEvent.click(screen.getByRole("button"));
+    const [url] = (window.open as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+    expect(url.startsWith("https://social.skyscribe.app/follow?")).toBe(true);
   });
 
   it("popup URL includes publication, origin, and title params", () => {
@@ -64,7 +71,7 @@ describe("SubscribeButton", () => {
     render(<SubscribeButton publicationUri={PUB_URI} title="My Site" serviceUrl={SERVICE_URL} />);
     fireEvent.click(screen.getByRole("button"));
     expect(window.open).toHaveBeenCalledWith(
-      expect.stringContaining("/unsubscribe?"),
+      expect.stringContaining("/unfollow?"),
       "scribe-social",
       expect.any(String),
     );
@@ -82,7 +89,7 @@ describe("SubscribeButton", () => {
       );
     });
 
-    const btn = screen.getByRole("button", { name: "Unsubscribe" });
+    const btn = screen.getByRole("button", { name: "Unfollow" });
     expect(btn).toHaveAttribute("aria-pressed", "true");
     expect(btn).not.toBeDisabled();
     expect(localStorage.getItem(`scribe:subscribed:${PUB_URI}`)).toBe("1");
@@ -136,7 +143,7 @@ describe("SubscribeButton", () => {
       );
     });
 
-    expect(screen.getByRole("button", { name: "Subscribe" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Follow" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("ignores postMessages with wrong action", async () => {
@@ -151,7 +158,7 @@ describe("SubscribeButton", () => {
       );
     });
 
-    expect(screen.getByRole("button", { name: "Subscribe" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Follow" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("renders static children instead of default label", () => {
@@ -161,7 +168,7 @@ describe("SubscribeButton", () => {
       </SubscribeButton>,
     );
     expect(screen.getByText("Follow this site")).toBeInTheDocument();
-    expect(screen.queryByText("Subscribe")).not.toBeInTheDocument();
+    expect(screen.queryByText("Follow")).not.toBeInTheDocument();
   });
 
   it("passes isSubscribed state to render-prop children", async () => {

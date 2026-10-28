@@ -1,8 +1,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { isSubscribed, markSubscribed, clearSubscribed } from "./storage.js";
 import { useSocialAction } from "./useSocialAction.js";
-
-const DEFAULT_SERVICE_URL = "https://social.scribe-atp.app";
+import { DEFAULT_SERVICE_URL } from "./config.js";
 
 export interface SubscribeButtonProps {
   publicationUri: string;
@@ -34,7 +33,7 @@ export function SubscribeButton({
   const { handleClick: handleSubscribeClick } = useSocialAction({
     isActive: subscribed,
     action: "subscribe",
-    endpoint: "/subscribe",
+    endpoint: "/follow",
     serviceUrl,
     onActivated: () => {
       markSubscribed(publicationUri);
@@ -53,7 +52,7 @@ export function SubscribeButton({
   const { handleClick: handleUnsubscribeClick } = useSocialAction({
     isActive: !subscribed,
     action: "unsubscribe",
-    endpoint: "/unsubscribe",
+    endpoint: "/unfollow",
     serviceUrl,
     onActivated: () => {
       clearSubscribed(publicationUri);
@@ -72,14 +71,14 @@ export function SubscribeButton({
   const label =
     typeof children === "function"
       ? children(subscribed)
-      : (children ?? (subscribed ? "Subscribed ✓" : "Subscribe"));
+      : (children ?? (subscribed ? "Following ✓" : "Follow"));
 
   return (
     <button
       type="button"
       onClick={subscribed ? handleUnsubscribeClick : handleSubscribeClick}
       aria-pressed={subscribed}
-      aria-label={subscribed ? "Unsubscribe" : "Subscribe"}
+      aria-label={subscribed ? "Unfollow" : "Follow"}
       className={`scribe-atp-subscribe-button${className ? ` ${className}` : ""}`}
     >
       {label}

@@ -3,9 +3,9 @@
 [![npm](https://img.shields.io/npm/v/@skyscribe-sdk/social)](https://www.npmjs.com/package/@skyscribe-sdk/social)
 [![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/ACregan/skyscribe-sdk/blob/main/LICENSE)
 
-React components for adding social interactions — likes, shares, and subscriptions — to [SkyScribe](https://skyscribe.app) articles. Works with any React-based framework (React Router, Next.js, etc.).
+React components for adding social interactions — likes, shares, and follows — to [SkyScribe](https://skyscribe.app) articles. Works with any React-based framework (React Router, Next.js, etc.).
 
-Interactions are powered by the AT Protocol via `social.scribe-atp.app`. When a user clicks a button, a popup opens for them to sign in with their Bluesky account. The result is written to their AT Protocol repository and reported back to the originating page.
+Interactions are powered by the AT Protocol via `social.skyscribe.app`. When a user clicks a button, a popup opens for them to sign in with their Bluesky account. The result is written to their AT Protocol repository and reported back to the originating page. A button only works on its own Publication's website (the Publication's `url`, or a SkyScribe Site showing it). `SubscribeButton` is the **Follow** button.
 
 ## Installation
 
@@ -36,7 +36,7 @@ import { LikeButton } from "@skyscribe-sdk/social";
 | `documentUri` | `string` | ✓ | AT URI of the `site.standard.document` record |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
 | `title` | `string` | ✓ | Article title — shown in the like popup |
-| `serviceUrl` | `string` | — | Override the social service URL. Defaults to `https://social.scribe-atp.app` |
+| `serviceUrl` | `string` | — | Override the social service URL. Defaults to `https://social.skyscribe.app` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-like-button` class |
 | `children` | `ReactNode \| ((isLiked: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Like"` / `"Liked ✓"` |
 | `onSuccess` | `() => void` | — | Called after a successful like |
@@ -80,7 +80,7 @@ import { ShareButton } from "@skyscribe-sdk/social";
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
 | `title` | `string` | ✓ | Article title — shown in the share popup |
 | `canonicalUrl` | `string` | — | Canonical URL of the article. Defaults to `window.location.href` |
-| `serviceUrl` | `string` | — | Override the social service URL. Defaults to `https://social.scribe-atp.app` |
+| `serviceUrl` | `string` | — | Override the social service URL. Defaults to `https://social.skyscribe.app` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-share-button` class |
 | `children` | `ReactNode \| ((isShared: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Share"` / `"Shared ✓"` |
 | `onSuccess` | `() => void` | — | Called after a successful share |
@@ -112,9 +112,9 @@ import { SubscribeButton } from "@skyscribe-sdk/social";
 | ---- | ---- | -------- | ----------- |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
 | `title` | `string` | ✓ | Publication name — shown in the subscribe popup |
-| `serviceUrl` | `string` | — | Override the social service URL. Defaults to `https://social.scribe-atp.app` |
+| `serviceUrl` | `string` | — | Override the social service URL. Defaults to `https://social.skyscribe.app` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-subscribe-button` class |
-| `children` | `ReactNode \| ((isSubscribed: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Subscribe"` / `"Subscribed ✓"` |
+| `children` | `ReactNode \| ((isSubscribed: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Follow"` / `"Following ✓"` |
 | `onSuccess` | `() => void` | — | Called after a successful subscription |
 | `defaultSubscribed` | `boolean` | — | Initial subscribed state. Pass `true` from an SSR loader to avoid a flash of unconfirmed state on first render |
 
@@ -171,7 +171,7 @@ When `defaultLiked` / `defaultSubscribed` is provided, the component uses it as 
 
 ## How it works
 
-1. The user clicks a button. A popup window opens at `social.scribe-atp.app` with the relevant AT URI and a one-time token.
+1. The user clicks a button. A popup window opens at `social.skyscribe.app` with the relevant AT URI and a one-time token.
 2. The user signs in with their Bluesky account via AT Protocol OAuth.
 3. On success, the service writes the like, share, or follow record, then notifies the originating page — via `postMessage` if the popup has access to `window.opener`, or via polling `/status/:token` as a fallback.
 4. The button updates to its confirmed state. For `LikeButton` and `SubscribeButton` the result is persisted to `localStorage`; for `ShareButton` the confirmed state resets after 3 seconds.

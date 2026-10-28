@@ -1,9 +1,9 @@
 # Social buttons
 
-`@skyscribe-sdk/social` exports `LikeButton`, `ShareButton` and `SubscribeButton`: React components that let readers like, share and subscribe using their Bluesky account. The components handle signing in through a popup, so you don't need any server code.
+`@skyscribe-sdk/social` exports `LikeButton`, `ShareButton` and `SubscribeButton`: React components that let readers like, share and follow a Publication using their Bluesky account. `SubscribeButton` is the **Follow** button: its name comes from the record it writes, `site.standard.graph.subscription`. The components handle signing in through a popup, so you don't need any server code.
 
-<Callout type="note" title="Your website must be registered">
-  The Social service only accepts actions from website origins on its allowlist. If the popup reports an error, or the button never confirms, email [hello@skyscribe.app](mailto:hello@skyscribe.app) with your website's address and the Publication it shows.
+<Callout type="note" title="Buttons work on the Publication's own website">
+  A button only works on its own Publication's website: the page it's on must be the Publication's `url` (with or without `www.`), or a SkyScribe Site showing that Publication. There's nothing to register. If the popup says the button isn't on its Publication's website, check the Publication's address in SkyScribe matches the website.
 </Callout>
 
 ## Install
@@ -101,10 +101,10 @@ import { LikeButton, ShareButton, SubscribeButton } from '@skyscribe-sdk/social'
 
 ## What happens when clicked
 
-1. A 480×640 popup opens at `social.scribe-atp.app`, showing the article title (or the site's name, for Subscribe).
+1. A 480×640 popup opens at `social.skyscribe.app`, showing the article title (or the site's name, for Follow).
 2. The reader signs in with their Bluesky account.
 3. The service writes the matching AT Protocol record to the reader's own account, then tells your page through `postMessage`.
-4. The button switches to its confirmed state. For Like and Subscribe, that state is saved in `localStorage`.
+4. The button switches to its confirmed state. For Like and Follow, that state is saved in `localStorage`.
 
 <Callout type="tip">
   If the browser blocks the `postMessage`, the button falls back to polling the service for up to 30 seconds.
@@ -237,14 +237,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   The components write liked/subscribed state to `localStorage` under `scribe:recommended:{documentUri}` and `scribe:subscribed:{publicationUri}`. Mirror these to a cookie (e.g. in `onSuccess`) so your SSR loader can read them on the next request.
 </Callout>
 
-## Unsubscribing
+## Unfollowing
 
-`SubscribeButton` is a **toggle**. When the reader is already subscribed, clicking it opens a popup asking them to confirm unsubscribing, rather than the subscribe flow.
+`SubscribeButton` is a **toggle**. When the reader already follows the Publication, clicking it opens a popup asking them to confirm unfollowing.
 
-After a confirmed unsubscribe:
+After a confirmed unfollow:
 - The subscription AT Protocol record is deleted from the reader's repository.
 - `localStorage` is cleared for the publication.
-- The button returns to its unsubscribed state.
+- The button returns to **Follow**.
 
 No extra props are needed: the button knows the reader's state from `localStorage`.
 

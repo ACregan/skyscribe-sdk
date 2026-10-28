@@ -9,10 +9,10 @@ The Social service has a `GET /counts` endpoint that returns totals for likes, s
 ## Endpoint
 
 ```
-GET https://social.scribe-atp.app/counts
+GET https://social.skyscribe.app/counts
 ```
 
-No API key or token is needed. Browser requests only work from registered websites (see [CORS](#cors-and-allowed-origins)); requests from your server work from anywhere.
+No API key or token is needed. It answers browser requests from any website (see [CORS](#cors)) and requests from your server.
 
 ## Parameters
 
@@ -38,7 +38,7 @@ Fetch the total number of likes for an article:
 
 ```ts
 const res = await fetch(
-  `https://social.scribe-atp.app/counts?action_type=recommend&document_uri=${encodeURIComponent(documentUri)}`
+  `https://social.skyscribe.app/counts?action_type=recommend&document_uri=${encodeURIComponent(documentUri)}`
 );
 const { count } = await res.json();
 // count: 42
@@ -48,7 +48,7 @@ Fetch the current subscriber count for a site:
 
 ```ts
 const res = await fetch(
-  `https://social.scribe-atp.app/counts?action_type=subscribe&publication_uri=${encodeURIComponent(publicationUri)}`
+  `https://social.skyscribe.app/counts?action_type=subscribe&publication_uri=${encodeURIComponent(publicationUri)}`
 );
 const { count } = await res.json();
 // count: 17
@@ -71,12 +71,12 @@ Combine `from` and `to` for a specific window, for example to compare this week 
 ```ts
 // This week
 const thisWeek = await fetch(
-  `https://social.scribe-atp.app/counts?action_type=subscribe&publication_uri=${encodeURIComponent(publicationUri)}&from=-7d`
+  `https://social.skyscribe.app/counts?action_type=subscribe&publication_uri=${encodeURIComponent(publicationUri)}&from=-7d`
 ).then((r) => r.json());
 
 // The week before
 const lastWeek = await fetch(
-  `https://social.scribe-atp.app/counts?action_type=subscribe&publication_uri=${encodeURIComponent(publicationUri)}&from=-14d&to=-7d`
+  `https://social.skyscribe.app/counts?action_type=subscribe&publication_uri=${encodeURIComponent(publicationUri)}&from=-14d&to=-7d`
 ).then((r) => r.json());
 
 const delta = thisWeek.count - lastWeek.count;
@@ -104,7 +104,7 @@ Add `group_by` to break the count down by article, reader or day. The response t
 
 ```ts
 const res = await fetch(
-  `https://social.scribe-atp.app/counts?action_type=share&from=-30d&group_by=document_uri&order_by=count&limit=10`
+  `https://social.skyscribe.app/counts?action_type=share&from=-30d&group_by=document_uri&order_by=count&limit=10`
 );
 const { groups, total } = await res.json();
 ```
@@ -113,7 +113,7 @@ const { groups, total } = await res.json();
 
 ```ts
 const res = await fetch(
-  `https://social.scribe-atp.app/counts?action_type=recommend&publication_uri=${encodeURIComponent(publicationUri)}&from=-7d&group_by=day&order_by=date`
+  `https://social.skyscribe.app/counts?action_type=recommend&publication_uri=${encodeURIComponent(publicationUri)}&from=-7d&group_by=day&order_by=date`
 );
 const { groups } = await res.json();
 // groups: [{ key: "2026-06-26", count: 3 }, { key: "2026-06-27", count: 1 }, ...]
@@ -133,7 +133,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     request.signal,
   );
   const likeCount = await fetch(
-    `https://social.scribe-atp.app/counts?action_type=recommend&document_uri=${encodeURIComponent(documentUri)}`
+    `https://social.skyscribe.app/counts?action_type=recommend&document_uri=${encodeURIComponent(documentUri)}`
   ).then((r) => r.json()).then((d) => d.count as number).catch(() => null);
   return { article, likeCount };
 }
@@ -141,13 +141,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 The `.catch(() => null)` means a Social service outage can't break your article page.
 
-## CORS and allowed origins
+## CORS
 
-The Social service keeps an allowlist of website origins (like `https://norobots.blog`), and only sends CORS headers to those. Requests from your server (a loader or API route) aren't subject to CORS, so they work from anywhere, which is another reason to fetch counts on the server.
-
-<Callout type="tip">
-  If browser requests from your website are blocked, your origin isn't on the allowlist yet. Email [hello@skyscribe.app](mailto:hello@skyscribe.app) with your website's address and the Publication it shows. The same allowlist applies to the [social buttons](/guides/social).
-</Callout>
+`/counts` answers browser requests from any website (`Access-Control-Allow-Origin: *`): the counts are public totals. Fetching them on the server is still worth it, for the rate limit below.
 
 ## Rate limits
 
