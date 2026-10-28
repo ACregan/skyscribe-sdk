@@ -1,5 +1,11 @@
 # @skyscribe-sdk/social
 
+## 1.6.0
+
+### Minor Changes
+
+- The buttons call the Social service at its SkyScribe address, `social.skyscribe.app` (the old `social.scribe-atp.app` redirects there, so earlier versions keep working). `SubscribeButton` is now the **Follow** button: its default label is "Follow" / "Following ✓" and it opens `/follow` and `/unfollow`. Buttons work on their Publication's own website without registering it.
+
 ## 1.5.0
 
 ### Minor Changes

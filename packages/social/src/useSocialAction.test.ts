@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useSocialAction } from "./useSocialAction.js";
 
-const SERVICE_URL = "https://social.scribe-atp.app";
+const SERVICE_URL = "https://social.skyscribe.app";
 
 function makeConfig(overrides: Partial<Parameters<typeof useSocialAction>[0]> = {}) {
   return {

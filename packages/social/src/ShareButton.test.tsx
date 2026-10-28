@@ -4,7 +4,7 @@ import { ShareButton } from "./ShareButton.js";
 
 const DOC_URI = "at://did:plc:abc/site.standard.document/test-post";
 const PUB_URI = "at://did:plc:abc/site.standard.publication/test-pub";
-const SERVICE_URL = "https://social.scribe-atp.app";
+const SERVICE_URL = "https://social.skyscribe.app";
 
 beforeEach(() => {
   vi.stubGlobal("open", vi.fn().mockReturnValue(null));

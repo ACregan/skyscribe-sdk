@@ -1,8 +1,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { isRecommended, markRecommended } from "./storage.js";
 import { useSocialAction } from "./useSocialAction.js";
-
-const DEFAULT_SERVICE_URL = "https://social.scribe-atp.app";
+import { DEFAULT_SERVICE_URL } from "./config.js";
 
 export interface LikeButtonProps {
   documentUri: string;

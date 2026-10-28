@@ -1,9 +1,9 @@
 # @skyscribe-sdk/social
 
-React buttons that let readers like, share and subscribe with their Bluesky account. Install with `npm install @skyscribe-sdk/social`. See the [Social buttons guide](/guides/social) for walkthroughs.
+React buttons that let readers like, share and follow with their Bluesky account. Install with `npm install @skyscribe-sdk/social`. See the [Social buttons guide](/guides/social) for walkthroughs.
 
 <Callout type="note">
-  The Social service only accepts actions from registered website origins. If your website isn't registered yet, email [hello@skyscribe.app](mailto:hello@skyscribe.app).
+  A button only works on its own Publication's website: the page it's on must be the Publication's `url` (with or without `www.`), or a SkyScribe Site showing that Publication. There's nothing to register.
 </Callout>
 
 ## Components
@@ -14,7 +14,7 @@ React buttons that let readers like, share and subscribe with their Bluesky acco
 function LikeButton(props: LikeButtonProps): JSX.Element
 ```
 
-A button that records a like (a `site.standard.graph.recommend` record in the reader's account) for an article. It opens a sign-in popup at `social.scribe-atp.app`, then switches to its confirmed state.
+A button that records a like (a `site.standard.graph.recommend` record in the reader's account) for an article. It opens a sign-in popup at `social.skyscribe.app`, then switches to its confirmed state.
 
 **`LikeButtonProps`**
 
@@ -23,7 +23,7 @@ A button that records a like (a `site.standard.graph.recommend` record in the re
 | `documentUri` | `string` | ✓ | AT URI of the `site.standard.document` record |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
 | `title` | `string` | ✓ | Article title, shown in the popup |
-| `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.scribe-atp.app"` |
+| `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.skyscribe.app"` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-like-button` class |
 | `children` | `ReactNode \| ((isLiked: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Like"` / `"Liked ✓"` |
 | `onSuccess` | `() => void` | — | Called after a successful like |
@@ -63,7 +63,7 @@ A button that opens a popup for the reader to share the article as a Bluesky pos
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
 | `title` | `string` | ✓ | Article title, shown in the popup |
 | `canonicalUrl` | `string` | — | Canonical URL of the article. Defaults to `window.location.href` |
-| `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.scribe-atp.app"` |
+| `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.skyscribe.app"` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-share-button` class |
 | `children` | `ReactNode \| ((isShared: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Share"` / `"Shared ✓"` |
 | `onSuccess` | `() => void` | — | Called after a successful share |
@@ -96,9 +96,9 @@ A button that subscribes the reader to a Site. It opens a sign-in popup, then sw
 | ---- | ---- | -------- | ----------- |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
 | `title` | `string` | ✓ | Site name, shown in the subscribe and unsubscribe popups |
-| `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.scribe-atp.app"` |
+| `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.skyscribe.app"` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-subscribe-button` class |
-| `children` | `ReactNode \| ((isSubscribed: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Subscribe"` / `"Subscribed ✓"`. The render prop receives `isSubscribed` so you can show different copy in each state |
+| `children` | `ReactNode \| ((isSubscribed: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Follow"` / `"Following ✓"` (since 1.6.0; `"Subscribe"` / `"Subscribed ✓"` before). The render prop receives `isSubscribed` so you can show different copy in each state |
 | `onSuccess` | `() => void` | — | Called after a successful subscription |
 | `onUnsubscribe` | `() => void` | — | Called after a confirmed unsubscription |
 | `defaultSubscribed` | `boolean` | — | Starting subscribed state. Pass it from a server loader to avoid a flash of the wrong state |
@@ -180,7 +180,7 @@ All five are safe to call on the server: where `localStorage` isn't available, t
 
 ## How the popup flow works
 
-1. The reader clicks a button. A 480×640 popup opens at `social.scribe-atp.app`, with the AT URI, the `title` and a one-time token in its URL.
+1. The reader clicks a button. A 480×640 popup opens at `social.skyscribe.app`, with the AT URI, the `title` and a one-time token in its URL.
 2. The reader signs in with their Bluesky account.
 3. The service writes the like, share or subscription record to the reader's account and tells your page, using `postMessage`. If the browser blocks that, the button polls the service instead.
 4. The button switches to its confirmed state. `LikeButton` and `SubscribeButton` save it to `localStorage`; `ShareButton` resets after 3 seconds.
