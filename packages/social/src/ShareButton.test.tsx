@@ -145,4 +145,30 @@ describe("ShareButton", () => {
 
     expect(screen.getByText("Thanks for sharing!")).toBeInTheDocument();
   });
+
+  it("asks the service to skip the compose step when confirm is false", () => {
+    vi.stubGlobal("open", vi.fn().mockReturnValue(null));
+    render(
+      <ShareButton
+        documentUri={DOC_URI}
+        publicationUri={PUB_URI}
+        title="Test Post"
+        serviceUrl={SERVICE_URL}
+        confirm={false}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button"));
+    const [url] = (window.open as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+    expect(new URL(url).searchParams.get("quick")).toBe("1");
+  });
+
+  it("leaves quick off by default", () => {
+    vi.stubGlobal("open", vi.fn().mockReturnValue(null));
+    render(
+      <ShareButton documentUri={DOC_URI} publicationUri={PUB_URI} title="Test Post" serviceUrl={SERVICE_URL} />,
+    );
+    fireEvent.click(screen.getByRole("button"));
+    const [url] = (window.open as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+    expect(new URL(url).searchParams.get("quick")).toBeNull();
+  });
 });

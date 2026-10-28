@@ -13,6 +13,9 @@ export interface ShareButtonProps {
   className?: string;
   children?: ReactNode | ((isShared: boolean) => ReactNode);
   onSuccess?: () => void;
+  /** Let the reader write the post before sharing (the default). `false`
+   * posts the title and link straight after sign-in. */
+  confirm?: boolean;
 }
 
 export function ShareButton({
@@ -24,6 +27,7 @@ export function ShareButton({
   className,
   children,
   onSuccess,
+  confirm = true,
 }: ShareButtonProps) {
   const [shared, setShared] = useState(false);
 
@@ -46,6 +50,7 @@ export function ShareButton({
         origin: window.location.origin,
         title,
         token,
+        ...(confirm ? {} : { quick: "1" }),
       }),
   });
 

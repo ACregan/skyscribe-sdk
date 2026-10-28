@@ -111,7 +111,7 @@ import { LikeButton, ShareButton, SubscribeButton } from '@skyscribe-sdk/social'
 </Callout>
 
 <Callout>
-  `ShareButton` doesn't save anything to `localStorage`. After a successful share it resets after 3 seconds, so the reader can share again. By default the shared post links to the current page's URL; pass `canonicalUrl` to link somewhere else, such as the article's canonical URL.
+  `ShareButton` opens a box for the reader to write their post. Pass `confirm={false}` (since 1.7.0) to post the title and link straight after sign-in instead. `ShareButton` doesn't save anything to `localStorage`. After a successful share it resets after 3 seconds, so the reader can share again. By default the shared post links to the current page's URL; pass `canonicalUrl` to link somewhere else, such as the article's canonical URL.
 </Callout>
 
 ## Customising the label
