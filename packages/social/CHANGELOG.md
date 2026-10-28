@@ -1,5 +1,11 @@
 # @skyscribe-sdk/social
 
+## 1.7.0
+
+### Minor Changes
+
+- `ShareButton` takes `confirm` (default `true`). With `confirm={false}`, Share posts the title and link straight after sign-in, without the box for writing the post. SkyScribe Sites use it when a design turns off "Ask before sharing".
+
 ## 1.6.0
 
 ### Minor Changes
