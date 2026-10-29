@@ -10,6 +10,13 @@ A monorepo of packages for reading SkyScribe content from the AT Protocol. Autho
 | `DEVELOPER_NOTES.md` | Day-to-day development workflow, changeset process, key commands |
 | `UBIQUITOUS_LANGUAGE.md` | Shared vocabulary across the codebase and documentation |
 
+## The SkyScribe Reader copies the docs header
+
+skyscribe-site's Reader (`reader.skyscribe.app`, its ADR 0022) draws the same
+header as these docs (`apps/docs/app/layout/DocsLayout` and its `SearchBar`),
+copied into its `app/components/ReaderHeader/`, with a READER badge where the
+docs say SDK. Change them together, in the same arc.
+
 ## Packages
 
 | Package | Path | Purpose |
