@@ -165,7 +165,7 @@ Only published articles (from `site.groups`) are included. Draft articles in `si
 
 #### Sitemap entries
 
-`getSitemapEntries` returns structured data — not XML — so you can merge Scribe URLs into your own framework's sitemap generator alongside non-Scribe pages (portfolio, contact, etc.). Articles marked `canonicalElsewhere` (imported into SkyScribe with the original kept as canonical) are left out, so search engines index the original.
+`getSitemapEntries` returns structured data — not XML — so you can merge Scribe URLs into your own framework's sitemap generator alongside non-Scribe pages (portfolio, contact, etc.). Articles marked `canonicalElsewhere` (imported into SkyScribe with the original kept as canonical) are left out, so search engines index the original. Articles whose author turned on noindex in their SEO Settings (`noindex`) are left out too.
 
 ```ts
 import { fetchSite, getSitemapEntries } from "@skyscribe-sdk/core";
@@ -212,6 +212,8 @@ const articleTags = generateArticleMeta(article, site);
 const siteTags = generateSiteMeta(site);
 // tags for a blog index or home page
 ```
+
+If the author gave the article SEO Settings in SkyScribe (`article.seo`), `generateArticleMeta` uses its SEO title and description in the title and description tags and adds `robots: noindex` when asked. The JSON-LD `headline` keeps the article's own title.
 
 `buildCanonicalUrl` is also exported — it derives the full article URL from `article.canonicalUrl` (if set) or by combining `article.site`, `site.urlPrefix`, and `article.path`:
 

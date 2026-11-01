@@ -3,6 +3,7 @@ import { resolveIdentifier, resolvePds } from "./resolve.js";
 import { slugFromUri } from "./utils.js";
 import { PdsFetchError } from "./errors.js";
 import { pdsFetch } from "./http.js";
+import { readDocumentSeo } from "./seo.js";
 
 interface ScribeManifest {
   domain: string;
@@ -34,7 +35,7 @@ interface RawDocument {
   contributors?: ArticleContributor[];
   updatedAt?: string;
   // Scribe-specific fields live in the `scribe` extension object.
-  scribe?: { createdAt?: string; coverImageUrl?: string };
+  scribe?: { createdAt?: string; coverImageUrl?: string; seo?: unknown };
   // Legacy top-level fields, written by older Scribe versions.
   createdAt?: string;
   splashImageUrl?: string | null;
@@ -127,5 +128,6 @@ export async function listArticles(
     createdAt: value.scribe?.createdAt ?? value.createdAt ?? value.publishedAt ?? "",
     publishedAt: value.publishedAt,
     updatedAt: value.updatedAt,
+    ...(readDocumentSeo(value.scribe?.seo)?.noindex ? { noindex: true as const } : {}),
   }));
 }

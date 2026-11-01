@@ -32,6 +32,30 @@ const article: Article = {
 };
 
 describe("generateArticleMeta", () => {
+  it("uses the SEO title and description in the head when set", () => {
+    const tags = generateArticleMeta(
+      { ...article, seo: { title: "LLMs, Honestly", description: "Why LLMs bluff." } },
+      site,
+    );
+    expect(tags).toContainEqual({ title: "LLMs, Honestly — NoRobots" });
+    expect(tags).toContainEqual({ property: "og:title", content: "LLMs, Honestly" });
+    expect(tags).toContainEqual({ name: "twitter:title", content: "LLMs, Honestly" });
+    expect(tags).toContainEqual({ name: "description", content: "Why LLMs bluff." });
+    expect(tags).toContainEqual({ property: "og:description", content: "Why LLMs bluff." });
+    expect(tags).toContainEqual({ name: "twitter:description", content: "Why LLMs bluff." });
+    // The JSON-LD headline keeps the article's own title.
+    const ld = tags.find((t) => "script:ld+json" in t) as { "script:ld+json": { headline: string } };
+    expect(ld["script:ld+json"].headline).toBe("LLMs Are Full of Shit");
+  });
+
+  it("adds robots noindex only when the SEO Settings ask for it", () => {
+    expect(generateArticleMeta(article, site)).not.toContainEqual({ name: "robots", content: "noindex" });
+    expect(generateArticleMeta({ ...article, seo: { noindex: true } }, site)).toContainEqual({
+      name: "robots",
+      content: "noindex",
+    });
+  });
+
   it("includes title tag combining article and site titles", () => {
     const tags = generateArticleMeta(article, site);
     expect(tags).toContainEqual({ title: "LLMs Are Full of Shit — NoRobots" });

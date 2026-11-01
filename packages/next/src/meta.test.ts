@@ -38,6 +38,22 @@ const article: Article = {
 };
 
 describe("articleMetadata", () => {
+  it("uses the SEO title and description and honours noindex", () => {
+    const meta = articleMetadata(
+      { ...article, seo: { title: "LLMs, Honestly", description: "Why LLMs bluff.", noindex: true } },
+      site,
+    );
+    expect(meta.title).toBe("LLMs, Honestly — NoRobots");
+    expect(meta.description).toBe("Why LLMs bluff.");
+    expect(meta.openGraph).toMatchObject({ title: "LLMs, Honestly", description: "Why LLMs bluff." });
+    expect(meta.twitter).toMatchObject({ title: "LLMs, Honestly", description: "Why LLMs bluff." });
+    expect(meta.robots).toEqual({ index: false });
+  });
+
+  it("leaves robots unset without noindex", () => {
+    expect(articleMetadata(article, site).robots).toBeUndefined();
+  });
+
   it("returns combined title", () => {
     const meta = articleMetadata(article, site);
     expect(meta.title).toBe("LLMs Are Full of Shit — NoRobots");

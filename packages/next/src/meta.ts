@@ -16,22 +16,27 @@ export { generateArticleJsonLd, generateSiteJsonLd };
 
 export function articleMetadata(article: Article, site: Site): Metadata {
   const canonicalUrl = buildCanonicalUrl(article, site);
+  // SEO Settings (core ADR 0004) replace the title and description here;
+  // the JSON-LD headline keeps the article's own title.
+  const title = article.seo?.title ?? article.title;
+  const description = article.seo?.description ?? article.description ?? undefined;
   return {
-    title: `${article.title} — ${site.title}`,
-    description: article.description ?? undefined,
+    title: `${title} — ${site.title}`,
+    description,
     alternates: { canonical: canonicalUrl },
+    ...(article.seo?.noindex ? { robots: { index: false } } : {}),
     openGraph: {
       type: "article",
-      title: article.title,
-      description: article.description ?? undefined,
+      title,
+      description,
       url: canonicalUrl,
       siteName: site.title,
       ...(article.coverImageUrl ? { images: [article.coverImageUrl] } : {}),
     },
     twitter: {
       card: article.coverImageUrl ? "summary_large_image" : "summary",
-      title: article.title,
-      description: article.description ?? undefined,
+      title,
+      description,
       ...(article.coverImageUrl ? { images: [article.coverImageUrl] } : {}),
     },
   };

@@ -119,6 +119,8 @@ useSeoMeta(articleSeoMeta(article, site));
 </script>
 ```
 
+If the author gave the article SEO Settings in SkyScribe (`article.seo`), `articleSeoMeta` uses its SEO title and description and adds `robots: "noindex"` when asked.
+
 `siteSeoMeta` covers index and group pages:
 
 ```ts

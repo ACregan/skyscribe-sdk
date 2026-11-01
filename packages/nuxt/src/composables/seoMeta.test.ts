@@ -33,6 +33,17 @@ const article: Article = {
 };
 
 describe("articleSeoMeta", () => {
+  it("uses the SEO title and description and honours noindex", () => {
+    const meta = articleSeoMeta(
+      { ...article, seo: { title: "SEO title", description: "SEO desc", noindex: true } },
+      site,
+    );
+    expect(meta.title).toBe(`SEO title — ${site.title}`);
+    expect(meta.ogTitle).toBe("SEO title");
+    expect(meta.twitterDescription).toBe("SEO desc");
+    expect(meta.robots).toBe("noindex");
+  });
+
   it("returns combined title", () => {
     const meta = articleSeoMeta(article, site);
     expect(meta.title).toBe("LLMs Are Full of Shit — NoRobots");

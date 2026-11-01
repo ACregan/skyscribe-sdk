@@ -13,6 +13,8 @@ const entries = getSitemapEntries(site, { baseUrl: 'https://alice.example.com' }
 // entries is: Array<{ url: string; lastmod?: string }>
 ```
 
+Two kinds of article are left out: one whose canonical URL is another website's (an imported article whose author kept the original as canonical), and one whose author turned on **noindex** in its SEO Settings. Both still appear on your site and in your feed: they just aren't offered to search engines.
+
 ## Wiring into your framework
 
 <Tabs>

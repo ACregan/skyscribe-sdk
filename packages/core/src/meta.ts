@@ -75,25 +75,33 @@ export function generateArticleMeta(
   site: Site,
 ): ScribeMetaTag[] {
   const canonicalUrl = buildCanonicalUrl(article, site);
+  // SEO Settings (ADR 0004) replace the title and description in the head
+  // only: the JSON-LD headline keeps the article's own title.
+  const title = article.seo?.title ?? article.title;
+  const description = article.seo?.description ?? article.description;
 
   const tags: ScribeMetaTag[] = [
-    { title: `${article.title} — ${site.title}` },
+    { title: `${title} — ${site.title}` },
     { tagName: "link", rel: "canonical", href: canonicalUrl },
     { property: "og:type", content: "article" },
-    { property: "og:title", content: article.title },
+    { property: "og:title", content: title },
     { property: "og:url", content: canonicalUrl },
     { property: "og:site_name", content: site.title },
-    { name: "twitter:title", content: article.title },
+    { name: "twitter:title", content: title },
     {
       name: "twitter:card",
       content: article.coverImageUrl ? "summary_large_image" : "summary",
     },
   ];
 
-  if (article.description) {
-    tags.push({ name: "description", content: article.description });
-    tags.push({ property: "og:description", content: article.description });
-    tags.push({ name: "twitter:description", content: article.description });
+  if (description) {
+    tags.push({ name: "description", content: description });
+    tags.push({ property: "og:description", content: description });
+    tags.push({ name: "twitter:description", content: description });
+  }
+
+  if (article.seo?.noindex) {
+    tags.push({ name: "robots", content: "noindex" });
   }
 
   if (article.coverImageUrl) {

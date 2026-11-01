@@ -390,6 +390,26 @@ describe("fetchArticle", () => {
     expect(result.coverImageUrl).toBe("https://images.example.com/cover.jpg");
   });
 
+  it("maps the valid parts of scribe.seo to article.seo", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        value: {
+          title: "Test",
+          content: { $type: "app.scribe.content.html", html: "" },
+          path: "/test",
+          site: "at://did:plc:testuser/site.standard.publication/3abc",
+          publishedAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+          scribe: { seo: { title: "SEO title", description: 7, noindex: true } },
+        },
+      }),
+    });
+
+    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    expect(result.seo).toEqual({ title: "SEO title", noindex: true });
+  });
+
   it("leaves coverImageUrl undefined when absent from scribe", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

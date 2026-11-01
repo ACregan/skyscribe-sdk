@@ -55,15 +55,25 @@ export function createScribeSite(author: string, publicationUrl: string) {
       const article = site.groups
         .flatMap((g) => g.articles)
         .find((a) => a.slug === articleSlug);
+      // The site record's snapshot has no SEO title or description (core
+      // ADR 0004), so read them from the article itself. Metadata falls
+      // back to the snapshot if that fetch fails.
+      const seo = article
+        ? await fetchArticleBySlug(author, publicationUrl, articleSlug)
+            .then(({ article: full }) => full.seo)
+            .catch(() => undefined)
+        : undefined;
       const title = article
-        ? `${article.title} — ${site.title}`
+        ? `${seo?.title ?? article.title} — ${site.title}`
         : site.title;
+      const description = seo?.description ?? article?.description ?? undefined;
       return {
         title,
-        description: article?.description ?? undefined,
+        description,
+        ...(article?.noindex || seo?.noindex ? { robots: { index: false } } : {}),
         openGraph: {
           title,
-          description: article?.description ?? undefined,
+          description,
           ...(article?.splashImageUrl
             ? { images: [article.splashImageUrl] }
             : {}),

@@ -270,7 +270,7 @@ function getSitemapEntries(
 ): SitemapEntry[]
 ```
 
-Returns sitemap entries for the home page, the path-prefix root (if any), each Group page and each published article. Articles marked [`canonicalElsewhere`](#articleref) are left out: their canonical URL is the original's, on another site.
+Returns sitemap entries for the home page, the path-prefix root (if any), each Group page and each published article. Articles marked [`canonicalElsewhere`](#articleref) are left out: their canonical URL is the original's, on another site. So are articles marked [`noindex`](#articleref).
 
 **`GetSitemapEntriesOptions`**
 
@@ -297,7 +297,7 @@ See the [Sitemaps guide](/guides/sitemaps) for usage examples.
 function generateArticleMeta(article: Article, site: Site): ScribeMetaTag[]
 ```
 
-Returns a framework-neutral array of tag descriptors for an article page: the `<title>`, a canonical `<link>`, `description`, `og:type`, `og:title`, `og:url`, `og:site_name`, `og:description`, `og:image` (the cover image), `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, and JSON-LD structured data.
+Returns a framework-neutral array of tag descriptors for an article page: the `<title>`, a canonical `<link>`, `description`, `og:type`, `og:title`, `og:url`, `og:site_name`, `og:description`, `og:image` (the cover image), `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, and JSON-LD structured data. The article's [SEO Settings](/guides/meta-tags#seo-settings) replace the title and description tags (not the JSON-LD `headline`) and add `robots: noindex` when set.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
@@ -653,10 +653,13 @@ interface ArticleRef {
   publishedAt?: string;   // ISO 8601
   updatedAt?: string;     // ISO 8601
   canonicalElsewhere?: true; // Canonical URL is another site's; see below
+  noindex?: true;          // The author asked search engines to leave it out
 }
 ```
 
 `canonicalElsewhere` is set on an article that was imported into SkyScribe from another app (Leaflet, pckt, …) when its author chose to keep the original as the canonical URL. Your copy still renders as normal, but search engines should index the original: `getSitemapEntries` leaves these articles out.
+
+`noindex` is set when the article's author turned on noindex in its [SEO Settings](/guides/meta-tags#seo-settings). `getSitemapEntries` leaves it out too; it still belongs on your site and in your feed.
 
 ### `Article`
 
@@ -675,9 +678,22 @@ interface Article {
   tags?: string[];
   contributors?: ArticleContributor[];
   bskyPostRef?: { uri: string; cid: string };  // set if the article was shared to Bluesky
+  seo?: DocumentSeo;       // The author's SEO Settings; absent when none are set
   createdAt?: string;      // ISO 8601
   publishedAt: string;     // ISO 8601
   updatedAt: string;       // ISO 8601
+}
+```
+
+### `DocumentSeo`
+
+An article's [SEO Settings](/guides/meta-tags#seo-settings), as `Article.seo`. Only valid values are kept: a field over its limit (`SEO_TITLE_MAX` = 200, `SEO_DESCRIPTION_MAX` = 500 characters) or of the wrong type is dropped. `readDocumentSeo(raw)` does the same for a raw record's `scribe.seo`.
+
+```ts
+interface DocumentSeo {
+  title?: string;        // Replaces the title in <title>, og:title and twitter:title
+  description?: string;  // Replaces the description in the description tags
+  noindex?: true;        // Ask search engines to leave the article out
 }
 ```
 
