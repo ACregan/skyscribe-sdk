@@ -159,5 +159,30 @@ describe("getSitemapEntries", () => {
     // The Group page stays.
     expect(urls).toContain("https://norobots.blog/blog/essays");
   });
+
+  it("leaves out an article whose SEO Settings ask for noindex", () => {
+    const site: Site = {
+      ...mockSite,
+      groups: [
+        {
+          ...mockSite.groups[0],
+          articles: [
+            ...mockSite.groups[0].articles,
+            {
+              uri: "at://did:plc:abc/site.standard.document/hidden",
+              title: "Hidden",
+              slug: "hidden",
+              splashImageUrl: null,
+              createdAt: "2024-03-01T00:00:00Z",
+              noindex: true,
+            },
+          ],
+        },
+      ],
+    };
+    const urls = getSitemapEntries(site, { baseUrl: "https://norobots.blog" }).map((e) => e.url);
+    expect(urls).not.toContain("https://norobots.blog/blog/essays/hidden");
+    expect(urls).toContain("https://norobots.blog/blog/essays/first-post");
+  });
 });
 

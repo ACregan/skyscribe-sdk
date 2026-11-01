@@ -3,6 +3,7 @@ import { resolveIdentifier, resolvePds, _clearCaches as _clearResolveCaches } fr
 import { slugFromUri, didFromUri } from "./utils.js";
 import { NotFoundError, PdsFetchError } from "./errors.js";
 import { pdsFetch } from "./http.js";
+import { readDocumentSeo } from "./seo.js";
 
 const PUBLICATION_URI_CACHE_TTL_MS = 60_000;
 
@@ -80,6 +81,7 @@ interface RawDocumentScribe {
   coverImageUrl?: string;
   createdAt?: string;
   canonicalUrl?: string;
+  seo?: unknown;
 }
 
 interface RawDocument {
@@ -222,6 +224,7 @@ export async function fetchArticle(
     tags: raw.tags,
     contributors: raw.contributors,
     bskyPostRef: raw.bskyPostRef,
+    seo: readDocumentSeo(raw.scribe?.seo),
     createdAt: raw.scribe?.createdAt,
     updatedAt: raw.updatedAt,
   };

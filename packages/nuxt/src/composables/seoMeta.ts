@@ -3,20 +3,24 @@ import { buildCanonicalUrl, buildSiteUrl } from "@skyscribe-sdk/core";
 
 export function articleSeoMeta(article: Article, site: Site) {
   const canonicalUrl = buildCanonicalUrl(article, site);
+  // SEO Settings (core ADR 0004) replace the title and description here.
+  const title = article.seo?.title ?? article.title;
+  const description = article.seo?.description ?? article.description ?? undefined;
   return {
-    title: `${article.title} — ${site.title}`,
+    title: `${title} — ${site.title}`,
     ogType: "article" as const,
-    ogTitle: article.title,
-    ogDescription: article.description ?? undefined,
+    ogTitle: title,
+    ogDescription: description,
     ogUrl: canonicalUrl,
     ogSiteName: site.title,
     ogImage: article.coverImageUrl ?? undefined,
     twitterCard: (article.coverImageUrl
       ? "summary_large_image"
       : "summary") as "summary_large_image" | "summary",
-    twitterTitle: article.title,
-    twitterDescription: article.description ?? undefined,
+    twitterTitle: title,
+    twitterDescription: description,
     twitterImage: article.coverImageUrl ?? undefined,
+    ...(article.seo?.noindex ? { robots: "noindex" } : {}),
   };
 }
 

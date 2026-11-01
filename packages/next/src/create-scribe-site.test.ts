@@ -66,6 +66,7 @@ const mockSite = {
 
 beforeEach(() => {
   mockFetchSite.mockResolvedValue(mockSite);
+  mockFetchArticleBySlug.mockResolvedValue({ article: {} as never, uri: "" });
 });
 
 describe("createScribeSite", () => {
@@ -171,6 +172,26 @@ describe("createScribeSite", () => {
       const scribe = createScribeSite("alice.bsky.social", "https://alice.bsky.social");
       const meta = await scribe.generateArticleMetadata("second");
       expect(meta.description).toBeUndefined();
+    });
+
+    it("uses the article's SEO Settings when it has them", async () => {
+      mockFetchArticleBySlug.mockResolvedValueOnce({
+        article: { seo: { title: "Hi", description: "Short", noindex: true } } as never,
+        uri: "",
+      });
+      const scribe = createScribeSite("alice.bsky.social", "https://alice.bsky.social");
+      const meta = await scribe.generateArticleMetadata("hello");
+      expect(meta.title).toBe("Hi — Alice's Blog");
+      expect(meta.description).toBe("Short");
+      expect(meta.robots).toEqual({ index: false });
+    });
+
+    it("falls back to the snapshot when the article fetch fails", async () => {
+      mockFetchArticleBySlug.mockRejectedValueOnce(new Error("PDS down"));
+      const scribe = createScribeSite("alice.bsky.social", "https://alice.bsky.social");
+      const meta = await scribe.generateArticleMetadata("hello");
+      expect(meta.title).toBe("Hello World — Alice's Blog");
+      expect(meta.robots).toBeUndefined();
     });
 
     it("falls back to site title when article is not found", async () => {

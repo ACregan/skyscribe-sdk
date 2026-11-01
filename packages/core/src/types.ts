@@ -1,3 +1,5 @@
+import type { DocumentSeo } from "./seo.js";
+
 export interface ArticleContributor {
   did: string;
   role?: string;
@@ -20,6 +22,10 @@ export interface ArticleRef {
    * Sitemaps leave it out (getSitemapEntries does). Absent means this
    * site's own URL is canonical. */
   canonicalElsewhere?: true;
+  /** The article's SEO Settings ask search engines to leave it out
+   * (skyscribe-app ADR 0099). Sitemaps leave it out (getSitemapEntries
+   * does); it still appears on the site and in RSS. */
+  noindex?: true;
 }
 
 export interface SiteGroup {
@@ -52,6 +58,9 @@ export interface Article {
   tags?: string[];
   contributors?: ArticleContributor[];
   bskyPostRef?: { uri: string; cid: string };
+  /** SEO Settings from the record's `scribe.seo`: only the valid parts,
+   * absent when it has none. generateArticleMeta applies them. */
+  seo?: DocumentSeo;
   createdAt?: string;
   publishedAt: string;
   updatedAt: string;

@@ -27,6 +27,16 @@ For an article page, the helpers produce:
 
 Add your own `{ title }` after the spread to use your own title format in the browser tab, while the Open Graph tags keep the plain article title.
 
+## SEO Settings
+
+Authors can give an article SEO Settings in SkyScribe: an SEO title, an SEO description and noindex. They're on the article as `article.seo` (`{ title?, description?, noindex? }`; absent when none are set), and the helpers apply them for you:
+
+- The **SEO title** replaces the article title in `<title>`, `og:title` and `twitter:title`. The JSON-LD `headline` keeps the article's own title, and so should the page's `<h1>`.
+- The **SEO description** replaces the article description in the `description`, `og:description` and `twitter:description` tags. Keep showing `article.description` on the page.
+- **noindex** adds `<meta name="robots" content="noindex">`. Keep the article on your site and in your feed: it only asks search engines to leave it out. `getSitemapEntries` already leaves it out of your sitemap.
+
+If you override the title, start from the SEO title so the author's choice still counts: `article.seo?.title ?? article.title`. Values over 200 characters (title) or 500 (description) are ignored, the same way SkyScribe Sites ignore them.
+
 ## Framework integration
 
 <Callout>
@@ -55,7 +65,7 @@ Add your own `{ title }` after the spread to use your own title format in the br
       if (!loaderData) return [{ title: 'My Blog' }];
       return [
         ...articleMeta(loaderData.article, loaderData.site),
-        { title: `${loaderData.article.title} | My Blog` },
+        { title: `${loaderData.article.seo?.title ?? loaderData.article.title} | My Blog` },
       ];
     }
     ```
@@ -80,14 +90,14 @@ Add your own `{ title }` after the spread to use your own title format in the br
       ]);
       return {
         ...articleMetadata(article, site),
-        title: `${article.title} — My Blog`,  // override title format if needed
+        title: `${article.seo?.title ?? article.title} — My Blog`,  // override title format if needed
       };
     }
     ```
 
     `Metadata` has no field for structured data. To add it, render `generateArticleJsonLd(article, site)` in a `<script type="application/ld+json">` in the page itself. Import it from `@skyscribe-sdk/core`: `@skyscribe-sdk/next` doesn't re-export it.
 
-    The `createScribeSite` factory's `generateArticleMetadata` is simpler: it works from the Site record alone, without the canonical URL or Twitter Card. Use `articleMetadata` when you want the full set.
+    The `createScribeSite` factory's `generateArticleMetadata` is simpler: it works from the Site record plus the article's SEO Settings, without the canonical URL or Twitter Card. Use `articleMetadata` when you want the full set.
   </Tab>
   <Tab label="Nuxt 3">
     Use `articleSeoMeta` from `@skyscribe-sdk/nuxt`. It returns an object shaped for `useSeoMeta()`.
@@ -106,7 +116,7 @@ Add your own `{ title }` after the spread to use your own title format in the br
 
     useSeoMeta(articleSeoMeta(article, site));
     useHead({
-      title: `${article.title} — My Blog`,
+      title: `${article.seo?.title ?? article.title} — My Blog`,
       link: [{ rel: 'canonical', href: buildCanonicalUrl(article, site) }],
       script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(generateArticleJsonLd(article, site)) }],
     });

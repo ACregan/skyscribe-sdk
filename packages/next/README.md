@@ -89,7 +89,7 @@ The metadata generators are opinionated by design. They produce complete, ready-
 | `generateGroupMetadata` | `"Group — Site"` | — | title |
 | `generateArticleMetadata` | `"Article — Site"` | `description` | title, description, splash image |
 
-Article metadata uses the cached `ArticleRef` snapshot already present in the site record — no extra network request per article at build time.
+Article metadata uses the cached `ArticleRef` snapshot already present in the site record, plus one request for the article itself to read its SEO Settings: the author's SEO title and description replace the title and description, and noindex sets `robots: { index: false }`. If that request fails, the snapshot alone is used. `articleMetadata` (below) applies the SEO Settings too.
 
 ### Standalone metadata helpers
 

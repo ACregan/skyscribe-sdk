@@ -48,6 +48,8 @@ export function getSitemapEntries(
       // author kept the original as canonical): this site's copy isn't
       // the page to offer search engines.
       if (article.canonicalElsewhere) continue;
+      // Its SEO Settings ask search engines to leave it out.
+      if (article.noindex) continue;
       const url = articleUrl(options.baseUrl, prefix, group.slug, article.slug ?? "");
       const lastmod =
         article.updatedAt && article.updatedAt.length > 0

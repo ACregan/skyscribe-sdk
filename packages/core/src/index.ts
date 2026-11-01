@@ -4,6 +4,8 @@ export { listSites, listArticles } from "./list.js";
 export { toSlug, slugFromUri, flattenArticles } from "./utils.js";
 export { generateFeed } from "./feed.js";
 export type { FeedOptions } from "./feed.js";
+export { readDocumentSeo, SEO_TITLE_MAX, SEO_DESCRIPTION_MAX } from "./seo.js";
+export type { DocumentSeo } from "./seo.js";
 export { getSitemapEntries } from "./sitemap.js";
 export type { SitemapEntry, GetSitemapEntriesOptions } from "./sitemap.js";
 export {

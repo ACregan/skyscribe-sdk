@@ -1,5 +1,11 @@
 # @skyscribe-sdk/core
 
+## 4.2.0
+
+### Minor Changes
+
+- Honour a Document's SEO Settings (ADR 0004). `Article` gains `seo` (`{ title?, description?, noindex? }`, read from the record's `scribe.seo`, invalid or over-long values dropped) and `ArticleRef` gains `noindex`. `generateArticleMeta`, Next's `articleMetadata` / `generateArticleMetadata` and Nuxt's `articleSeoMeta` use the SEO title and description in the title and description tags (the JSON-LD headline keeps the article's title) and add robots noindex when set. `getSitemapEntries` leaves out noindexed articles. New exports: `readDocumentSeo`, `DocumentSeo`, `SEO_TITLE_MAX`, `SEO_DESCRIPTION_MAX`.
+
 ## 4.1.0
 
 ### Minor Changes
