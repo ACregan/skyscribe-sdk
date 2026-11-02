@@ -163,6 +163,14 @@ discussion, it should match the definition here.
   individually. Avoids N+1 fetch patterns. A code-level concept intended
   for developers; not surfaced in the Scribe CMS UI.
 
+**SEO Settings**
+: An author's optional search-engine settings for one article, set in
+  SkyScribe and stored as `scribe.seo` on the record: an SEO title and SEO
+  description (used in the head instead of the article's own) and
+  noindex. Exposed as `Article.seo` (type `DocumentSeo`); an ArticleRef
+  carries only `noindex`. The meta helpers and `getSitemapEntries` apply
+  them (ADR 0004).
+
 **Group (SiteGroup)**
 : A named collection of articles within a site, used to organise content
   into sections or categories. Each group has a `slug` and `title` and

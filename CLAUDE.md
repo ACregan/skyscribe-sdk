@@ -113,6 +113,7 @@ Scribe stores content in two collections on the author's Personal Data Server (P
     createdAt: string,      // ISO 8601 — article creation date
     coverImageUrl?: string, // source URL for the cover image (→ Article.coverImageUrl)
     canonicalUrl?: string,  // fully-qualified article URL (→ Article.canonicalUrl) — omitted while loose
+    seo?: { title?: string, description?: string, noindex?: true }, // SEO Settings (ADR 0004) → Article.seo, via readDocumentSeo (invalid/over-long values dropped)
   },
 }
 ```
@@ -137,8 +138,12 @@ An article belongs to at most one publication at a time. The old middle state (`
   createdAt: string,
   publishedAt?: string,
   updatedAt?: string,
+  canonicalElsewhere?: true, // imported, original kept as canonical: sitemaps skip it
+  noindex?: true,            // its SEO Settings ask for noindex: sitemaps skip it (ADR 0004)
 }
 ```
+
+**SEO Settings** (ADR 0004): the meta helpers (`generateArticleMeta`, Next's `articleMetadata`/`generateArticleMetadata`, Nuxt's `articleSeoMeta`) apply `Article.seo` themselves, and `getSitemapEntries` skips `noindex` refs. skyscribe-app and skyscribe-site keep their own copies of the same rules and limits (200 / 500 characters): change all three together.
 
 AT Protocol repos are **publicly readable without authentication**. No OAuth required for reading.
 
