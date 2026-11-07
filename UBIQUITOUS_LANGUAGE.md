@@ -103,113 +103,107 @@ discussion, it should match the definition here.
 
 ---
 
-## Scribe Domain Concepts
+## Domain Concepts
 
-**Site**
-: An author's publication — the top-level container for all their
-  articles. Stored as a record in the `site.standard.publication` collection.
-  Carries metadata (title, description, logo) and the full list of articles
-  via `groups` and `ungroupedArticles`.
+The SDK uses the site.standard names wherever the spec has one
+(Publication, Document), and SkyScribe's name for the rest (Category), so
+the SDK, SkyScribe and the records all say the same thing (decided
+2026-11-07, see ADR 0005).
 
-**Site URL (`url`)**
-: The domain (TLD) of the site, e.g. `anthonycregan.co.uk`. Does not
-  include a protocol or path.
+**Publication**
+: An author's `site.standard.publication` record: the top-level container
+  for their Documents. Carries metadata (title, description, logo) and the
+  full list of Documents, arranged in Categories. One author can have
+  several.
+  _Avoid_: "Site" (in SkyScribe a Site is the hosted website built for a
+  Publication), "blog".
 
-**URL prefix (`urlPrefix`)**
-: An optional path segment under which all site content lives. A prefix
-  of `blog` means the site root is `anthonycregan.co.uk/blog` and all
-  groups and articles are children of that path:
-  `{url}/{urlPrefix}/{group-slug}/{article-slug}`.
-  When blank, groups are immediate children of the domain:
-  `{url}/{group-slug}/{article-slug}`.
+**Publication URL**
+: The spec-defined base URL of a Publication, the `url` field of its
+  record, e.g. `https://anthonycregan.co.uk`. No trailing slash. The
+  lookup key for a Publication.
 
-**Site slug**
-: The `rkey` used to fetch a site record. Derived automatically from the
-  site's domain at creation time — not entered or editable by the author.
-  Derivation rule: replace every `.` with `-`, then strip all remaining
-  non-alphanumeric characters.
-  Example: `norobots.blog` → `norobots-blog`.
-  Defined in Scribe CMS as `url.replace(/\./g, "-").replace(/[^a-z0-9-]/g, "")`.
+**Domain**
+: The bare domain a Publication's website lives on, e.g.
+  `anthonycregan.co.uk`: no protocol, no path. Links are built from the
+  domain and the base path.
 
-**Article**
-: A single piece of written content. Stored as a `site.standard.document`
-  record on the author's PDS. In the Draft state, `publishedAt` is absent
-  and the record is not referenced by any Site record at all — assigning
-  an article to a Site and placing it in a named group happen together,
-  in one atomic Publish step (Scribe CMS ADR 0013). There is no
-  intermediate "assigned but ungrouped" state.
+**Base path**
+: An optional path segment under which all of a Publication's Documents
+  live. A base path of `blog` puts them at
+  `{url}/blog/{category-slug}/{document-slug}`; when blank, Categories are
+  immediate children of the domain.
+  _Avoid_: "URL prefix".
 
-**Article slug**
-: The human-readable URL segment for an article (e.g. `my-first-post`).
-  Stored in the `slug` field of the `site.standard.document` record.
-  Distinct from the article's AT Protocol rkey, which is a TID.
+**Publication slug**
+: A stable identifier derived from a Publication's domain
+  (`norobots.blog` → `norobots-blog`). Not a lookup key and not the rkey.
+
+**Document**
+: One piece of authored content: a `site.standard.document` record on the
+  author's PDS. In the Draft state it is referenced by no Publication;
+  assigning it to a Publication and placing it in a Category happen
+  together, in one Publish step.
+  _Avoid_: "Article", "post".
+
+**Document slug**
+: The human-readable URL segment for a Document (e.g. `my-first-post`).
+  Distinct from the Document's rkey, which is a TID.
 
 **`publishedAt`**
-: The timestamp of the instant an article is first published — i.e. when
-  its article ref is first moved from `ungroupedArticles` into a named group.
-  Set once at publish time; never updated thereafter. Absent on articles that
-  have not yet been published.
+: The instant a Document is first published, i.e. first placed in a
+  Category. Set once; absent on Drafts.
 
 **`createdAt`**
-: A Scribe extension field on `site.standard.document` records. Records
-  the instant the article was first created. Stored in `scribe.createdAt`.
-  Set once; never changed. Distinct from `publishedAt` — an article may
-  remain unpublished for days or weeks before being published.
+: The instant a Document was first created (`scribe.createdAt`). Set once.
+  A Document may stay a Draft for weeks before `publishedAt` is set.
 
-**ArticleRef**
-: The internal schema type for a lightweight article snapshot cached
-  inside the site record. Contains enough metadata (title, slug, synopsis,
-  splash image) to render an article list without fetching each article
-  individually. Avoids N+1 fetch patterns. A code-level concept intended
-  for developers; not surfaced in the Scribe CMS UI.
+**Document ref**
+: A lightweight snapshot of a Document cached inside its Publication's
+  record: enough (title, slug, description, image) to list Documents
+  without fetching each one. For developers; never shown to authors.
+  _Avoid_: "summary".
 
 **SEO Settings**
-: An author's optional search-engine settings for one article, set in
-  SkyScribe and stored as `scribe.seo` on the record: an SEO title and SEO
-  description (used in the head instead of the article's own) and
-  noindex. Exposed as `Article.seo` (type `DocumentSeo`); an ArticleRef
-  carries only `noindex`. The meta helpers and `getSitemapEntries` apply
-  them (ADR 0004).
+: An author's optional search-engine settings for one Document, set in
+  SkyScribe: an SEO title and SEO description (used in the head instead of
+  the Document's own) and noindex. A Document ref carries only noindex.
+  The meta helpers and sitemap entries apply them (ADR 0004).
 
-**Group (SiteGroup)**
-: A named collection of articles within a site, used to organise content
-  into sections or categories. Each group has a `slug` and `title` and
-  carries an array of `ArticleRef`s.
+**Category**
+: A named, ordered set of Documents within a Publication: a section of
+  the website. Has a slug (its URL segment) and a title. Stored inside the
+  Publication record (`scribe.groups[]`), not as a record of its own; the
+  spec has no equivalent.
+  _Avoid_: "Group" (the old SDK and Scribe CMS name), "section",
+  "collection" (an AT Protocol term).
 
-**Ungrouped articles**
-: The `ungroupedArticles` field on the site record. Legacy — under the
-  current (ADR 0013) model no article can ever end up here, since Publish
-  assigns a Site and places the article in a named group in the same
-  step. The field remains in the schema and the `Site` type for backwards
-  compatibility with older content; expect it to always be an empty array.
-  Do not build features that assume it is populated.
+**Uncategorised Documents (legacy)**
+: The `scribe.ungroupedArticles` field on old Publication records. Under
+  the current model no Document can end up there; expect it empty and
+  don't build features that read it.
 
-**Article's `site` field**
-: Identifies which Site (if any) a `site.standard.document` record
-  belongs to. Holds one of two shapes (ADR 0013, the sole loose-vs-published
-  signal): a plain `https://` reader URL
-  (`https://reader.scribe-atp.app/{did}/site.standard.document/{rkey}`)
-  when the article is a Draft, or the owning Site's own `at://` record URI
-  (`at://{did}/site.standard.publication/{rkey}`) once published. Never a
-  bare domain string, and never set independently of Group placement.
+**Document's `site` field**
+: Which Publication, if any, a Document belongs to: the Publication's
+  `at://` URI once published, or a plain `https://` reader URL while a
+  Draft. Never set independently of Category placement.
+
+**Scribe extension**
+: The fields SkyScribe (and Scribe CMS) add to site.standard records beyond
+  the spec, kept in a `scribe` object so the top level stays spec-only:
+  Categories, base path, SEO Settings, the HTML content format and so on.
+  Its presence marks a record as written by SkyScribe or Scribe CMS rather
+  than by another site.standard app. "Scribe" in an SDK name (e.g.
+  `ScribeContent`, `useScribePublication`) means "understands the Scribe
+  extension", not the old Scribe brand.
+  _Avoid_: "custom fields", "extra fields".
 
 **Publication states**
-: The two states an article can be in, from the perspective of
-  visibility and site assignment (revised by ADR 0013 — previously
-  described as three states, with a "Draft" that was already assigned to
-  a site via `ungroupedArticles`; that middle state no longer exists):
-  - **Draft** — the article exists as a `site.standard.document` record
-    but is not referenced in any Site record. `publishedAt` is absent.
-  - **Published** — the article is referenced in a named group within a
-    Site record. `publishedAt` is set, `site` holds that Site's `at://`
-    URI, and it has a canonical URL on the author's consumer site.
-
-  An article belongs to at most one Site at a time — there is no
-  "published to multiple sites with a nominated canonical one" case.
-  The old **Canonical Site** concept (nominating one of several sites an
-  article was cross-posted to) no longer exists; site membership and
-  canonical identity are now the same thing, since there is only ever
-  one site.
+: A Document is in one of two states:
+  - **Draft**: referenced by no Publication; `publishedAt` absent.
+  - **Published**: in a Category of exactly one Publication;
+    `publishedAt` set, and it has a canonical URL on that Publication's
+    website.
 
 ---
 

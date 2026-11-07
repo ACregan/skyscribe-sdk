@@ -1,23 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { generateFeed } from "./feed.js";
-import type { Site } from "./types.js";
+import type { StandardPublication } from "./types.js";
 
-const mockSite: Site = {
+const mockSite: StandardPublication = {
   uri: "at://did:plc:abc/site.standard.publication/norobotspubkey",
-  title: "Test Blog",
-  url: "norobots.blog",
-  urlPrefix: "blog",
+  name: "Test Blog",
+  domain: "norobots.blog",
+  basePath: "blog",
   description: "A test blog about things",
-  groups: [
+  categories: [
     {
       slug: "essays",
       title: "Essays",
-      articles: [
+      documents: [
         {
           uri: "at://did:plc:abc/site.standard.document/first-post",
           title: "First Post",
           slug: "first-post",
-          splashImageUrl: "https://norobots.blog/splash.jpg",
+          coverImageUrl: "https://norobots.blog/splash.jpg",
           description: "This is the first post synopsis",
           createdAt: "2024-01-01T00:00:00Z",
           publishedAt: "2024-01-01T12:00:00Z",
@@ -27,7 +27,7 @@ const mockSite: Site = {
           uri: "at://did:plc:abc/site.standard.document/second-post",
           title: "Second Post",
           slug: "second-post",
-          splashImageUrl: null,
+          coverImageUrl: null,
           createdAt: "2024-02-01T00:00:00Z",
           publishedAt: "2024-02-01T12:00:00Z",
           updatedAt: "2024-02-02T00:00:00Z",
@@ -37,12 +37,12 @@ const mockSite: Site = {
     {
       slug: "notes",
       title: "Notes",
-      articles: [
+      documents: [
         {
           uri: "at://did:plc:abc/site.standard.document/note-one",
           title: "Note One",
           slug: "note-one",
-          splashImageUrl: null,
+          coverImageUrl: null,
           description: "A short note",
           createdAt: "2024-03-01T00:00:00Z",
           publishedAt: "2024-03-01T12:00:00Z",
@@ -52,21 +52,11 @@ const mockSite: Site = {
           uri: "at://did:plc:abc/site.standard.document/note-two",
           title: "Note Two",
           slug: "note-two",
-          splashImageUrl: null,
+          coverImageUrl: null,
           createdAt: "2024-04-01T00:00:00Z",
           publishedAt: "2024-04-01T12:00:00Z",
         },
       ],
-    },
-  ],
-  ungroupedArticles: [
-    {
-      uri: "at://did:plc:abc/site.standard.document/draft",
-      title: "Draft Article",
-      slug: "draft",
-      splashImageUrl: null,
-      createdAt: "2024-05-01T00:00:00Z",
-      publishedAt: "2024-05-01T12:00:00Z",
     },
   ],
 };
@@ -88,7 +78,7 @@ describe("generateFeed", () => {
   });
 
   it("falls back to site title when description is absent", () => {
-    const siteNoDesc: Site = { ...mockSite, description: undefined };
+    const siteNoDesc: StandardPublication = { ...mockSite, description: undefined };
     const feed = generateFeed(siteNoDesc, { baseUrl: "https://norobots.blog" });
     // title appears in channel <title> and <description>
     const cdataOccurrences = feed.match(/<!\[CDATA\[Test Blog\]\]>/g);
@@ -96,13 +86,13 @@ describe("generateFeed", () => {
     expect(cdataOccurrences!.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("includes correct channel link with urlPrefix", () => {
+  it("includes correct channel link with basePath", () => {
     const feed = generateFeed(mockSite, { baseUrl: "https://norobots.blog" });
     expect(feed).toContain("<link>https://norobots.blog/blog</link>");
   });
 
-  it("includes correct channel link without urlPrefix", () => {
-    const siteNoPrefix: Site = { ...mockSite, urlPrefix: "" };
+  it("includes correct channel link without basePath", () => {
+    const siteNoPrefix: StandardPublication = { ...mockSite, basePath: "" };
     const feed = generateFeed(siteNoPrefix, {
       baseUrl: "https://norobots.blog",
     });
@@ -115,14 +105,14 @@ describe("generateFeed", () => {
     expect(itemCount).toBe(4);
   });
 
-  it("constructs correct article URLs with urlPrefix", () => {
+  it("constructs correct article URLs with basePath", () => {
     const feed = generateFeed(mockSite, { baseUrl: "https://norobots.blog" });
     expect(feed).toContain("https://norobots.blog/blog/essays/first-post");
     expect(feed).toContain("https://norobots.blog/blog/notes/note-one");
   });
 
-  it("constructs correct article URLs without urlPrefix", () => {
-    const siteNoPrefix: Site = { ...mockSite, urlPrefix: "" };
+  it("constructs correct article URLs without basePath", () => {
+    const siteNoPrefix: StandardPublication = { ...mockSite, basePath: "" };
     const feed = generateFeed(siteNoPrefix, {
       baseUrl: "https://norobots.blog",
     });
@@ -156,11 +146,6 @@ describe("generateFeed", () => {
     expect(feed).not.toContain("atom:link");
   });
 
-  it("does not include ungroupedArticles", () => {
-    const feed = generateFeed(mockSite, { baseUrl: "https://norobots.blog" });
-    expect(feed).not.toContain("draft");
-    expect(feed).not.toContain("Draft Article");
-  });
 
   it("uses empty string for description when absent", () => {
     const feed = generateFeed(mockSite, { baseUrl: "https://norobots.blog" });
@@ -203,21 +188,21 @@ describe("generateFeed XML escaping", () => {
   });
 
   it("wraps titles containing markup in CDATA rather than escaping them", () => {
-    const site: Site = { ...mockSite, title: `A "quoted" <Title> & More` };
+    const site: StandardPublication = { ...mockSite, name: `A "quoted" <Title> & More` };
     const feed = generateFeed(site, { baseUrl: "https://norobots.blog" });
     expect(feed).toContain(`<![CDATA[A "quoted" <Title> & More]]>`);
   });
 
   it("wraps article descriptions containing markup in CDATA rather than escaping them", () => {
-    const site: Site = {
+    const site: StandardPublication = {
       ...mockSite,
-      groups: [
+      categories: [
         {
           slug: "essays",
           title: "Essays",
-          articles: [
+          documents: [
             {
-              ...mockSite.groups[0].articles[0],
+              ...mockSite.categories[0].documents[0],
               description: `Uses <b>bold</b> & "quotes"`,
             },
           ],
@@ -235,7 +220,7 @@ describe("generateFeed XML escaping", () => {
   // that exact sequence (unlikely, but not impossible from pasted content)
   // would corrupt the generated XML. cdata() has no handling for it.
   it("[known gap] does not escape a literal ']]>' inside CDATA content, which would truncate the CDATA section", () => {
-    const site: Site = { ...mockSite, title: "Weird title ]]> more text" };
+    const site: StandardPublication = { ...mockSite, name: "Weird title ]]> more text" };
     const feed = generateFeed(site, { baseUrl: "https://norobots.blog" });
     expect(feed).toContain("<![CDATA[Weird title ]]> more text]]>");
   });

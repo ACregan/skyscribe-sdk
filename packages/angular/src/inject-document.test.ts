@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TestBed } from "@angular/core/testing";
-import { injectArticle } from "./inject-article.js";
+import { injectDocument } from "./inject-document.js";
+import { injectArticle } from "./deprecated.js";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchArticle: vi.fn(),
+  fetchDocument: vi.fn(),
 }));
 
-import { fetchArticle } from "@skyscribe-sdk/core";
-const mockFetchArticle = vi.mocked(fetchArticle);
+import { fetchDocument } from "@skyscribe-sdk/core";
+const mockFetchArticle = vi.mocked(fetchDocument);
 
 const article = {
+  uri: "at://did:plc:test/site.standard.document/test-article",
   title: "Test Article",
   content: "<p>Hello</p>",
   path: "/test-article",
@@ -22,17 +24,17 @@ const article = {
 beforeEach(() => mockFetchArticle.mockReset());
 afterEach(() => TestBed.resetTestingModule());
 
-describe("injectArticle", () => {
+describe("injectDocument", () => {
   it("starts in loading state", () => {
     const { promise } = Promise.withResolvers<typeof article>();
     mockFetchArticle.mockReturnValueOnce(promise);
 
     const result = TestBed.runInInjectionContext(() =>
-      injectArticle("did:plc:test", "test-article")
+      injectDocument("did:plc:test", "test-article")
     );
 
     expect(result.loading()).toBe(true);
-    expect(result.article()).toBeNull();
+    expect(result.document()).toBeNull();
     expect(result.error()).toBeNull();
   });
 
@@ -40,13 +42,13 @@ describe("injectArticle", () => {
     mockFetchArticle.mockResolvedValueOnce(article);
 
     const result = TestBed.runInInjectionContext(() =>
-      injectArticle("did:plc:test", "test-article")
+      injectDocument("did:plc:test", "test-article")
     );
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(result.loading()).toBe(false);
-    expect(result.article()).toEqual(article);
+    expect(result.document()).toEqual(article);
     expect(result.error()).toBeNull();
   });
 
@@ -54,14 +56,14 @@ describe("injectArticle", () => {
     mockFetchArticle.mockRejectedValueOnce(new Error("Not found"));
 
     const result = TestBed.runInInjectionContext(() =>
-      injectArticle("did:plc:test", "test-article")
+      injectDocument("did:plc:test", "test-article")
     );
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(result.loading()).toBe(false);
     expect(result.error()?.message).toBe("Not found");
-    expect(result.article()).toBeNull();
+    expect(result.document()).toBeNull();
   });
 
   it("aborts on destroy", () => {
@@ -70,12 +72,21 @@ describe("injectArticle", () => {
     mockFetchArticle.mockReturnValueOnce(promise);
 
     TestBed.runInInjectionContext(() =>
-      injectArticle("did:plc:test", "test-article")
+      injectDocument("did:plc:test", "test-article")
     );
     TestBed.resetTestingModule();
 
     expect(abortSpy).toHaveBeenCalled();
     reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
     abortSpy.mockRestore();
+  });
+});
+
+describe("injectArticle (deprecated)", () => {
+  it("keeps the old { article } result key", async () => {
+    mockFetchArticle.mockResolvedValueOnce(article);
+    const result = TestBed.runInInjectionContext(() => injectArticle("did:plc:test", "test-article"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(result.article()).toEqual(article);
   });
 });

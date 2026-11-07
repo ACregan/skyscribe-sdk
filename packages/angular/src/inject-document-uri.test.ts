@@ -3,11 +3,11 @@ import { TestBed } from "@angular/core/testing";
 import { injectDocumentUri } from "./inject-document-uri.js";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchArticleBySlug: vi.fn(),
+  fetchDocumentBySlug: vi.fn(),
 }));
 
-import { fetchArticleBySlug } from "@skyscribe-sdk/core";
-const mockFetchArticleBySlug = vi.mocked(fetchArticleBySlug);
+import { fetchDocumentBySlug } from "@skyscribe-sdk/core";
+const mockFetchArticleBySlug = vi.mocked(fetchDocumentBySlug);
 
 const DOCUMENT_URI = "at://did:plc:test/site.standard.document/3jxtctq7kqm2y";
 
@@ -29,7 +29,7 @@ describe("injectDocumentUri", () => {
   });
 
   it("sets uri on success", async () => {
-    mockFetchArticleBySlug.mockResolvedValueOnce({ article: {} as never, uri: DOCUMENT_URI });
+    mockFetchArticleBySlug.mockResolvedValueOnce({ uri: DOCUMENT_URI } as never);
 
     const result = TestBed.runInInjectionContext(() =>
       injectDocumentUri("did:plc:test", "example-com", "hello")

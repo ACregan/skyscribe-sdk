@@ -1,35 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createScribeSite, createWellKnownHandler } from "./create-scribe-site.js";
+import { createScribePublication, createScribeSite, createWellKnownHandler } from "./create-scribe-site.js";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchSite: vi.fn(),
-  fetchArticleBySlug: vi.fn(),
+  fetchPublication: vi.fn(),
+  fetchDocumentBySlug: vi.fn(),
   resolvePublicationUri: vi.fn(),
 }));
 
-import { fetchSite, fetchArticleBySlug, resolvePublicationUri } from "@skyscribe-sdk/core";
-const mockFetchSite = vi.mocked(fetchSite);
-const mockFetchArticleBySlug = vi.mocked(fetchArticleBySlug);
+import { fetchPublication, fetchDocumentBySlug, resolvePublicationUri } from "@skyscribe-sdk/core";
+const mockFetchSite = vi.mocked(fetchPublication);
+const mockFetchArticleBySlug = vi.mocked(fetchDocumentBySlug);
 const mockResolvePublicationUri = vi.mocked(resolvePublicationUri);
 
 const mockSite = {
   uri: "at://did:plc:abc/site.standard.publication/alicepubkey",
-  title: "Alice's Blog",
-  url: "alice.bsky.social",
-  urlPrefix: "blog",
+  name: "Alice's Blog",
+  domain: "alice.bsky.social",
+  basePath: "blog",
   description: "Thoughts from Alice",
   splashImageUrl: "https://example.com/splash.jpg",
-  groups: [
+  categories: [
     {
       slug: "tech",
       title: "Tech",
-      articles: [
+      documents: [
         {
           uri: "at://did:plc:abc/site.standard.document/hello",
           title: "Hello World",
           slug: "hello",
           description: "My first post",
-          splashImageUrl: "https://example.com/hello.jpg",
+          coverImageUrl: "https://example.com/hello.jpg",
           createdAt: "2024-01-01T00:00:00Z",
           publishedAt: "2024-01-01T12:00:00Z",
           updatedAt: "2024-01-02T00:00:00Z",
@@ -39,7 +39,7 @@ const mockSite = {
           title: "Second Post",
           slug: "second",
           description: null,
-          splashImageUrl: null,
+          coverImageUrl: null,
           createdAt: "2024-02-01T00:00:00Z",
           publishedAt: "2024-02-01T12:00:00Z",
         },
@@ -48,28 +48,57 @@ const mockSite = {
     {
       slug: "life",
       title: "Life",
-      articles: [
+      documents: [
         {
           uri: "at://did:plc:abc/site.standard.document/travel",
           title: "Travel Notes",
           slug: "travel",
           description: "A trip",
-          splashImageUrl: null,
+          coverImageUrl: null,
           createdAt: "2024-03-01T00:00:00Z",
           publishedAt: "2024-03-01T12:00:00Z",
         },
       ],
     },
   ],
-  ungroupedArticles: [],
 };
 
 beforeEach(() => {
   mockFetchSite.mockResolvedValue(mockSite);
-  mockFetchArticleBySlug.mockResolvedValue({ article: {} as never, uri: "" });
+  mockFetchArticleBySlug.mockResolvedValue({ uri: "" } as never);
 });
 
-describe("createScribeSite", () => {
+describe("createScribePublication", () => {
+  const scribe = () => createScribePublication("alice.bsky.social", "https://alice.bsky.social");
+
+  it("generateCategoryParams returns categorySlug params", async () => {
+    expect(await scribe().generateCategoryParams()).toEqual([{ categorySlug: "tech" }, { categorySlug: "life" }]);
+  });
+
+  it("generateDocumentParams returns documentSlug params", async () => {
+    expect(await scribe().generateDocumentParams()).toEqual([
+      { documentSlug: "hello" },
+      { documentSlug: "second" },
+      { documentSlug: "travel" },
+    ]);
+  });
+
+  it("generateCategoryDocumentParams returns categorySlug + documentSlug pairs", async () => {
+    expect(await scribe().generateCategoryDocumentParams()).toContainEqual({
+      categorySlug: "tech",
+      documentSlug: "hello",
+    });
+  });
+
+  it("generateDocumentMetadata uses the snapshot's cover image", async () => {
+    const meta = await scribe().generateDocumentMetadata("hello");
+    expect(meta.openGraph).toMatchObject({ images: ["https://example.com/hello.jpg"] });
+  });
+});
+
+// The deprecated factory keeps its old names and { groupSlug, articleSlug }
+// params, so these exercise both it and the code it wraps.
+describe("createScribeSite (deprecated)", () => {
   describe("generateGroupParams", () => {
     it("returns one entry per group", async () => {
       const scribe = createScribeSite("alice.bsky.social", "https://alice.bsky.social");
@@ -77,7 +106,7 @@ describe("createScribeSite", () => {
       expect(params).toEqual([{ groupSlug: "tech" }, { groupSlug: "life" }]);
     });
 
-    it("calls fetchSite with the correct author and publicationUrl", async () => {
+    it("calls fetchPublication with the correct author and publicationUrl", async () => {
       const scribe = createScribeSite("alice.bsky.social", "https://alice.bsky.social");
       await scribe.generateGroupParams();
       expect(mockFetchSite).toHaveBeenCalledWith("alice.bsky.social", "https://alice.bsky.social");
@@ -176,9 +205,9 @@ describe("createScribeSite", () => {
 
     it("uses the article's SEO Settings when it has them", async () => {
       mockFetchArticleBySlug.mockResolvedValueOnce({
-        article: { seo: { title: "Hi", description: "Short", noindex: true } } as never,
+        seo: { title: "Hi", description: "Short", noindex: true },
         uri: "",
-      });
+      } as never);
       const scribe = createScribeSite("alice.bsky.social", "https://alice.bsky.social");
       const meta = await scribe.generateArticleMetadata("hello");
       expect(meta.title).toBe("Hi — Alice's Blog");
@@ -204,7 +233,7 @@ describe("createScribeSite", () => {
   describe("getDocumentUri", () => {
     it("returns the AT URI for a document", async () => {
       const documentUri = "at://did:plc:abc/site.standard.document/3jxtctq7kqm2y";
-      mockFetchArticleBySlug.mockResolvedValueOnce({ article: {} as never, uri: documentUri });
+      mockFetchArticleBySlug.mockResolvedValueOnce({ uri: documentUri } as never);
       const scribe = createScribeSite("alice.bsky.social", "https://alice.bsky.social");
       const uri = await scribe.getDocumentUri("hello");
       expect(uri).toBe(documentUri);

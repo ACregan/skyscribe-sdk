@@ -1,66 +1,79 @@
 import type { Metadata } from "next";
-import type { Article, Site } from "@skyscribe-sdk/core";
+import type { StandardDocument, StandardPublication } from "@skyscribe-sdk/core";
 import {
   buildCanonicalUrl,
-  buildSiteUrl,
-  generateArticleJsonLd,
-  generateSiteJsonLd,
+  buildPublicationUrl,
+  generateDocumentJsonLd,
+  generatePublicationJsonLd,
+  standardSiteLinks,
 } from "@skyscribe-sdk/core";
 
-// Re-exported so consumers can render structured data themselves — Next's
-// Metadata object has no field for a raw <script> tag, so the convention is
-// for the page component to render
+// Re-exported so consumers can render structured data and the
+// site.standard link tags themselves. Next's Metadata object has no field
+// for a raw <script> or an arbitrary <link rel>, so the page renders
 // <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-// using these.
-export { generateArticleJsonLd, generateSiteJsonLd };
+// and standardSiteLinks()'s tags as <link> elements (React 19 hoists them
+// into the head).
+export { generateDocumentJsonLd, generatePublicationJsonLd, standardSiteLinks };
 
-export function articleMetadata(article: Article, site: Site): Metadata {
-  const canonicalUrl = buildCanonicalUrl(article, site);
+export function documentMetadata(
+  document: StandardDocument,
+  publication: StandardPublication
+): Metadata {
+  const canonicalUrl = buildCanonicalUrl(document, publication);
   // SEO Settings (core ADR 0004) replace the title and description here;
-  // the JSON-LD headline keeps the article's own title.
-  const title = article.seo?.title ?? article.title;
-  const description = article.seo?.description ?? article.description ?? undefined;
+  // the JSON-LD headline keeps the Document's own title.
+  const title = document.seo?.title ?? document.title;
+  const description = document.seo?.description ?? document.description ?? undefined;
   return {
-    title: `${title} — ${site.title}`,
+    title: `${title} — ${publication.name}`,
     description,
     alternates: { canonical: canonicalUrl },
-    ...(article.seo?.noindex ? { robots: { index: false } } : {}),
+    ...(document.seo?.noindex ? { robots: { index: false } } : {}),
     openGraph: {
       type: "article",
       title,
       description,
       url: canonicalUrl,
-      siteName: site.title,
-      ...(article.coverImageUrl ? { images: [article.coverImageUrl] } : {}),
+      siteName: publication.name,
+      ...(document.coverImageUrl ? { images: [document.coverImageUrl] } : {}),
     },
     twitter: {
-      card: article.coverImageUrl ? "summary_large_image" : "summary",
+      card: document.coverImageUrl ? "summary_large_image" : "summary",
       title,
       description,
-      ...(article.coverImageUrl ? { images: [article.coverImageUrl] } : {}),
+      ...(document.coverImageUrl ? { images: [document.coverImageUrl] } : {}),
     },
   };
 }
 
-export function siteMetadata(site: Site): Metadata {
-  const siteUrl = buildSiteUrl(site);
+export function publicationMetadata(publication: StandardPublication): Metadata {
+  const url = buildPublicationUrl(publication);
+  const description = publication.description ?? undefined;
   return {
-    title: site.title,
-    description: site.description ?? undefined,
-    alternates: { canonical: siteUrl },
+    title: publication.name,
+    description,
+    alternates: { canonical: url },
     openGraph: {
       type: "website",
-      title: site.title,
-      description: site.description ?? undefined,
-      url: siteUrl,
-      siteName: site.title,
-      ...(site.splashImageUrl ? { images: [site.splashImageUrl] } : {}),
+      title: publication.name,
+      description,
+      url,
+      siteName: publication.name,
+      ...(publication.splashImageUrl ? { images: [publication.splashImageUrl] } : {}),
     },
     twitter: {
-      card: site.splashImageUrl ? "summary_large_image" : "summary",
-      title: site.title,
-      description: site.description ?? undefined,
-      ...(site.splashImageUrl ? { images: [site.splashImageUrl] } : {}),
+      card: publication.splashImageUrl ? "summary_large_image" : "summary",
+      title: publication.name,
+      description,
+      ...(publication.splashImageUrl ? { images: [publication.splashImageUrl] } : {}),
     },
   };
 }
+
+// ── Deprecated names (ADR 0005): removed in the next major ──────────────
+
+/** @deprecated Use `documentMetadata`. */
+export const articleMetadata = documentMetadata;
+/** @deprecated Use `publicationMetadata`. */
+export const siteMetadata = publicationMetadata;

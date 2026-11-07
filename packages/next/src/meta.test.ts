@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import {
-  articleMetadata,
-  siteMetadata,
-  generateArticleJsonLd,
-  generateSiteJsonLd,
+  documentMetadata,
+  publicationMetadata,
+  generateDocumentJsonLd,
+  generatePublicationJsonLd,
 } from "./meta.js";
 
 vi.mock("@skyscribe-sdk/core", async (importOriginal) => {
@@ -11,21 +11,21 @@ vi.mock("@skyscribe-sdk/core", async (importOriginal) => {
   return { ...actual };
 });
 
-import type { Article, Site } from "@skyscribe-sdk/core";
+import type { StandardDocument, StandardPublication } from "@skyscribe-sdk/core";
 
-const site: Site = {
+const site: StandardPublication = {
   uri: "at://did:plc:abc/site.standard.publication/tid123",
-  title: "NoRobots",
-  url: "norobots.blog",
-  urlPrefix: "blog",
+  name: "NoRobots",
+  domain: "norobots.blog",
+  basePath: "blog",
   description: "A blog about engineering.",
   splashImageUrl: "https://norobots.blog/images/splash.webp",
   logoImageUrl: "https://norobots.blog/images/logo.webp",
-  groups: [],
-  ungroupedArticles: [],
+  categories: [],
 };
 
-const article: Article = {
+const article: StandardDocument = {
+  uri: "at://did:plc:testuser/site.standard.document/doc1",
   title: "LLMs Are Full of Shit",
   content: "<p>Content</p>",
   path: "/engineering/llms-are-full-of-shit",
@@ -37,9 +37,9 @@ const article: Article = {
   updatedAt: "2025-01-01T00:00:00.000Z",
 };
 
-describe("articleMetadata", () => {
+describe("documentMetadata", () => {
   it("uses the SEO title and description and honours noindex", () => {
-    const meta = articleMetadata(
+    const meta = documentMetadata(
       { ...article, seo: { title: "LLMs, Honestly", description: "Why LLMs bluff.", noindex: true } },
       site,
     );
@@ -51,28 +51,28 @@ describe("articleMetadata", () => {
   });
 
   it("leaves robots unset without noindex", () => {
-    expect(articleMetadata(article, site).robots).toBeUndefined();
+    expect(documentMetadata(article, site).robots).toBeUndefined();
   });
 
   it("returns combined title", () => {
-    const meta = articleMetadata(article, site);
+    const meta = documentMetadata(article, site);
     expect(meta.title).toBe("LLMs Are Full of Shit — NoRobots");
   });
 
   it("sets og:type to article", () => {
-    const meta = articleMetadata(article, site);
+    const meta = documentMetadata(article, site);
     expect(meta.openGraph).toMatchObject({ type: "article" });
   });
 
-  it("composes og:url from site.url + urlPrefix + path", () => {
-    const meta = articleMetadata(article, site);
+  it("composes og:url from site.url + basePath + path", () => {
+    const meta = documentMetadata(article, site);
     expect(meta.openGraph?.url).toBe(
       "https://norobots.blog/blog/engineering/llms-are-full-of-shit",
     );
   });
 
   it("prefers article.canonicalUrl when present", () => {
-    const meta = articleMetadata(
+    const meta = documentMetadata(
       { ...article, canonicalUrl: "https://norobots.blog/custom" },
       site,
     );
@@ -80,7 +80,7 @@ describe("articleMetadata", () => {
   });
 
   it("includes og:image when coverImageUrl present", () => {
-    const meta = articleMetadata(article, site);
+    const meta = documentMetadata(article, site);
     expect(meta.openGraph?.images).toContain(
       "https://norobots.blog/images/llms.webp",
     );
@@ -88,67 +88,67 @@ describe("articleMetadata", () => {
   });
 
   it("falls back to summary card when no coverImageUrl", () => {
-    const meta = articleMetadata({ ...article, coverImageUrl: undefined }, site);
+    const meta = documentMetadata({ ...article, coverImageUrl: undefined }, site);
     expect(meta.twitter).toMatchObject({ card: "summary" });
     expect(meta.openGraph?.images).toBeUndefined();
   });
 
   it("omits description when absent", () => {
-    const meta = articleMetadata({ ...article, description: undefined }, site);
+    const meta = documentMetadata({ ...article, description: undefined }, site);
     expect(meta.description).toBeUndefined();
     expect(meta.openGraph?.description).toBeUndefined();
   });
 
   it("sets alternates.canonical to the composed canonical url", () => {
-    const meta = articleMetadata(article, site);
+    const meta = documentMetadata(article, site);
     expect(meta.alternates).toEqual({
       canonical: "https://norobots.blog/blog/engineering/llms-are-full-of-shit",
     });
   });
 });
 
-describe("generateArticleJsonLd / generateSiteJsonLd re-exports", () => {
-  it("re-exports a working generateArticleJsonLd from @skyscribe-sdk/core", () => {
-    const jsonLd = generateArticleJsonLd(article, site);
+describe("generateDocumentJsonLd / generatePublicationJsonLd re-exports", () => {
+  it("re-exports a working generateDocumentJsonLd from @skyscribe-sdk/core", () => {
+    const jsonLd = generateDocumentJsonLd(article, site);
     expect(jsonLd).toMatchObject({ "@type": "BlogPosting", headline: article.title });
   });
 
-  it("re-exports a working generateSiteJsonLd from @skyscribe-sdk/core", () => {
-    const jsonLd = generateSiteJsonLd(site);
-    expect(jsonLd).toMatchObject({ "@type": "WebSite", name: site.title });
+  it("re-exports a working generatePublicationJsonLd from @skyscribe-sdk/core", () => {
+    const jsonLd = generatePublicationJsonLd(site);
+    expect(jsonLd).toMatchObject({ "@type": "WebSite", name: site.name });
   });
 });
 
-describe("siteMetadata", () => {
+describe("publicationMetadata", () => {
   it("returns site title", () => {
-    const meta = siteMetadata(site);
+    const meta = publicationMetadata(site);
     expect(meta.title).toBe("NoRobots");
   });
 
   it("sets og:type to website", () => {
-    const meta = siteMetadata(site);
+    const meta = publicationMetadata(site);
     expect(meta.openGraph).toMatchObject({ type: "website" });
   });
 
-  it("composes og:url from url + urlPrefix", () => {
-    const meta = siteMetadata(site);
+  it("composes og:url from url + basePath", () => {
+    const meta = publicationMetadata(site);
     expect(meta.openGraph?.url).toBe("https://norobots.blog/blog");
   });
 
-  it("handles missing urlPrefix", () => {
-    const meta = siteMetadata({ ...site, urlPrefix: "" });
+  it("handles missing basePath", () => {
+    const meta = publicationMetadata({ ...site, basePath: "" });
     expect(meta.openGraph?.url).toBe("https://norobots.blog");
   });
 
   it("includes og:image when splashImageUrl present", () => {
-    const meta = siteMetadata(site);
+    const meta = publicationMetadata(site);
     expect(meta.openGraph?.images).toContain(
       "https://norobots.blog/images/splash.webp",
     );
   });
 
   it("sets alternates.canonical to the composed site url", () => {
-    const meta = siteMetadata(site);
+    const meta = publicationMetadata(site);
     expect(meta.alternates).toEqual({ canonical: "https://norobots.blog/blog" });
   });
 });

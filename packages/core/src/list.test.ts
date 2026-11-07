@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { listSites, listArticles } from "./list.js";
+import { listPublications, listDocuments } from "./list.js";
 
 vi.mock("./resolve.js", () => ({
   resolveIdentifier: vi.fn(async () => "did:plc:testuser"),
@@ -11,7 +11,7 @@ vi.stubGlobal("fetch", mockFetch);
 
 beforeEach(() => mockFetch.mockReset());
 
-describe("listSites", () => {
+describe("listPublications", () => {
   it("fetches all sites from a single page response", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -34,12 +34,12 @@ describe("listSites", () => {
       }),
     });
 
-    const result = await listSites("alice.bsky.social");
+    const result = await listPublications("alice.bsky.social");
     expect(result).toHaveLength(1);
     expect(result[0].uri).toBe("at://did:plc:testuser/site.standard.publication/example-com");
-    expect(result[0].title).toBe("My Blog");
-    expect(result[0].url).toBe("example.com");
-    expect(result[0].urlPrefix).toBe("blog");
+    expect(result[0].name).toBe("My Blog");
+    expect(result[0].domain).toBe("example.com");
+    expect(result[0].basePath).toBe("blog");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({ href: expect.stringContaining("com.atproto.repo.listRecords") }),
       expect.any(Object)
@@ -70,7 +70,7 @@ describe("listSites", () => {
       }),
     });
 
-    const result = await listSites("alice.bsky.social");
+    const result = await listPublications("alice.bsky.social");
     expect(result[0].description).toBe("Top-level wins");
   });
 
@@ -100,7 +100,7 @@ describe("listSites", () => {
       }),
     });
 
-    const result = await listSites("alice.bsky.social");
+    const result = await listPublications("alice.bsky.social");
     expect(result[0].description).toBe("Legacy nested description");
   });
 
@@ -120,7 +120,7 @@ describe("listSites", () => {
       }),
     });
 
-    await listSites("alice.bsky.social");
+    await listPublications("alice.bsky.social");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         href: expect.stringContaining("site.standard.publication"),
@@ -145,9 +145,9 @@ describe("listSites", () => {
       }),
     });
 
-    const result = await listSites("did:plc:testuser");
-    expect(result[0].url).toBe("norobots.blog");
-    expect(result[0].urlPrefix).toBe("posts");
+    const result = await listPublications("did:plc:testuser");
+    expect(result[0].domain).toBe("norobots.blog");
+    expect(result[0].basePath).toBe("posts");
   });
 
   it("follows cursor across multiple pages", async () => {
@@ -182,16 +182,16 @@ describe("listSites", () => {
         }),
       });
 
-    const result = await listSites("did:plc:testuser");
+    const result = await listPublications("did:plc:testuser");
     expect(result).toHaveLength(2);
-    expect(result[0].title).toBe("Site One");
-    expect(result[1].title).toBe("Site Two");
+    expect(result[0].name).toBe("Site One");
+    expect(result[1].name).toBe("Site Two");
 
     const secondCall = mockFetch.mock.calls[1][0] as URL;
     expect(secondCall.searchParams.get("cursor")).toBe("page2token");
   });
 
-  it("normalises missing groups and ungroupedArticles to empty arrays", async () => {
+  it("normalises missing Categories to an empty array", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -207,9 +207,8 @@ describe("listSites", () => {
       }),
     });
 
-    const result = await listSites("did:plc:testuser");
-    expect(result[0].groups).toEqual([]);
-    expect(result[0].ungroupedArticles).toEqual([]);
+    const result = await listPublications("did:plc:testuser");
+    expect(result[0].categories).toEqual([]);
   });
 
   it("returns an empty array when there are no site records", async () => {
@@ -218,17 +217,17 @@ describe("listSites", () => {
       json: async () => ({ records: [] }),
     });
 
-    const result = await listSites("did:plc:testuser");
+    const result = await listPublications("did:plc:testuser");
     expect(result).toEqual([]);
   });
 
   it("throws when the fetch fails", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, statusText: "Forbidden" });
-    await expect(listSites("did:plc:testuser")).rejects.toThrow("Failed to list site.standard.publication");
+    await expect(listPublications("did:plc:testuser")).rejects.toThrow("Failed to list site.standard.publication");
   });
 });
 
-describe("listArticles", () => {
+describe("listDocuments", () => {
   it("fetches all articles from site.standard.document collection", async () => {
     const rawDocument = {
       title: "Hello World",
@@ -253,13 +252,13 @@ describe("listArticles", () => {
       }),
     });
 
-    const result = await listArticles("alice.bsky.social");
+    const result = await listDocuments("alice.bsky.social");
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({
       uri: "at://did:plc:testuser/site.standard.document/hello-world",
       title: "Hello World",
       slug: "hello-world",
-      splashImageUrl: null,
+      coverImageUrl: null,
       description: "A test article",
       createdAt: "2024-01-01T00:00:00Z",
       publishedAt: "2024-01-02T00:00:00Z",
@@ -287,7 +286,7 @@ describe("listArticles", () => {
       }),
     });
 
-    const result = await listArticles("did:plc:testuser");
+    const result = await listDocuments("did:plc:testuser");
     expect(result[0].slug).toBe("my-article-slug");
   });
 
@@ -310,7 +309,7 @@ describe("listArticles", () => {
       }),
     });
 
-    const result = await listArticles("did:plc:testuser");
+    const result = await listDocuments("did:plc:testuser");
     expect(result[0].slug).toBe("a-year-of-letters");
   });
 
@@ -332,7 +331,7 @@ describe("listArticles", () => {
       }),
     });
 
-    const result = await listArticles("did:plc:testuser");
+    const result = await listDocuments("did:plc:testuser");
     expect(result[0].slug).toBe("3mp47vvkh342n");
   });
 
@@ -360,9 +359,9 @@ describe("listArticles", () => {
       }),
     });
 
-    const result = await listArticles("did:plc:testuser");
+    const result = await listDocuments("did:plc:testuser");
     expect(result[0].createdAt).toBe("2024-01-01T00:00:00Z");
-    expect(result[0].splashImageUrl).toBe("https://cdn.example.com/cover.webp");
+    expect(result[0].coverImageUrl).toBe("https://cdn.example.com/cover.webp");
     expect(result[0].contributors).toEqual([{ did: "did:plc:bob", role: "Editor" }]);
   });
 
@@ -406,13 +405,13 @@ describe("listArticles", () => {
         }),
       });
 
-    const result = await listArticles("did:plc:testuser");
+    const result = await listDocuments("did:plc:testuser");
     expect(result).toHaveLength(2);
     expect(result[0].title).toBe("First");
     expect(result[1].title).toBe("Second");
   });
 
-  it("normalises undefined splashImageUrl to null", async () => {
+  it("normalises an undefined cover image to null", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -432,8 +431,8 @@ describe("listArticles", () => {
       }),
     });
 
-    const result = await listArticles("did:plc:testuser");
-    expect(result[0].splashImageUrl).toBeNull();
+    const result = await listDocuments("did:plc:testuser");
+    expect(result[0].coverImageUrl).toBeNull();
   });
 
   it("returns an empty array when there are no article records", async () => {
@@ -442,13 +441,13 @@ describe("listArticles", () => {
       json: async () => ({ records: [] }),
     });
 
-    const result = await listArticles("did:plc:testuser");
+    const result = await listDocuments("did:plc:testuser");
     expect(result).toEqual([]);
   });
 
   it("throws when the fetch fails", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, statusText: "Not Found" });
-    await expect(listArticles("did:plc:testuser")).rejects.toThrow(
+    await expect(listDocuments("did:plc:testuser")).rejects.toThrow(
       "Failed to list site.standard.document"
     );
   });

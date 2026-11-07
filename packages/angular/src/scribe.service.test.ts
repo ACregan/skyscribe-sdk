@@ -2,28 +2,30 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ScribeService } from "./scribe.service.js";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchSite: vi.fn(),
-  fetchArticle: vi.fn(),
+  fetchPublication: vi.fn(),
+  fetchDocument: vi.fn(),
+  fetchDocumentBySlug: vi.fn(),
   fetchArticleBySlug: vi.fn(),
   resolvePublicationUri: vi.fn(),
 }));
 
-import { fetchSite, fetchArticle, fetchArticleBySlug, resolvePublicationUri } from "@skyscribe-sdk/core";
-const mockFetchSite = vi.mocked(fetchSite);
-const mockFetchArticle = vi.mocked(fetchArticle);
+import { fetchPublication, fetchDocument, fetchDocumentBySlug, fetchArticleBySlug, resolvePublicationUri } from "@skyscribe-sdk/core";
+const mockFetchSite = vi.mocked(fetchPublication);
+const mockFetchArticle = vi.mocked(fetchDocument);
+const mockFetchDocumentBySlug = vi.mocked(fetchDocumentBySlug);
 const mockFetchArticleBySlug = vi.mocked(fetchArticleBySlug);
 const mockResolvePublicationUri = vi.mocked(resolvePublicationUri);
 
 const site = {
   uri: "at://did:plc:test/site.standard.publication/testpubkey",
-  title: "Test Site",
-  url: "example.com",
-  urlPrefix: "blog",
-  groups: [],
-  ungroupedArticles: [],
+  name: "Test Site",
+  domain: "example.com",
+  basePath: "blog",
+  categories: [],
 };
 
 const article = {
+  uri: "at://did:plc:test/site.standard.document/test-article",
   title: "Test Article",
   content: "<p>Hello</p>",
   path: "/test-article",
@@ -37,16 +39,17 @@ beforeEach(() => {
   mockFetchSite.mockReset();
   mockFetchArticle.mockReset();
   mockFetchArticleBySlug.mockReset();
+  mockFetchDocumentBySlug.mockReset();
   mockResolvePublicationUri.mockReset();
 });
 
 describe("ScribeService", () => {
-  describe("getSite", () => {
+  describe("getPublication", () => {
     it("emits site and completes on success", () =>
       new Promise<void>((resolve) => {
         mockFetchSite.mockResolvedValueOnce(site);
         const service = new ScribeService();
-        service.getSite("did:plc:test", "example-com").subscribe({
+        service.getPublication("did:plc:test", "example-com").subscribe({
           next: (value) => expect(value).toEqual(site),
           complete: resolve,
         });
@@ -56,7 +59,7 @@ describe("ScribeService", () => {
       new Promise<void>((resolve) => {
         mockFetchSite.mockRejectedValueOnce(new Error("Network error"));
         const service = new ScribeService();
-        service.getSite("did:plc:test", "example-com").subscribe({
+        service.getPublication("did:plc:test", "example-com").subscribe({
           error: (err: Error) => {
             expect(err.message).toBe("Network error");
             resolve();
@@ -69,7 +72,7 @@ describe("ScribeService", () => {
       const { promise, reject } = Promise.withResolvers<typeof site>();
       mockFetchSite.mockReturnValueOnce(promise);
       const service = new ScribeService();
-      const sub = service.getSite("did:plc:test", "example-com").subscribe();
+      const sub = service.getPublication("did:plc:test", "example-com").subscribe();
       sub.unsubscribe();
       expect(abortSpy).toHaveBeenCalled();
       reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
@@ -82,7 +85,7 @@ describe("ScribeService", () => {
           Promise.withResolvers<typeof site>();
         mockFetchSite.mockReturnValueOnce(promise);
         const service = new ScribeService();
-        const sub = service.getSite("did:plc:test", "example-com").subscribe({
+        const sub = service.getPublication("did:plc:test", "example-com").subscribe({
           error: () => reject(new Error("should not error")),
           complete: resolve,
         });
@@ -92,12 +95,12 @@ describe("ScribeService", () => {
       }));
   });
 
-  describe("getArticle", () => {
+  describe("getDocument", () => {
     it("emits article and completes on success", () =>
       new Promise<void>((resolve) => {
         mockFetchArticle.mockResolvedValueOnce(article);
         const service = new ScribeService();
-        service.getArticle("did:plc:test", "test-article").subscribe({
+        service.getDocument("did:plc:test", "test-article").subscribe({
           next: (value) => expect(value).toEqual(article),
           complete: resolve,
         });
@@ -107,7 +110,7 @@ describe("ScribeService", () => {
       new Promise<void>((resolve) => {
         mockFetchArticle.mockRejectedValueOnce(new Error("Not found"));
         const service = new ScribeService();
-        service.getArticle("did:plc:test", "test-article").subscribe({
+        service.getDocument("did:plc:test", "test-article").subscribe({
           error: (err: Error) => {
             expect(err.message).toBe("Not found");
             resolve();
@@ -121,7 +124,7 @@ describe("ScribeService", () => {
       mockFetchArticle.mockReturnValueOnce(promise);
       const service = new ScribeService();
       const sub = service
-        .getArticle("did:plc:test", "test-article")
+        .getDocument("did:plc:test", "test-article")
         .subscribe();
       sub.unsubscribe();
       expect(abortSpy).toHaveBeenCalled();
@@ -166,7 +169,7 @@ describe("ScribeService", () => {
     });
   });
 
-  describe("getArticleBySlug", () => {
+  describe("getArticleBySlug (deprecated)", () => {
     const DOCUMENT_URI = "at://did:plc:test/site.standard.document/3mp47vvkh342n";
 
     it("emits the article with its AT URI and completes", () =>
@@ -209,12 +212,24 @@ describe("ScribeService", () => {
     });
   });
 
+  describe("getDocumentBySlug", () => {
+    it("emits the Document and completes", () =>
+      new Promise<void>((resolve) => {
+        mockFetchDocumentBySlug.mockResolvedValueOnce(article);
+        const service = new ScribeService();
+        service.getDocumentBySlug("did:plc:test", "https://example.com", "hello").subscribe({
+          next: (value) => expect(value).toEqual(article),
+          complete: resolve,
+        });
+      }));
+  });
+
   describe("getDocumentUri", () => {
     const DOCUMENT_URI = "at://did:plc:test/site.standard.document/3jxtctq7kqm2y";
 
     it("emits uri and completes on success", () =>
       new Promise<void>((resolve) => {
-        mockFetchArticleBySlug.mockResolvedValueOnce({ article: {} as never, uri: DOCUMENT_URI });
+        mockFetchDocumentBySlug.mockResolvedValueOnce({ ...article, uri: DOCUMENT_URI });
         const service = new ScribeService();
         service.getDocumentUri("did:plc:test", "example-com", "hello").subscribe({
           next: (value) => expect(value).toBe(DOCUMENT_URI),
@@ -224,7 +239,7 @@ describe("ScribeService", () => {
 
     it("errors on failure", () =>
       new Promise<void>((resolve) => {
-        mockFetchArticleBySlug.mockRejectedValueOnce(new Error("failed"));
+        mockFetchDocumentBySlug.mockRejectedValueOnce(new Error("failed"));
         const service = new ScribeService();
         service.getDocumentUri("did:plc:test", "example-com", "hello").subscribe({
           error: (err: Error) => {
@@ -237,7 +252,7 @@ describe("ScribeService", () => {
     it("aborts on unsubscribe", () => {
       const abortSpy = vi.spyOn(AbortController.prototype, "abort");
       const { promise, reject } = Promise.withResolvers<never>();
-      mockFetchArticleBySlug.mockReturnValueOnce(promise);
+      mockFetchDocumentBySlug.mockReturnValueOnce(promise);
       const service = new ScribeService();
       const sub = service.getDocumentUri("did:plc:test", "example-com", "hello").subscribe();
       sub.unsubscribe();

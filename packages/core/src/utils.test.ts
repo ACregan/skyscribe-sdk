@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toSlug, slugFromUri, flattenArticles, didFromUri } from "./utils.js";
+import { toSlug, slugFromUri, flattenDocuments, didFromUri } from "./utils.js";
 
 describe("toSlug", () => {
   it("replaces dots with hyphens", () => {
@@ -39,27 +39,27 @@ describe("didFromUri", () => {
   });
 });
 
-describe("flattenArticles", () => {
-  it("combines articles from all groups into a single array", () => {
-    const groups = [
+describe("flattenDocuments", () => {
+  it("combines Documents from all Categories into a single array", () => {
+    const categories = [
       {
-        articles: [
-          { uri: "at://1", title: "A", splashImageUrl: null, createdAt: "" },
+        documents: [
+          { uri: "at://1", title: "A", coverImageUrl: null, createdAt: "" },
         ],
       },
       {
-        articles: [
-          { uri: "at://2", title: "B", splashImageUrl: null, createdAt: "" },
+        documents: [
+          { uri: "at://2", title: "B", coverImageUrl: null, createdAt: "" },
         ],
       },
     ];
-    const result = flattenArticles(groups);
+    const result = flattenDocuments(categories);
     expect(result).toHaveLength(2);
     expect(result[0].uri).toBe("at://1");
     expect(result[1].uri).toBe("at://2");
   });
 
-  it("returns an empty array when there are no groups", () => {
-    expect(flattenArticles([])).toEqual([]);
+  it("returns an empty array when there are no Categories", () => {
+    expect(flattenDocuments([])).toEqual([]);
   });
 });

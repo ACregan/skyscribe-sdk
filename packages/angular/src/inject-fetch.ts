@@ -1,25 +1,25 @@
+// Internal: the Signals API's shared shape. Starts the fetch now, aborts it
+// when the injection context is destroyed.
 import { inject, DestroyRef, signal } from "@angular/core";
 import type { Signal } from "@angular/core";
-import { fetchSite } from "@skyscribe-sdk/core";
-import type { Site } from "@skyscribe-sdk/core";
 
-interface InjectSiteResult {
-  site: Signal<Site | null>;
+export interface FetchSignals<T> {
+  value: Signal<T | null>;
   loading: Signal<boolean>;
   error: Signal<Error | null>;
 }
 
-export function injectSite(author: string, publicationUrl: string): InjectSiteResult {
-  const site = signal<Site | null>(null);
+export function injectFetch<T>(run: (signal: AbortSignal) => Promise<T>): FetchSignals<T> {
+  const value = signal<T | null>(null);
   const loading = signal(true);
   const error = signal<Error | null>(null);
 
   const destroyRef = inject(DestroyRef);
   const controller = new AbortController();
 
-  fetchSite(author, publicationUrl, controller.signal)
+  run(controller.signal)
     .then((data) => {
-      site.set(data);
+      value.set(data);
       loading.set(false);
     })
     .catch((err: unknown) => {
@@ -30,9 +30,5 @@ export function injectSite(author: string, publicationUrl: string): InjectSiteRe
 
   destroyRef.onDestroy(() => controller.abort());
 
-  return {
-    site: site as Signal<Site | null>,
-    loading: loading as Signal<boolean>,
-    error: error as Signal<Error | null>,
-  };
+  return { value: value.asReadonly(), loading: loading.asReadonly(), error: error.asReadonly() };
 }

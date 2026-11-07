@@ -1,4 +1,4 @@
-import type { Site } from "./types.js";
+import type { DocumentRef, StandardPublication } from "./types.js";
 
 export interface FeedOptions {
   baseUrl: string;
@@ -20,34 +20,31 @@ function cdata(text: string): string {
   return `<![CDATA[${text}]]>`;
 }
 
-function siteLink(baseUrl: string, urlPrefix: string): string {
-  if (!urlPrefix) return baseUrl;
-  return `${baseUrl}/${urlPrefix}`;
+function channelUrl(baseUrl: string, basePath: string): string {
+  if (!basePath) return baseUrl;
+  return `${baseUrl}/${basePath}`;
 }
 
-function articleLink(
+function documentLink(
   baseUrl: string,
-  urlPrefix: string,
-  groupSlug: string,
-  articleUrl: string
+  basePath: string,
+  categorySlug: string,
+  documentSlug: string
 ): string {
-  const prefix = urlPrefix ? `${urlPrefix}/` : "";
-  return `${baseUrl}/${prefix}${groupSlug}/${articleUrl}`;
+  const prefix = basePath ? `${basePath}/` : "";
+  return `${baseUrl}/${prefix}${categorySlug}/${documentSlug}`;
 }
 
-export function generateFeed(site: Site, options: FeedOptions): string {
+export function generateFeed(publication: StandardPublication, options: FeedOptions): string {
   const language = options.language ?? "en";
-  const channelLink = siteLink(options.baseUrl, site.urlPrefix ?? "");
-  const description = site.description ?? site.title;
+  const channelLink = channelUrl(options.baseUrl, publication.basePath ?? "");
+  const description = publication.description ?? publication.name;
 
-  // Collect all published articles from groups with their group context
-  const allItems: Array<{
-    groupSlug: string;
-    article: (typeof site.groups)[0]["articles"][0];
-  }> = [];
-  for (const group of site.groups) {
-    for (const article of group.articles) {
-      allItems.push({ groupSlug: group.slug, article });
+  // Every published Document, with the Category it's in
+  const allItems: Array<{ categorySlug: string; ref: DocumentRef }> = [];
+  for (const category of publication.categories) {
+    for (const ref of category.documents) {
+      allItems.push({ categorySlug: category.slug, ref });
     }
   }
 
@@ -63,19 +60,19 @@ export function generateFeed(site: Site, options: FeedOptions): string {
     : "";
 
   const items = limitedItems
-    .map(({ groupSlug, article }) => {
-      const link = articleLink(
+    .map(({ categorySlug, ref }) => {
+      const link = documentLink(
         options.baseUrl,
-        site.urlPrefix ?? "",
-        groupSlug,
-        article.slug ?? ""
+        publication.basePath ?? "",
+        categorySlug,
+        ref.slug ?? ""
       );
-      const pubDate = article.publishedAt ?? article.createdAt;
+      const pubDate = ref.publishedAt ?? ref.createdAt;
       return [
         "<item>",
-        `<title>${cdata(article.title)}</title>`,
+        `<title>${cdata(ref.title)}</title>`,
         `<link>${escapeXml(link)}</link>`,
-        `<description>${cdata(article.description ?? "")}</description>`,
+        `<description>${cdata(ref.description ?? "")}</description>`,
         `<pubDate>${new Date(pubDate).toUTCString()}</pubDate>`,
         `<guid isPermaLink="true">${escapeXml(link)}</guid>`,
         "</item>",
@@ -87,7 +84,7 @@ export function generateFeed(site: Site, options: FeedOptions): string {
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<rss version="2.0"${atomNs}>`,
     "<channel>",
-    `<title>${cdata(site.title)}</title>`,
+    `<title>${cdata(publication.name)}</title>`,
     `<link>${escapeXml(channelLink)}</link>`,
     `<description>${cdata(description)}</description>`,
     `<language>${escapeXml(language)}</language>`,

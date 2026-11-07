@@ -1,27 +1,27 @@
 import { useState, useEffect } from "react";
-import { fetchSite } from "@skyscribe-sdk/core";
-import type { Site } from "@skyscribe-sdk/core";
+import { fetchPublication } from "@skyscribe-sdk/core";
+import type { StandardPublication } from "@skyscribe-sdk/core";
 
-interface UseSiteResult {
-  site: Site | null;
+export interface UsePublicationResult {
+  publication: StandardPublication | null;
   loading: boolean;
   error: Error | null;
 }
 
-export function useSite(author: string, publicationUrl: string): UseSiteResult {
-  const [site, setSite] = useState<Site | null>(null);
+export function usePublication(author: string, publicationUrl: string): UsePublicationResult {
+  const [publication, setPublication] = useState<StandardPublication | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    setSite(null);
+    setPublication(null);
     setError(null);
 
-    fetchSite(author, publicationUrl, controller.signal)
+    fetchPublication(author, publicationUrl, controller.signal)
       .then((data) => {
-        setSite(data);
+        setPublication(data);
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -33,5 +33,5 @@ export function useSite(author: string, publicationUrl: string): UseSiteResult {
     return () => controller.abort();
   }, [author, publicationUrl]);
 
-  return { site, loading, error };
+  return { publication, loading, error };
 }

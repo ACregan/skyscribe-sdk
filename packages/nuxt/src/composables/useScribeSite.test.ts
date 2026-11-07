@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchSite: vi.fn(),
+  fetchPublication: vi.fn(),
 }));
 
 vi.mock("#app", () => ({
   useAsyncData: vi.fn(),
 }));
 
-import { fetchSite } from "@skyscribe-sdk/core";
+import { fetchPublication } from "@skyscribe-sdk/core";
 import { useAsyncData } from "#app";
 import { useScribeSite } from "./useScribeSite.js";
 
-const mockFetchSite = vi.mocked(fetchSite);
+const mockFetchSite = vi.mocked(fetchPublication);
 const mockUseAsyncData = vi.mocked(useAsyncData);
 
 beforeEach(() => {
@@ -20,7 +20,7 @@ beforeEach(() => {
   mockUseAsyncData.mockReturnValue({ data: null, pending: false, error: null } as any);
 });
 
-describe("useScribeSite", () => {
+describe("useScribeSite (deprecated)", () => {
   it("generates the correct useAsyncData key", () => {
     useScribeSite("alice.bsky.social", "alice-bsky-social");
     expect(mockUseAsyncData).toHaveBeenCalledWith(
@@ -30,8 +30,8 @@ describe("useScribeSite", () => {
     );
   });
 
-  it("handler calls fetchSite with correct args", async () => {
-    const mockSite = { uri: "at://did:plc:test/site.standard.publication/testpubkey", title: "Test", url: "test.com", urlPrefix: "", groups: [], ungroupedArticles: [] };
+  it("handler calls fetchPublication with correct args", async () => {
+    const mockSite = { uri: "at://did:plc:test/site.standard.publication/testpubkey", name: "Test", domain: "test.com", basePath: "", categories: [] };
     mockFetchSite.mockResolvedValueOnce(mockSite);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (mockUseAsyncData as any).mockImplementation((_key: any, handler: any) => {

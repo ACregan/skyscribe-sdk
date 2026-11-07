@@ -1,25 +1,26 @@
 import { describe, it, expect } from "vitest";
 import {
-  generateArticleMeta,
-  generateSiteMeta,
-  generateArticleJsonLd,
-  generateSiteJsonLd,
+  generateDocumentMeta,
+  generatePublicationMeta,
+  generateDocumentJsonLd,
+  generatePublicationJsonLd,
+  standardSiteLinks,
 } from "./meta.js";
-import type { Article, Site } from "./types.js";
+import type { StandardDocument, StandardPublication } from "./types.js";
 
-const site: Site = {
+const site: StandardPublication = {
   uri: "at://did:plc:abc/site.standard.publication/tid123",
-  title: "NoRobots",
-  url: "norobots.blog",
-  urlPrefix: "blog",
+  name: "NoRobots",
+  domain: "norobots.blog",
+  basePath: "blog",
   description: "A blog about engineering and design.",
   splashImageUrl: "https://norobots.blog/images/splash.webp",
   logoImageUrl: "https://norobots.blog/images/logo.webp",
-  groups: [],
-  ungroupedArticles: [],
+  categories: [],
 };
 
-const article: Article = {
+const article: StandardDocument = {
+  uri: "at://did:plc:abc/site.standard.document/doc123",
   title: "LLMs Are Full of Shit",
   content: "<p>Content</p>",
   path: "/engineering/llms-are-full-of-shit",
@@ -31,9 +32,9 @@ const article: Article = {
   updatedAt: "2025-01-01T00:00:00.000Z",
 };
 
-describe("generateArticleMeta", () => {
+describe("generateDocumentMeta", () => {
   it("uses the SEO title and description in the head when set", () => {
-    const tags = generateArticleMeta(
+    const tags = generateDocumentMeta(
       { ...article, seo: { title: "LLMs, Honestly", description: "Why LLMs bluff." } },
       site,
     );
@@ -49,20 +50,20 @@ describe("generateArticleMeta", () => {
   });
 
   it("adds robots noindex only when the SEO Settings ask for it", () => {
-    expect(generateArticleMeta(article, site)).not.toContainEqual({ name: "robots", content: "noindex" });
-    expect(generateArticleMeta({ ...article, seo: { noindex: true } }, site)).toContainEqual({
+    expect(generateDocumentMeta(article, site)).not.toContainEqual({ name: "robots", content: "noindex" });
+    expect(generateDocumentMeta({ ...article, seo: { noindex: true } }, site)).toContainEqual({
       name: "robots",
       content: "noindex",
     });
   });
 
   it("includes title tag combining article and site titles", () => {
-    const tags = generateArticleMeta(article, site);
+    const tags = generateDocumentMeta(article, site);
     expect(tags).toContainEqual({ title: "LLMs Are Full of Shit — NoRobots" });
   });
 
-  it("composes canonical url from site.url + site.urlPrefix + article.path", () => {
-    const tags = generateArticleMeta(article, site);
+  it("composes canonical url from site.url + site.basePath + article.path", () => {
+    const tags = generateDocumentMeta(article, site);
     expect(tags).toContainEqual({
       property: "og:url",
       content: "https://norobots.blog/blog/engineering/llms-are-full-of-shit",
@@ -71,7 +72,7 @@ describe("generateArticleMeta", () => {
 
   it("doesn't repeat the prefix when article.path already contains it", () => {
     // Publishing writes path with the base path included.
-    const tags = generateArticleMeta(
+    const tags = generateDocumentMeta(
       { ...article, path: "/blog/engineering/llms-are-full-of-shit" },
       site,
     );
@@ -82,7 +83,7 @@ describe("generateArticleMeta", () => {
   });
 
   it("still adds the prefix when a path merely starts with the same letters", () => {
-    const tags = generateArticleMeta(
+    const tags = generateDocumentMeta(
       { ...article, path: "/blogging/llms-are-full-of-shit" },
       site,
     );
@@ -93,7 +94,7 @@ describe("generateArticleMeta", () => {
   });
 
   it("prefers article.canonicalUrl when present", () => {
-    const tags = generateArticleMeta(
+    const tags = generateDocumentMeta(
       { ...article, canonicalUrl: "https://norobots.blog/custom" },
       site,
     );
@@ -103,8 +104,8 @@ describe("generateArticleMeta", () => {
     });
   });
 
-  it("handles missing urlPrefix", () => {
-    const tags = generateArticleMeta(article, { ...site, urlPrefix: "" });
+  it("handles missing basePath", () => {
+    const tags = generateDocumentMeta(article, { ...site, basePath: "" });
     expect(tags).toContainEqual({
       property: "og:url",
       content: "https://norobots.blog/engineering/llms-are-full-of-shit",
@@ -112,7 +113,7 @@ describe("generateArticleMeta", () => {
   });
 
   it("includes og:image and twitter:image when coverImageUrl present", () => {
-    const tags = generateArticleMeta(article, site);
+    const tags = generateDocumentMeta(article, site);
     expect(tags).toContainEqual({
       property: "og:image",
       content: "https://norobots.blog/images/llms.webp",
@@ -128,7 +129,7 @@ describe("generateArticleMeta", () => {
   });
 
   it("falls back to summary card when no coverImageUrl", () => {
-    const tags = generateArticleMeta(
+    const tags = generateDocumentMeta(
       { ...article, coverImageUrl: undefined },
       site,
     );
@@ -139,7 +140,7 @@ describe("generateArticleMeta", () => {
   });
 
   it("omits description tags when description is absent", () => {
-    const tags = generateArticleMeta(
+    const tags = generateDocumentMeta(
       { ...article, description: undefined },
       site,
     );
@@ -149,12 +150,12 @@ describe("generateArticleMeta", () => {
   });
 
   it("sets og:type to article", () => {
-    const tags = generateArticleMeta(article, site);
+    const tags = generateDocumentMeta(article, site);
     expect(tags).toContainEqual({ property: "og:type", content: "article" });
   });
 
   it("includes a canonical link tag matching the composed canonical url", () => {
-    const tags = generateArticleMeta(article, site);
+    const tags = generateDocumentMeta(article, site);
     expect(tags).toContainEqual({
       tagName: "link",
       rel: "canonical",
@@ -162,17 +163,17 @@ describe("generateArticleMeta", () => {
     });
   });
 
-  it("includes a script:ld+json tag matching generateArticleJsonLd's output", () => {
-    const tags = generateArticleMeta(article, site);
+  it("includes a script:ld+json tag matching generateDocumentJsonLd's output", () => {
+    const tags = generateDocumentMeta(article, site);
     expect(tags).toContainEqual({
-      "script:ld+json": generateArticleJsonLd(article, site),
+      "script:ld+json": generateDocumentJsonLd(article, site),
     });
   });
 });
 
-describe("generateArticleJsonLd", () => {
+describe("generateDocumentJsonLd", () => {
   it("produces a BlogPosting schema with the article's core fields", () => {
-    const jsonLd = generateArticleJsonLd(article, site);
+    const jsonLd = generateDocumentJsonLd(article, site);
     expect(jsonLd).toMatchObject({
       "@context": "https://schema.org",
       "@type": "BlogPosting",
@@ -185,7 +186,7 @@ describe("generateArticleJsonLd", () => {
   });
 
   it("sets mainEntityOfPage to the article's canonical url", () => {
-    const jsonLd = generateArticleJsonLd(article, site);
+    const jsonLd = generateDocumentJsonLd(article, site);
     expect(jsonLd.mainEntityOfPage).toEqual({
       "@type": "WebPage",
       "@id": "https://norobots.blog/blog/engineering/llms-are-full-of-shit",
@@ -193,12 +194,12 @@ describe("generateArticleJsonLd", () => {
   });
 
   it("falls back to the site title as author when no contributor is present", () => {
-    const jsonLd = generateArticleJsonLd(article, site);
+    const jsonLd = generateDocumentJsonLd(article, site);
     expect(jsonLd.author).toEqual({ "@type": "Person", name: "NoRobots" });
   });
 
   it("uses the first contributor's displayName as author when present", () => {
-    const jsonLd = generateArticleJsonLd(
+    const jsonLd = generateDocumentJsonLd(
       {
         ...article,
         contributors: [{ did: "did:plc:xyz", displayName: "Alice Author" }],
@@ -209,7 +210,7 @@ describe("generateArticleJsonLd", () => {
   });
 
   it("includes publisher logo when the site has one", () => {
-    const jsonLd = generateArticleJsonLd(article, site);
+    const jsonLd = generateDocumentJsonLd(article, site);
     expect(jsonLd.publisher).toEqual({
       "@type": "Organization",
       name: "NoRobots",
@@ -218,7 +219,7 @@ describe("generateArticleJsonLd", () => {
   });
 
   it("omits publisher logo when the site has none", () => {
-    const jsonLd = generateArticleJsonLd(article, { ...site, logoImageUrl: undefined });
+    const jsonLd = generateDocumentJsonLd(article, { ...site, logoImageUrl: undefined });
     expect(jsonLd.publisher).toEqual({
       "@type": "Organization",
       name: "NoRobots",
@@ -226,7 +227,7 @@ describe("generateArticleJsonLd", () => {
   });
 
   it("joins tags into a keywords string when present", () => {
-    const jsonLd = generateArticleJsonLd(
+    const jsonLd = generateDocumentJsonLd(
       { ...article, tags: ["ai", "engineering"] },
       site,
     );
@@ -234,7 +235,7 @@ describe("generateArticleJsonLd", () => {
   });
 
   it("omits keywords, description, and image when absent", () => {
-    const jsonLd = generateArticleJsonLd(
+    const jsonLd = generateDocumentJsonLd(
       { ...article, tags: undefined, description: undefined, coverImageUrl: undefined },
       site,
     );
@@ -244,22 +245,22 @@ describe("generateArticleJsonLd", () => {
   });
 });
 
-describe("generateSiteMeta", () => {
+describe("generatePublicationMeta", () => {
   it("includes site title as title tag", () => {
-    const tags = generateSiteMeta(site);
+    const tags = generatePublicationMeta(site);
     expect(tags).toContainEqual({ title: "NoRobots" });
   });
 
-  it("composes site url from url + urlPrefix", () => {
-    const tags = generateSiteMeta(site);
+  it("composes site url from url + basePath", () => {
+    const tags = generatePublicationMeta(site);
     expect(tags).toContainEqual({
       property: "og:url",
       content: "https://norobots.blog/blog",
     });
   });
 
-  it("handles missing urlPrefix", () => {
-    const tags = generateSiteMeta({ ...site, urlPrefix: "" });
+  it("handles missing basePath", () => {
+    const tags = generatePublicationMeta({ ...site, basePath: "" });
     expect(tags).toContainEqual({
       property: "og:url",
       content: "https://norobots.blog",
@@ -267,12 +268,12 @@ describe("generateSiteMeta", () => {
   });
 
   it("sets og:type to website", () => {
-    const tags = generateSiteMeta(site);
+    const tags = generatePublicationMeta(site);
     expect(tags).toContainEqual({ property: "og:type", content: "website" });
   });
 
   it("includes og:image when splashImageUrl present", () => {
-    const tags = generateSiteMeta(site);
+    const tags = generatePublicationMeta(site);
     expect(tags).toContainEqual({
       property: "og:image",
       content: "https://norobots.blog/images/splash.webp",
@@ -280,7 +281,7 @@ describe("generateSiteMeta", () => {
   });
 
   it("includes a canonical link tag matching the composed site url", () => {
-    const tags = generateSiteMeta(site);
+    const tags = generatePublicationMeta(site);
     expect(tags).toContainEqual({
       tagName: "link",
       rel: "canonical",
@@ -288,15 +289,15 @@ describe("generateSiteMeta", () => {
     });
   });
 
-  it("includes a script:ld+json tag matching generateSiteJsonLd's output", () => {
-    const tags = generateSiteMeta(site);
-    expect(tags).toContainEqual({ "script:ld+json": generateSiteJsonLd(site) });
+  it("includes a script:ld+json tag matching generatePublicationJsonLd's output", () => {
+    const tags = generatePublicationMeta(site);
+    expect(tags).toContainEqual({ "script:ld+json": generatePublicationJsonLd(site) });
   });
 });
 
-describe("generateSiteJsonLd", () => {
+describe("generatePublicationJsonLd", () => {
   it("produces a WebSite schema with the site's core fields", () => {
-    const jsonLd = generateSiteJsonLd(site);
+    const jsonLd = generatePublicationJsonLd(site);
     expect(jsonLd).toEqual({
       "@context": "https://schema.org",
       "@type": "WebSite",
@@ -307,7 +308,37 @@ describe("generateSiteJsonLd", () => {
   });
 
   it("omits description when the site has none", () => {
-    const jsonLd = generateSiteJsonLd({ ...site, description: undefined });
+    const jsonLd = generatePublicationJsonLd({ ...site, description: undefined });
     expect(jsonLd.description).toBeUndefined();
+  });
+});
+
+describe("standard.site link tags", () => {
+  const publicationLink = {
+    tagName: "link",
+    rel: "site.standard.publication",
+    href: "at://did:plc:abc/site.standard.publication/tid123",
+  };
+  const documentLink = {
+    tagName: "link",
+    rel: "site.standard.document",
+    href: "at://did:plc:abc/site.standard.document/doc123",
+  };
+
+  it("standardSiteLinks names the Publication, and the Document when given one", () => {
+    expect(standardSiteLinks(site)).toEqual([publicationLink]);
+    expect(standardSiteLinks(site, article)).toEqual([publicationLink, documentLink]);
+  });
+
+  it("generateDocumentMeta includes both link tags", () => {
+    const tags = generateDocumentMeta(article, site);
+    expect(tags).toContainEqual(publicationLink);
+    expect(tags).toContainEqual(documentLink);
+  });
+
+  it("generatePublicationMeta includes the Publication link tag only", () => {
+    const tags = generatePublicationMeta(site);
+    expect(tags).toContainEqual(publicationLink);
+    expect(tags).not.toContainEqual(documentLink);
   });
 });
