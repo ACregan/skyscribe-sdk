@@ -1,5 +1,20 @@
 # @skyscribe-sdk/core
 
+## 5.0.0
+
+### Major Changes
+
+- **Upgrade every `@skyscribe-sdk` package together.** Older adapters (react-router-framework 2, next 1, angular 1) accept any core version and break at runtime on core 5.
+
+  The API now uses the site.standard names (ADR 0005); see "Upgrading to 5.0" on sdk.skyscribe.app for the full table.
+
+  - Types: `Site` → `StandardPublication`, `Article` → `StandardDocument`, `SiteGroup` → `Category`, `ArticleRef` → `DocumentRef`, `ArticleContributor` → `DocumentContributor`. `SiteRecord` is removed.
+  - Fields: a Publication's `title` → `name`, `url` (a bare domain) → `domain`, `urlPrefix` → `basePath`, `groups` → `categories`; a Category's `articles` → `documents`; a `DocumentRef`'s `splashImageUrl` → `coverImageUrl`. `ungroupedArticles` (always empty) is removed.
+  - `StandardDocument` has its own `uri`, so `fetchDocumentBySlug` returns the Document itself instead of `{ article, uri }`.
+  - Functions: `fetchSite` → `fetchPublication`, `fetchArticle` → `fetchDocument`, `fetchArticleBySlug` → `fetchDocumentBySlug`, `listSites` → `listPublications`, `listArticles` → `listDocuments`, `flattenArticles` → `flattenDocuments`, `generateSiteMeta` / `generateArticleMeta` → `generatePublicationMeta` / `generateDocumentMeta`, the JSON-LD helpers likewise, `buildSiteUrl` → `buildPublicationUrl`.
+  - New: the meta helpers add `<link rel="site.standard.publication">` (and `site.standard.document` on Documents), which Bluesky needs for its Standard.site link card; `standardSiteLinks()` returns just those tags.
+  - The old function and type names still work, marked `@deprecated`, until the next major. `fetchArticleBySlug` still returns `{ article, uri }`.
+
 ## 4.2.0
 
 ### Minor Changes

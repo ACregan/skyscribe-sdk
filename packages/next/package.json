@@ -1,6 +1,6 @@
 {
   "name": "@skyscribe-sdk/next",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "description": "Next.js App Router adapter for reading SkyScribe content from the AT Protocol.",
   "license": "MIT",
   "engines": {
@@ -28,7 +28,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@skyscribe-sdk/core": "*"
+    "@skyscribe-sdk/core": "^5.0.0"
   },
   "peerDependencies": {
     "next": ">=13.0.0"

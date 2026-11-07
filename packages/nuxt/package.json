@@ -1,6 +1,6 @@
 {
   "name": "@skyscribe-sdk/nuxt",
-  "version": "1.5.0",
+  "version": "2.0.0",
   "description": "Nuxt 3 module for reading SkyScribe content from the AT Protocol.",
   "license": "MIT",
   "engines": {
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@nuxt/kit": "^3.0.0",
-    "@skyscribe-sdk/core": "^4.2.0"
+    "@skyscribe-sdk/core": "^5.0.0"
   },
   "peerDependencies": {
     "nuxt": "^3.0.0"
