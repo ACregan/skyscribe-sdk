@@ -4,98 +4,98 @@ Metadata and static-params helpers for the Next.js 13+ App Router. Install with 
 
 ## Functions
 
-### `createScribeSite`
+### `createScribePublication`
 
 ```ts
-function createScribeSite(author: string, publicationUrl: string)
+function createScribePublication(author: string, publicationUrl: string)
 ```
 
-Returns an object of async functions (below) for `generateStaticParams` and `generateMetadata`. Each one fetches the Site itself; fetching the content for your pages is up to you, with `@skyscribe-sdk/core`.
+Returns an object of async functions (below) for `generateStaticParams` and `generateMetadata`. Each one fetches the Publication itself; fetching the content for your pages is up to you, with `@skyscribe-sdk/core`.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
 
 **Usage:**
 
 ```ts
 // lib/scribe.ts
-import { createScribeSite } from '@skyscribe-sdk/next';
-export const scribe = createScribeSite('alice.bsky.social', 'https://alice.bsky.social');
+import { createScribePublication } from '@skyscribe-sdk/next';
+export const scribe = createScribePublication('alice.bsky.social', 'https://alice.bsky.social');
 ```
 
 ---
 
 ## Factory methods
 
-### `generateGroupParams`
+### `generateCategoryParams`
 
 ```ts
-generateGroupParams(): Promise<{ groupSlug: string }[]>
+generateCategoryParams(): Promise<{ categorySlug: string }[]>
 ```
 
-Returns static params for a `[groupSlug]` route segment. Use as `generateStaticParams` on a group page.
+Returns static params for a `[categorySlug]` route segment. Use it as `generateStaticParams` on a Category page.
 
 ---
 
-### `generateArticleParams`
+### `generateDocumentParams`
 
 ```ts
-generateArticleParams(): Promise<{ articleSlug: string }[]>
+generateDocumentParams(): Promise<{ documentSlug: string }[]>
 ```
 
-Returns static params for a single `[articleSlug]` segment, with no group in the URL. Use it as `generateStaticParams` on an article page with one dynamic segment. Articles without a slug are skipped.
+Returns static params for a single `[documentSlug]` segment, with no Category in the URL. Use it as `generateStaticParams` on a Document page with one dynamic segment. Documents without a slug are skipped.
 
 ---
 
-### `generateGroupArticleParams`
+### `generateCategoryDocumentParams`
 
 ```ts
-generateGroupArticleParams(): Promise<{ groupSlug: string; articleSlug: string }[]>
+generateCategoryDocumentParams(): Promise<{ categorySlug: string; documentSlug: string }[]>
 ```
 
-Returns static params for a `[groupSlug]/[articleSlug]` route. Use it as `generateStaticParams` on a nested article page.
+Returns static params for a `[categorySlug]/[documentSlug]` route. Use it as `generateStaticParams` on a nested Document page.
 
 ---
 
-### `generateSiteMetadata`
+### `generatePublicationMetadata`
 
 ```ts
-generateSiteMetadata(): Promise<Metadata>
+generatePublicationMetadata(): Promise<Metadata>
 ```
 
-Returns `Metadata` for the site index page: `title`, `description`, and `openGraph` (with the splash image, when set). It takes no arguments, so you can assign it straight to `generateMetadata`.
+Returns `Metadata` for the Publication's home page: `title`, `description`, and `openGraph` (with the splash image, when set). It takes no arguments, so you can assign it straight to `generateMetadata`.
 
 ---
 
-### `generateGroupMetadata`
+### `generateCategoryMetadata`
 
 ```ts
-generateGroupMetadata(groupSlug: string): Promise<Metadata>
+generateCategoryMetadata(categorySlug: string): Promise<Metadata>
 ```
 
-Returns `Metadata` for a group page, titled `"{Group Title} — {Site Title}"`. It takes the slug, not Next's `{ params }`, so call it from your own `generateMetadata`.
+Returns `Metadata` for a Category page, titled `"{Category title} — {Publication name}"`. It takes the slug, not Next's `{ params }`, so call it from your own `generateMetadata`.
 
 ---
 
-### `generateArticleMetadata`
+### `generateDocumentMetadata`
 
 ```ts
-generateArticleMetadata(articleSlug: string): Promise<Metadata>
+generateDocumentMetadata(documentSlug: string): Promise<Metadata>
 ```
 
-Returns `Metadata` for an article page, titled `"{Article Title} — {Site Title}"`, with the description and `openGraph.images`. It works from the article's `ArticleRef` in the Site, so the image is the ref's splash image, and there's no canonical URL or Twitter Card: use [`articleMetadata`](#articlemetadata) for those. Like `generateGroupMetadata`, it takes the slug.
+Returns `Metadata` for a Document page, titled `"{Document title} — {Publication name}"`, with the description and `openGraph.images`. It works from the Document's `DocumentRef` in the Publication, so the image is the ref's cover image, and there's no canonical URL or Twitter Card: use [`documentMetadata`](#documentmetadata) for those. Like `generateCategoryMetadata`, it takes the slug.
 
 ---
 
 ### `getDocumentUri`
 
 ```ts
-getDocumentUri(articleSlug: string): Promise<string>
+getDocumentUri(documentSlug: string): Promise<string>
 ```
 
-Returns the AT URI of the article with this slug, for `@skyscribe-sdk/social`'s buttons.
+Returns the AT URI of the Document with this slug, for `@skyscribe-sdk/social`'s buttons.
 
 ---
 
@@ -110,12 +110,12 @@ function createWellKnownHandler(
 ): (request: Request) => Promise<Response>
 ```
 
-Returns an App Router route handler that responds with the Site's AT URI as plain text. Serve it at `/.well-known/site.standard.publication`, where `site.standard` apps look to confirm that a website belongs to a Publication.
+Returns an App Router route handler that responds with the Publication's AT URI as plain text. Serve it at `/.well-known/site.standard.publication`, where `site.standard` apps look to confirm that a website belongs to a Publication.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
 
 ```ts
 // app/.well-known/site.standard.publication/route.ts
@@ -128,48 +128,69 @@ export const GET = createWellKnownHandler('alice.bsky.social', 'https://alice.bs
 
 ## Standalone helpers
 
-These take `Article` and `Site` objects you've already fetched, and return a `Metadata` object.
+These take `StandardDocument` and `StandardPublication` objects you've already fetched, and return a `Metadata` object.
 
-### `articleMetadata`
+### `documentMetadata`
 
 ```ts
-function articleMetadata(article: Article, site: Site): Metadata
+function documentMetadata(document: StandardDocument, publication: StandardPublication): Metadata
 ```
 
-Returns `Metadata` for an article page: `title`, `description`, a canonical URL (`alternates.canonical`), `openGraph` (type `article`, URL, site name, cover image) and `twitter`. It doesn't include structured data: see [`generateArticleJsonLd`](/api/core#generatearticlejsonld).
+Returns `Metadata` for a Document page: `title`, `description`, a canonical URL (`alternates.canonical`), `openGraph` (type `article`, URL, site name, cover image) and `twitter`. It doesn't include structured data or the site.standard link tags, which `Metadata` has no field for: render [`generateDocumentJsonLd`](/api/core#generatedocumentjsonld) and [`standardSiteLinks`](#standardsitelinks) in the page.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `article` | `Article` | The full article object |
-| `site` | `Site` | The site object |
+| `document` | `StandardDocument` | The full Document |
+| `publication` | `StandardPublication` | The Publication |
 
 ```ts
-import { articleMetadata } from '@skyscribe-sdk/next';
-import { fetchArticleBySlug, fetchSite } from '@skyscribe-sdk/core';
+import { documentMetadata } from '@skyscribe-sdk/next';
+import { fetchDocumentBySlug, fetchPublication } from '@skyscribe-sdk/core';
 
-export async function generateMetadata({ params }: { params: Promise<{ articleSlug: string }> }) {
-  const { articleSlug } = await params;
-  const [{ article }, site] = await Promise.all([
-    fetchArticleBySlug('alice.bsky.social', 'https://alice.bsky.social', articleSlug),
-    fetchSite('alice.bsky.social', 'https://alice.bsky.social'),
+export async function generateMetadata({ params }: { params: Promise<{ documentSlug: string }> }) {
+  const { documentSlug } = await params;
+  const [document, publication] = await Promise.all([
+    fetchDocumentBySlug('alice.bsky.social', 'https://alice.bsky.social', documentSlug),
+    fetchPublication('alice.bsky.social', 'https://alice.bsky.social'),
   ]);
-  return articleMetadata(article, site);
+  return documentMetadata(document, publication);
 }
 ```
 
 ---
 
-### `siteMetadata`
+### `publicationMetadata`
 
 ```ts
-function siteMetadata(site: Site): Metadata
+function publicationMetadata(publication: StandardPublication): Metadata
 ```
 
-Returns `Metadata` for a site index or group page, with a canonical URL, Open Graph and Twitter fields.
+Returns `Metadata` for a Publication's home or Category page, with a canonical URL, Open Graph and Twitter fields.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `site` | `Site` | The site object |
+| `publication` | `StandardPublication` | The Publication |
+
+---
+
+### `standardSiteLinks`
+
+```ts
+function standardSiteLinks(
+  publication: StandardPublication,
+  document?: StandardDocument
+): { tagName: "link"; rel: string; href: string }[]
+```
+
+The [site.standard link tags](/guides/meta-tags#sitestandard-link-tags), re-exported from core. `Metadata` can't hold them, so render them as `<link>` elements in the page or layout (React 19 moves them into the `<head>`):
+
+```tsx
+{standardSiteLinks(publication, document).map(({ rel, href }) => (
+  <link key={rel} rel={rel} href={href} />
+))}
+```
+
+`generateDocumentJsonLd` and `generatePublicationJsonLd` are re-exported too.
 
 ---
 
@@ -178,7 +199,11 @@ Returns `Metadata` for a site index or group page, with a canonical URL, Open Gr
 The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from '@skyscribe-sdk/next';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/next';
 ```
 
 See the [core reference](/api/core#types) for type definitions.
+
+## Deprecated names
+
+`createScribeSite` still works, marked `@deprecated`, until the next major. Its methods keep their 4.x names (`generateGroupParams`, `generateArticleParams`, `generateGroupArticleParams`, `generateSiteMetadata`, `generateGroupMetadata`, `generateArticleMetadata`) and still return `{ groupSlug, articleSlug }` params, so rename your route folders when you switch to `createScribePublication`. `siteMetadata` and `articleMetadata` are deprecated aliases too. See [Upgrading to 5.0](/upgrading-to-5).

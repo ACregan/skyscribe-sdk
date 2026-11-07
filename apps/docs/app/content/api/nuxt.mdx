@@ -11,7 +11,7 @@ export default defineNuxtConfig({
 });
 ```
 
-Once it's registered, `useScribeSite`, `useScribeArticleBySlug`, `useScribeArticle`, `useScribePublicationUri`, `useScribeDocumentUri`, `articleSeoMeta` and `siteSeoMeta` are available in every component and page without importing them.
+Once it's registered, `useScribePublication`, `useScribeDocumentBySlug`, `useScribeDocument`, `useScribePublicationUri`, `useScribeDocumentUri`, `useSiteAnalytics`, `documentSeoMeta` and `publicationSeoMeta` are available in every component and page without importing them.
 
 <Callout type="warning">
   Use version 1.3.0 or later. Earlier versions, including every `@scribe-atp/nuxt` release, left the composables out of the published package, so they were never auto-imported.
@@ -21,69 +21,69 @@ Once it's registered, `useScribeSite`, `useScribeArticleBySlug`, `useScribeArtic
 
 ## Composables
 
-### `useScribeSite`
+### `useScribePublication`
 
 ```ts
-function useScribeSite(
+function useScribePublication(
   author: string,
   publicationUrl: string,
   options?: AsyncDataOptions
-): Promise<AsyncData<Site | null, Error | null>>
+): Promise<AsyncData<StandardPublication | null, Error | null>>
 ```
 
-Runs `fetchSite` inside `useAsyncData`, so the Site is fetched during server rendering and reused on the client.
+Runs `fetchPublication` inside `useAsyncData`, so the Publication is fetched during server rendering and reused on the client.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
 | `options` | `AsyncDataOptions` | Optional. Passed on to `useAsyncData` (`lazy`, `server`, `watch` and so on) |
 
-Returns Nuxt's standard `AsyncData`: `{ data, pending, error, refresh }`, where `data` holds `Site | null`.
+Returns Nuxt's standard `AsyncData`: `{ data, pending, error, refresh }`, where `data` holds `StandardPublication | null`.
 
 ---
 
-### `useScribeArticleBySlug`
+### `useScribeDocumentBySlug`
 
 ```ts
-function useScribeArticleBySlug(
+function useScribeDocumentBySlug(
   author: string,
   publicationUrl: string,
-  articleSlug: string,
+  documentSlug: string,
   options?: AsyncDataOptions
-): Promise<AsyncData<ArticleResult | null, Error | null>>
+): Promise<AsyncData<StandardDocument | null, Error | null>>
 ```
 
-Looks an article up by its slug in the Site at `publicationUrl`, inside `useAsyncData`. `data` holds `{ article, uri }`: the article and its AT URI. Since 1.3.0.
+Looks a Document up by its slug in the Publication at `publicationUrl`, inside `useAsyncData`. `data` holds the Document; `data.value.uri` is its AT URI.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
-| `articleSlug` | `string` | The article's slug, as in its URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
+| `documentSlug` | `string` | The Document's slug, as in its URL |
 | `options` | `AsyncDataOptions` | Optional. Passed on to `useAsyncData` |
 
 ---
 
-### `useScribeArticle`
+### `useScribeDocument`
 
 ```ts
-function useScribeArticle(
+function useScribeDocument(
   author: string,
   rkey: string,
   options?: AsyncDataOptions
-): Promise<AsyncData<Article | null, Error | null>>
+): Promise<AsyncData<StandardDocument | null, Error | null>>
 ```
 
-Runs `fetchArticle` inside `useAsyncData`, so it fetches by the article's **record key (rkey)**.
+Runs `fetchDocument` inside `useAsyncData`, so it fetches by the Document's **record key (rkey)**.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `author` | `string` | Handle or DID of the account the article is stored in |
-| `rkey` | `string` | The article's record key |
+| `author` | `string` | Handle or DID of the account the Document is stored in |
+| `rkey` | `string` | The Document's record key |
 | `options` | `AsyncDataOptions` | Optional. Forwarded to `useAsyncData` |
 
-Returns `{ data, pending, error, refresh }`, where `data` holds `Article | null`. Don't pass a slug: it only finds very old articles. With a slug, use `useScribeArticleBySlug`.
+Returns `{ data, pending, error, refresh }`, where `data` holds `StandardDocument | null`. Don't pass a slug: it only finds very old Documents. With a slug, use `useScribeDocumentBySlug`.
 
 ---
 
@@ -91,10 +91,10 @@ Returns `{ data, pending, error, refresh }`, where `data` holds `Article | null`
 
 ```ts
 function useScribePublicationUri(author: string, publicationUrl: string, options?: AsyncDataOptions)
-function useScribeDocumentUri(author: string, publicationUrl: string, articleSlug: string, options?: AsyncDataOptions)
+function useScribeDocumentUri(author: string, publicationUrl: string, documentSlug: string, options?: AsyncDataOptions)
 ```
 
-Resolve just the AT URI of a Site or (by slug) an article, inside `useAsyncData`. `data` holds the URI string.
+Resolve just the AT URI of a Publication or (by slug) a Document, inside `useAsyncData`. `data` holds the URI string.
 
 ---
 
@@ -108,31 +108,34 @@ Puts the [Site Analytics](/guides/site-analytics) beacon in the page `<head>` th
 
 ## Meta helpers
 
-### `articleSeoMeta`
+### `documentSeoMeta`
 
 ```ts
-function articleSeoMeta(article: Article, site: Site): UseSeoMetaInput
+function documentSeoMeta(document: StandardDocument, publication: StandardPublication): UseSeoMetaInput
 ```
 
-Returns an object for Nuxt's `useSeoMeta()`: `title`, `ogType`, `ogTitle`, `ogUrl`, `ogSiteName`, `ogDescription`, `ogImage` (the cover image), `twitterCard`, `twitterTitle`, `twitterDescription` and `twitterImage`. `useSeoMeta` can't set a canonical link or structured data: add those with `useHead`, using `buildCanonicalUrl` and `generateArticleJsonLd`, which this package re-exports.
+Returns an object for Nuxt's `useSeoMeta()`: `title`, `ogType`, `ogTitle`, `ogUrl`, `ogSiteName`, `ogDescription`, `ogImage` (the cover image), `twitterCard`, `twitterTitle`, `twitterDescription` and `twitterImage`. `useSeoMeta` can't set a canonical link, the [site.standard link tags](/guides/meta-tags#sitestandard-link-tags) or structured data: add those with `useHead`, using `buildCanonicalUrl`, `standardSiteLinks` and `generateDocumentJsonLd`, which this package re-exports.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `article` | `Article` | The full article object |
-| `site` | `Site` | The site object |
+| `document` | `StandardDocument` | The full Document |
+| `publication` | `StandardPublication` | The Publication |
 
 ```vue
 <script setup lang="ts">
-import { articleSeoMeta } from '@skyscribe-sdk/nuxt';
-import { fetchArticleBySlug, fetchSite } from '@skyscribe-sdk/core';
+import { documentSeoMeta, standardSiteLinks } from '@skyscribe-sdk/nuxt';
+import { fetchDocumentBySlug, fetchPublication } from '@skyscribe-sdk/core';
 
 const route = useRoute();
-const [{ article }, site] = await Promise.all([
-  fetchArticleBySlug('alice.bsky.social', 'https://alice.bsky.social', route.params.slug as string),
-  fetchSite('alice.bsky.social', 'https://alice.bsky.social'),
+const [document, publication] = await Promise.all([
+  fetchDocumentBySlug('alice.bsky.social', 'https://alice.bsky.social', route.params.slug as string),
+  fetchPublication('alice.bsky.social', 'https://alice.bsky.social'),
 ]);
 
-useSeoMeta(articleSeoMeta(article, site));
+useSeoMeta(documentSeoMeta(document, publication));
+useHead({
+  link: standardSiteLinks(publication, document).map(({ rel, href }) => ({ rel, href })),
+});
 </script>
 ```
 
@@ -140,17 +143,17 @@ Import it from `@skyscribe-sdk/nuxt`.
 
 ---
 
-### `siteSeoMeta`
+### `publicationSeoMeta`
 
 ```ts
-function siteSeoMeta(site: Site): UseSeoMetaInput
+function publicationSeoMeta(publication: StandardPublication): UseSeoMetaInput
 ```
 
-Returns `useSeoMeta()` input for a site index or group page. The package also re-exports `buildSiteUrl` and `generateSiteJsonLd` for the canonical link and structured data.
+Returns `useSeoMeta()` input for a Publication's home or Category page. The package also re-exports `buildPublicationUrl` and `generatePublicationJsonLd` for the canonical link and structured data.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `site` | `Site` | The site object |
+| `publication` | `StandardPublication` | The Publication |
 
 ---
 
@@ -159,7 +162,11 @@ Returns `useSeoMeta()` input for a site index or group page. The package also re
 The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from '@skyscribe-sdk/nuxt';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/nuxt';
 ```
 
 See the [core reference](/api/core#types) for type definitions.
+
+## Deprecated names
+
+`useScribeSite`, `useScribeArticle`, `useScribeArticleBySlug` (whose `data` is still `{ article, uri }`), `siteSeoMeta` and `articleSeoMeta` still work, marked `@deprecated`, until the next major. The composables stay auto-imported. See [Upgrading to 5.0](/upgrading-to-5).

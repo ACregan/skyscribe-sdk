@@ -41,7 +41,7 @@ discussion, it should match the definition here.
 
 **`@skyscribe-sdk/angular`**
 : The Angular adapter. Provides `ScribeService` (Observable API) and
-  `injectSite` / `injectArticle` (Signals API) wrapping `@skyscribe-sdk/core`
+  `injectPublication` / `injectDocument` (Signals API) wrapping `@skyscribe-sdk/core`
   with idiomatic Angular reactivity and cleanup.
 
 ---
@@ -231,15 +231,15 @@ the SDK, SkyScribe and the records all say the same thing (decided
 **Publication URI cache**
 : An in-memory `Map` inside `packages/core/src/fetch.ts` that stores each
   resolved `site.standard.publication` AT URI keyed by DID + publication
-  URL, avoiding a `listRecords` call on every `fetchSite` request. Entries
-  expire after 60 seconds, and `fetchSite` self-heals immediately if a
+  URL, avoiding a `listRecords` call on every `fetchPublication` request. Entries
+  expire after 60 seconds, and `fetchPublication` self-heals immediately if a
   cached entry's `getRecord` call fails (e.g. the record was deleted and
   recreated) by dropping it and falling back to a fresh `listRecords`
   lookup — so a long-running consumer process never needs a manual restart
   to recover.
 
 **Injection function**
-: An Angular-idiomatic function (e.g. `injectSite`, `injectArticle`) that
+: An Angular-idiomatic function (e.g. `injectPublication`, `injectDocument`) that
   uses Angular's `inject()` API internally. Must be called within an
   injection context (constructor, field initialiser, or
   `runInInjectionContext()`). Returns reactive signals and registers cleanup

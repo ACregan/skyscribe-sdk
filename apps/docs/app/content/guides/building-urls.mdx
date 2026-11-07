@@ -1,87 +1,87 @@
 # Building URLs
 
-A `Site` record carries two URL-related fields that together define the root of the site's content:
+A `StandardPublication` carries two URL-related fields that together define the root of its Documents:
 
 | Field | Example | Meaning |
 | ----- | ------- | ------- |
-| `site.url` | `"anthonycregan.co.uk"` | The site's domain (no protocol) |
-| `site.urlPrefix` | `"blog"` | Path prefix for content: an empty string if content is at the root |
+| `publication.domain` | `"anthonycregan.co.uk"` | The Publication's domain (no protocol) |
+| `publication.basePath` | `"blog"` | Path prefix for its Documents: an empty string if they're at the root |
 
-An article's own slug is `slug` on its `ArticleRef`.
+A Document's own slug is `slug` on its `DocumentRef`.
 
-## Article URL pattern
+## Document URL pattern
 
-The canonical URL for a published article is:
-
-```
-https://{site.url}/{site.urlPrefix}/{group.slug}/{article.slug}
-```
-
-When `urlPrefix` is empty, the pattern is:
+The canonical URL for a published Document is:
 
 ```
-https://{site.url}/{group.slug}/{article.slug}
+https://{publication.domain}/{publication.basePath}/{category.slug}/{ref.slug}
+```
+
+When `basePath` is empty, the pattern is:
+
+```
+https://{publication.domain}/{category.slug}/{ref.slug}
 ```
 
 ## Helper functions
 
 `@skyscribe-sdk/core` has two helpers:
 
-- `buildSiteUrl(site)` returns the site root, e.g. `https://anthonycregan.co.uk/blog`
-- `buildCanonicalUrl(article, site)` returns a full `Article`'s canonical URL. It uses the `canonicalUrl` SkyScribe stored when the article was published
+- `buildPublicationUrl(publication)` returns the Publication's root, e.g. `https://anthonycregan.co.uk/blog`
+- `buildCanonicalUrl(document, publication)` returns a full `StandardDocument`'s canonical URL. It uses the `canonicalUrl` SkyScribe stored when the Document was published
 
-To build a URL from an `ArticleRef` (from `fetchSite`, without fetching each article), write a small helper once and reuse it:
+To build a URL from a `DocumentRef` (from `fetchPublication`, without fetching each Document), write a small helper once and reuse it:
 
 ```ts
-import type { Site } from '@skyscribe-sdk/core';
+import type { StandardPublication } from '@skyscribe-sdk/core';
 
-function articleUrl(site: Site, groupSlug: string, articleSlug: string): string {
-  const base = site.urlPrefix
-    ? `https://${site.url}/${site.urlPrefix}`
-    : `https://${site.url}`;
-  return `${base}/${groupSlug}/${articleSlug}`;
+function documentUrl(publication: StandardPublication, categorySlug: string, documentSlug: string): string {
+  const base = publication.basePath
+    ? `https://${publication.domain}/${publication.basePath}`
+    : `https://${publication.domain}`;
+  return `${base}/${categorySlug}/${documentSlug}`;
 }
 ```
 
 Usage:
 
 ```ts
-const url = articleUrl(site, group.slug, article.slug);
+const url = documentUrl(publication, category.slug, ref.slug);
 // e.g. "https://anthonycregan.co.uk/blog/2024/my-first-post"
 //   or "https://norobots.blog/2024/my-first-post"
 ```
 
 <Callout type="tip">
-  When building internal links within your own site, use relative paths (`/blog/2024/my-first-post`) rather than absolute URLs. The absolute form is for canonical `<link>` tags, RSS items, and sitemap entries.
+  When building internal links within your own website, use relative paths (`/blog/2024/my-first-post`) rather than absolute URLs. The absolute form is for canonical `<link>` tags, RSS items, and sitemap entries.
 </Callout>
 
-## Looking up a site by URL
+## Looking up a Publication by URL
 
-Pass the site's canonical HTTPS URL straight to `fetchSite`:
+Pass the Publication's canonical HTTPS URL straight to `fetchPublication`:
 
 ```ts
-import { fetchSite } from '@skyscribe-sdk/core';
+import { fetchPublication } from '@skyscribe-sdk/core';
 
-await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
-await fetchSite('anthonycregan.dev', 'https://anthonycregan.co.uk');
-await fetchSite('anthonycregan.dev', 'https://norobots.blog');
+await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
+await fetchPublication('anthonycregan.dev', 'https://anthonycregan.co.uk');
+await fetchPublication('anthonycregan.dev', 'https://norobots.blog');
 ```
 
-(`toSlug` is still exported from `@skyscribe-sdk/core`, but site lookups no longer need it.)
+(`toSlug` is still exported from `@skyscribe-sdk/core`, but lookups no longer need it.)
 
-## Article slugs
+## Document slugs
 
-An article's human-readable slug is on the `ArticleRef` objects returned by `fetchSite`. Use `article.slug`; don't try to derive it from the AT URI.
+A Document's human-readable slug is on the `DocumentRef` objects returned by `fetchPublication`. Use `ref.slug`; don't try to derive it from the AT URI.
 
 ```ts
-const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
+const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
 
-for (const group of site.groups) {
-  for (const article of group.articles) {
-    if (!article.slug) continue; // very old records may lack one
-    const url = articleUrl(site, group.slug, article.slug);
+for (const category of publication.categories) {
+  for (const ref of category.documents) {
+    if (!ref.slug) continue; // very old records may lack one
+    const url = documentUrl(publication, category.slug, ref.slug);
   }
 }
 ```
 
-Article rkeys are opaque TIDs (e.g. `3mp47vvkh342n`) assigned by the PDS. `slugFromUri` returns that TID, which is not the human-readable slug, so use `article.slug` when building URLs.
+Document rkeys are opaque TIDs (e.g. `3mp47vvkh342n`) assigned by the PDS. `slugFromUri` returns that TID, which is not the human-readable slug, so use `ref.slug` when building URLs.

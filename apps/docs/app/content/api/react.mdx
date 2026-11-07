@@ -16,7 +16,7 @@ type ScribeContentProps = Omit<HTMLAttributes<HTMLDivElement>, "dangerouslySetIn
 };
 ```
 
-A thin `<div>` that renders article HTML. It adds the `scribe-content` class, so `@skyscribe-sdk/styles` applies. It accepts all standard `div` attributes, and `className` is added to `scribe-content` rather than replacing it. Apart from Embeds, it renders the HTML as-is: sanitise it first if you show accounts you don't control.
+A thin `<div>` that renders a Document's HTML. It adds the `scribe-content` class, so `@skyscribe-sdk/styles` applies. It accepts all standard `div` attributes, and `className` is added to `scribe-content` rather than replacing it. Apart from Embeds, it renders the HTML as-is: sanitise it first if you show accounts you don't control.
 
 It shows [Embeds](/api/core#embeds) (videos, music, code pens, Bluesky posts and link cards) through `renderEmbeds`, and calls `enhanceEmbeds` for you. Videos, music and code pens show as Posters that load their player when clicked; pass `clickToLoad={false}` to load every player with the page. Bluesky posts grow to their real height. Pass `embeds={false}` to leave Embeds as the links they're stored as.
 
@@ -24,10 +24,10 @@ It shows [Embeds](/api/core#embeds) (videos, music, code pens, Bluesky posts and
 import { ScribeContent } from "@skyscribe-sdk/react";
 import "@skyscribe-sdk/styles";
 
-<ScribeContent html={article.content} />
+<ScribeContent html={document.content} />
 
 // With an extra class
-<ScribeContent html={article.content} className={styles.articleBody} />
+<ScribeContent html={document.content} className={styles.articleBody} />
 ```
 
 See the [`@skyscribe-sdk/styles` reference](/api/styles) for theming and the full list of styled elements.
@@ -52,78 +52,77 @@ import { SiteAnalytics } from "@skyscribe-sdk/react";
 
 ## Hooks
 
-### `useSite`
+### `usePublication`
 
 ```ts
-function useSite(author: string, publicationUrl: string): UseSiteResult
+function usePublication(author: string, publicationUrl: string): UsePublicationResult
 
-interface UseSiteResult {
-  site: Site | null;
+interface UsePublicationResult {
+  publication: StandardPublication | null;
   loading: boolean;
   error: Error | null;
 }
 ```
 
-Fetches a Site on mount, and again whenever `author` or `publicationUrl` changes. Aborts the in-flight request on unmount and when the arguments change.
+Fetches a Publication on mount, and again whenever `author` or `publicationUrl` changes. Aborts the in-flight request on unmount and when the arguments change.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
 
-While loading, `site` is `null` and `loading` is `true`. On error, `site` stays `null` and `error` is set. A cancelled request (`AbortError`) doesn't set `error`.
+While loading, `publication` is `null` and `loading` is `true`. On error, `publication` stays `null` and `error` is set. A cancelled request (`AbortError`) doesn't set `error`.
 
 ---
 
-### `useArticleBySlug`
+### `useDocumentBySlug`
 
 ```ts
-function useArticleBySlug(
+function useDocumentBySlug(
   author: string,
   publicationUrl: string,
-  articleSlug: string
-): UseArticleBySlugResult
+  documentSlug: string
+): UseDocumentBySlugResult
 
-interface UseArticleBySlugResult {
-  article: Article | null;
-  uri: string | null;     // the article's AT URI
+interface UseDocumentBySlugResult {
+  document: StandardDocument | null;  // document.uri is its AT URI
   loading: boolean;
   error: Error | null;
 }
 ```
 
-Looks an article up by its slug in the Site at `publicationUrl` (using `fetchArticleBySlug`), and returns it with its AT URI. Fetches on mount and again whenever the arguments change, aborting the previous request. Since 2.2.0.
+Looks a Document up by its slug in the Publication at `publicationUrl` (using `fetchDocumentBySlug`). Fetches on mount and again whenever the arguments change, aborting the previous request.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
-| `articleSlug` | `string` | The article's slug, as in its URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
+| `documentSlug` | `string` | The Document's slug, as in its URL |
 
-If no published article has that slug, `error` is a `NotFoundError`.
+If no published Document has that slug, `error` is a `NotFoundError`.
 
 ---
 
-### `useArticle`
+### `useDocument`
 
 ```ts
-function useArticle(author: string, rkey: string): UseArticleResult
+function useDocument(author: string, rkey: string): UseDocumentResult
 
-interface UseArticleResult {
-  article: Article | null;
+interface UseDocumentResult {
+  document: StandardDocument | null;
   loading: boolean;
   error: Error | null;
 }
 ```
 
-Fetches an article by its **record key (rkey)** on mount, and again whenever the arguments change. Aborts on unmount and when the arguments change.
+Fetches a Document by its **record key (rkey)** on mount, and again whenever the arguments change. Aborts on unmount and when the arguments change.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `author` | `string` | Handle or DID of the account the article is stored in |
-| `rkey` | `string` | The article's record key |
+| `author` | `string` | Handle or DID of the account the Document is stored in |
+| `rkey` | `string` | The Document's record key |
 
-Take both from an `ArticleRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)`. Don't pass a slug: it only finds very old articles. With a slug, use `useArticleBySlug`.
+Take both from a `DocumentRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)`. Don't pass a slug: it only finds very old Documents. With a slug, use `useDocumentBySlug`.
 
 ---
 
@@ -132,7 +131,11 @@ Take both from an `ArticleRef`: the account is `ref.uri.split('/')[2]` and the r
 The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup, ArticleResult, UseArticleBySlugResult } from '@skyscribe-sdk/react';
+import type { StandardPublication, StandardDocument, DocumentRef, Category, UseDocumentBySlugResult } from '@skyscribe-sdk/react';
 ```
 
 See the [core reference](/api/core#types) for type definitions.
+
+## Deprecated names
+
+`useSite` (returning `{ site }`), `useArticle` (`{ article }`) and `useArticleBySlug` (`{ article, uri }`) still work, marked `@deprecated`, until the next major. See [Upgrading to 5.0](/upgrading-to-5).

@@ -17,13 +17,13 @@ npm install @skyscribe-sdk/vue
 
 ## Usage
 
-### `useScribeSite`
+### `useScribePublication`
 
 ```vue
 <script setup lang="ts">
-import { useScribeSite } from "@skyscribe-sdk/vue";
+import { useScribePublication } from "@skyscribe-sdk/vue";
 
-const { site, loading, error } = useScribeSite(
+const { publication, loading, error } = useScribePublication(
   "alice.bsky.social",
   "https://alice.bsky.social"
 );
@@ -33,23 +33,23 @@ const { site, loading, error } = useScribeSite(
   <div v-if="loading">Loading…</div>
   <div v-else-if="error">{{ error.message }}</div>
   <ul v-else>
-    <li v-for="group in site!.groups" :key="group.slug">
-      {{ group.title }}
+    <li v-for="group in publication!.categories" :key="group.slug">
+      {{ category.title }}
     </li>
   </ul>
 </template>
 ```
 
-### `useScribeArticleBySlug`
+### `useScribeDocumentBySlug`
 
-Looks the article up by its slug (as in its URL) and returns it with its AT URI:
+Looks the Document up by its slug (as in its URL). Its `uri` is its AT URI:
 
 ```vue
 <script setup lang="ts">
-import { useScribeArticleBySlug } from "@skyscribe-sdk/vue";
+import { useScribeDocumentBySlug } from "@skyscribe-sdk/vue";
 
 const props = defineProps<{ slug: string }>();
-const { article, uri, loading, error } = useScribeArticleBySlug(
+const { document, loading, error } = useScribeDocumentBySlug(
   "alice.bsky.social",
   "https://alice.bsky.social",
   props.slug
@@ -60,13 +60,13 @@ const { article, uri, loading, error } = useScribeArticleBySlug(
   <div v-if="loading">Loading…</div>
   <div v-else-if="error">{{ error.message }}</div>
   <article v-else>
-    <h1>{{ article!.title }}</h1>
-    <div v-html="article!.content" />
+    <h1>{{ document!.title }}</h1>
+    <div v-html="document!.content" />
   </article>
 </template>
 ```
 
-`useScribeArticle(author, rkey)` fetches by record key instead, for when you already have an `ArticleRef`. Don't pass it a slug.
+`useScribeDocument(author, rkey)` fetches by record key instead, for when you already have a `DocumentRef`. Don't pass it a slug.
 
 Both composables abort the in-flight request automatically when the component is unmounted.
 
@@ -91,7 +91,7 @@ Figures appear once your site serves `/.well-known/site.standard.publication` wi
 All types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from "@skyscribe-sdk/vue";
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from "@skyscribe-sdk/vue";
 ```
 
 ## License

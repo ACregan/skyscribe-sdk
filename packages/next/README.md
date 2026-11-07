@@ -21,62 +21,62 @@ Create a factory once and export its functions from your route files:
 
 ```ts
 // lib/scribe.ts
-import { createScribeSite } from "@skyscribe-sdk/next";
+import { createScribePublication } from "@skyscribe-sdk/next";
 
-export const scribe = createScribeSite("alice.bsky.social", "https://alice.bsky.social");
+export const scribe = createScribePublication("alice.bsky.social", "https://alice.bsky.social");
 ```
 
-### Group index route — `/blog/[groupSlug]`
+### Category route — `/blog/[categorySlug]`
 
 ```ts
-// app/blog/[groupSlug]/page.tsx
+// app/blog/[categorySlug]/page.tsx
 import { scribe } from "@/lib/scribe";
 
-export const generateStaticParams = scribe.generateGroupParams;
-// → [{ groupSlug: "tech" }, { groupSlug: "life" }]
+export const generateStaticParams = scribe.generateCategoryParams;
+// → [{ categorySlug: "tech" }, { categorySlug: "life" }]
 
-export const generateMetadata = ({ params }: { params: { groupSlug: string } }) =>
-  scribe.generateGroupMetadata(params.groupSlug);
+export const generateMetadata = ({ params }: { params: { categorySlug: string } }) =>
+  scribe.generateCategoryMetadata(params.categorySlug);
 
-export default function GroupPage({ params }: { params: { groupSlug: string } }) {
+export default function CategoryPage({ params }: { params: { categorySlug: string } }) {
   // ...
 }
 ```
 
-### Article route — `/blog/[groupSlug]/[articleSlug]`
+### Document route — `/blog/[categorySlug]/[documentSlug]`
 
 ```ts
-// app/blog/[groupSlug]/[articleSlug]/page.tsx
+// app/blog/[categorySlug]/[documentSlug]/page.tsx
 import { scribe } from "@/lib/scribe";
 
-export const generateStaticParams = scribe.generateGroupArticleParams;
-// → [{ groupSlug: "tech", articleSlug: "hello" }, ...]
+export const generateStaticParams = scribe.generateCategoryDocumentParams;
+// → [{ categorySlug: "tech", documentSlug: "hello" }, ...]
 
-export const generateMetadata = ({ params }: { params: { articleSlug: string } }) =>
-  scribe.generateArticleMetadata(params.articleSlug);
+export const generateMetadata = ({ params }: { params: { documentSlug: string } }) =>
+  scribe.generateDocumentMetadata(params.documentSlug);
 
-export default function ArticlePage({ params }: { params: { groupSlug: string; articleSlug: string } }) {
+export default function DocumentPage({ params }: { params: { categorySlug: string; documentSlug: string } }) {
   // ...
 }
 ```
 
-### Flat article route — `/blog/[articleSlug]`
+### Flat Document route — `/blog/[documentSlug]`
 
 ```ts
-// app/blog/[articleSlug]/page.tsx
+// app/blog/[documentSlug]/page.tsx
 import { scribe } from "@/lib/scribe";
 
-export const generateStaticParams = scribe.generateArticleParams;
-// → [{ articleSlug: "hello" }, { articleSlug: "second" }, ...]
+export const generateStaticParams = scribe.generateDocumentParams;
+// → [{ documentSlug: "hello" }, { documentSlug: "second" }, ...]
 ```
 
-### Site index metadata
+### Publication home metadata
 
 ```ts
 // app/blog/page.tsx
 import { scribe } from "@/lib/scribe";
 
-export const generateMetadata = scribe.generateSiteMetadata;
+export const generateMetadata = scribe.generatePublicationMetadata;
 ```
 
 ## Metadata
@@ -85,50 +85,54 @@ The metadata generators are opinionated by design. They produce complete, ready-
 
 | Generator | `title` | `description` | OpenGraph |
 | --------- | ------- | ------------- | --------- |
-| `generateSiteMetadata` | `site.title` | `site.description` | title, description, splash image |
-| `generateGroupMetadata` | `"Group — Site"` | — | title |
-| `generateArticleMetadata` | `"Article — Site"` | `description` | title, description, splash image |
+| `generatePublicationMetadata` | `publication.name` | `publication.description` | title, description, splash image |
+| `generateCategoryMetadata` | `"Category — Publication"` | — | title |
+| `generateDocumentMetadata` | `"Document — Publication"` | `description` | title, description, cover image |
 
-Article metadata uses the cached `ArticleRef` snapshot already present in the site record, plus one request for the article itself to read its SEO Settings: the author's SEO title and description replace the title and description, and noindex sets `robots: { index: false }`. If that request fails, the snapshot alone is used. `articleMetadata` (below) applies the SEO Settings too.
+Document metadata uses the cached `DocumentRef` snapshot already present in the Publication record, plus one request for the Document itself to read its SEO Settings: the author's SEO title and description replace the title and description, and noindex sets `robots: { index: false }`. If that request fails, the snapshot alone is used. `documentMetadata` (below) applies the SEO Settings too.
 
 ### Standalone metadata helpers
 
-Outside the factory pattern, `articleMetadata` and `siteMetadata` are exported as standalone functions that accept an `Article`/`Site` object directly. These are useful when you're already fetching content yourself and just need the `Metadata` object:
+Outside the factory pattern, `documentMetadata` and `publicationMetadata` are exported as standalone functions that accept a `StandardDocument`/`StandardPublication` object directly. These are useful when you're already fetching content yourself and just need the `Metadata` object:
 
 ```ts
-import { articleMetadata, siteMetadata } from "@skyscribe-sdk/next";
-import { fetchArticleBySlug, fetchSite } from "@skyscribe-sdk/core";
+import { documentMetadata, publicationMetadata } from "@skyscribe-sdk/next";
+import { fetchDocumentBySlug, fetchPublication } from "@skyscribe-sdk/core";
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const [{ article }, site] = await Promise.all([
-    fetchArticleBySlug("alice.bsky.social", "https://alice.bsky.social", params.slug),
-    fetchSite("alice.bsky.social", "https://alice.bsky.social"),
+  const [document, publication] = await Promise.all([
+    fetchDocumentBySlug("alice.bsky.social", "https://alice.bsky.social", params.slug),
+    fetchPublication("alice.bsky.social", "https://alice.bsky.social"),
   ]);
-  return articleMetadata(article, site);
+  return documentMetadata(document, publication);
 }
 ```
 
-**Need custom metadata?** Call `fetchSite` or `fetchArticle` from `@skyscribe-sdk/core` directly and compose your own `Metadata` object:
+**Need custom metadata?** Call `fetchPublication` or `fetchDocument` from `@skyscribe-sdk/core` directly and compose your own `Metadata` object:
 
 ```ts
-import { fetchSite } from "@skyscribe-sdk/core";
+import { fetchPublication } from "@skyscribe-sdk/core";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const site = await fetchSite("alice.bsky.social", "https://alice.bsky.social");
+  const publication = await fetchPublication("alice.bsky.social", "https://alice.bsky.social");
   return {
-    title: `${site.title} | My Platform`,
+    title: `${publication.name} | My Platform`,
     // custom fields...
   };
 }
 ```
+
+### site.standard link tags
+
+`Metadata` has no field for the `<link rel="site.standard.publication">` / `site.standard.document` tags Bluesky reads for its Standard.site link card, so render `standardSiteLinks(publication, document)` as `<link>` elements in your page or layout (React 19 moves them into the `<head>`).
 
 ## ISR (Incremental Static Regeneration)
 
 The SDK does not configure Next.js fetch caching. Use Next.js [route segment config](https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config) to control revalidation:
 
 ```ts
-// app/blog/[groupSlug]/[articleSlug]/page.tsx
+// app/blog/[categorySlug]/[documentSlug]/page.tsx
 export const revalidate = 3600; // revalidate every hour
 ```
 
@@ -139,23 +143,23 @@ export const revalidate = 3600; // revalidate every hour
 ```ts
 // pages/blog/[slug].tsx
 import type { GetStaticPaths, GetStaticProps } from "next";
-import { fetchSite, fetchArticleBySlug } from "@skyscribe-sdk/core";
+import { fetchPublication, fetchDocumentBySlug } from "@skyscribe-sdk/core";
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const site = await fetchSite("alice.bsky.social", "https://alice.bsky.social");
-  const paths = site.groups.flatMap((group) =>
-    group.articles.map((article) => ({ params: { slug: article.slug ?? "" } }))
+  const publication = await fetchPublication("alice.bsky.social", "https://alice.bsky.social");
+  const paths = publication.categories.flatMap((category) =>
+    category.documents.map((document) => ({ params: { slug: document.slug ?? "" } }))
   );
   return { paths, fallback: false };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const { article } = await fetchArticleBySlug(
+  const document = await fetchDocumentBySlug(
     "alice.bsky.social",
     "https://alice.bsky.social",
     params!.slug as string
   );
-  return { props: { article } };
+  return { props: { document } };
 };
 ```
 
@@ -164,9 +168,11 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 All types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from "@skyscribe-sdk/next";
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from "@skyscribe-sdk/next";
 ```
 
 ## License
 
 [MIT](https://github.com/ACregan/skyscribe-sdk/blob/main/LICENSE)
+
+Upgrading from 1.x? `createScribeSite` still works, marked `@deprecated`, with its old method names and `{ groupSlug, articleSlug }` params; rename your route folders when you switch to `createScribePublication`. See [Upgrading to 5.0](https://sdk.skyscribe.app/upgrading-to-5).

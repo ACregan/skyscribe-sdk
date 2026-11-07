@@ -1,6 +1,6 @@
 # @skyscribe-sdk/styles
 
-A plain CSS package for rendering SkyScribe article content: no JavaScript, no build step. Every rule is scoped to `.scribe-content`, so nothing leaks into the rest of your page. See the [Styles guide](/frameworks/styles) for set-up in each framework.
+A plain CSS package for rendering SkyScribe Document content: no JavaScript, no build step. Every rule is scoped to `.scribe-content`, so nothing leaks into the rest of your page. See the [Styles guide](/frameworks/styles) for set-up in each framework.
 
 ## Installation
 
@@ -10,25 +10,25 @@ npm install @skyscribe-sdk/styles
 
 ## Usage
 
-Import the stylesheet once, in the route that renders article content:
+Import the stylesheet once, in the route that renders Document content:
 
 ```ts
 import "@skyscribe-sdk/styles";
 ```
 
-Then wrap your article HTML in an element with the `scribe-content` class. The easiest way is the `<ScribeContent>` component from `@skyscribe-sdk/react`, which adds the class automatically:
+Then wrap your Document's HTML in an element with the `scribe-content` class. The easiest way is the `<ScribeContent>` component from `@skyscribe-sdk/react`, which adds the class automatically:
 
 ```tsx
 import { ScribeContent } from "@skyscribe-sdk/react";
 import "@skyscribe-sdk/styles";
 
-<ScribeContent html={article.content} />
+<ScribeContent html={document.content} />
 ```
 
 Without React, add the class to whatever element you render the HTML into:
 
 ```html
-<div class="scribe-content"><!-- article.content --></div>
+<div class="scribe-content"><!-- document.content --></div>
 ```
 
 ---

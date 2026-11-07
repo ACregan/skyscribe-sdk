@@ -25,12 +25,12 @@ export default defineNuxtConfig({
 
 The composables are auto-imported globally — no import statement needed:
 
-### `useScribeSite`
+### `useScribePublication`
 
 ```vue
 <!-- pages/blog/index.vue -->
 <script setup lang="ts">
-const { data: site, pending, error } = await useScribeSite(
+const { data: publication, pending, error } = await useScribePublication(
   "alice.bsky.social",
   "https://alice.bsky.social"
 );
@@ -40,22 +40,22 @@ const { data: site, pending, error } = await useScribeSite(
   <div v-if="pending">Loading…</div>
   <div v-else-if="error">{{ error.message }}</div>
   <ul v-else>
-    <li v-for="group in site!.groups" :key="group.slug">
-      {{ group.title }}
+    <li v-for="group in publication!.categories" :key="group.slug">
+      {{ category.title }}
     </li>
   </ul>
 </template>
 ```
 
-### `useScribeArticleBySlug`
+### `useScribeDocumentBySlug`
 
-Looks the article up by its slug (as in its URL). `data` holds `{ article, uri }`:
+Looks the Document up by its slug (as in its URL). `data` holds the Document; its `uri` is its AT URI:
 
 ```vue
 <!-- pages/blog/[slug].vue -->
 <script setup lang="ts">
 const route = useRoute();
-const { data, pending, error } = await useScribeArticleBySlug(
+const { data: document, pending, error } = await useScribeDocumentBySlug(
   "alice.bsky.social",
   "https://alice.bsky.social",
   route.params.slug as string
@@ -63,14 +63,14 @@ const { data, pending, error } = await useScribeArticleBySlug(
 </script>
 
 <template>
-  <article v-if="data">
-    <h1>{{ data.article.title }}</h1>
-    <div v-html="data.article.content" />
+  <article v-if="document">
+    <h1>{{ document.title }}</h1>
+    <div v-html="document.content" />
   </article>
 </template>
 ```
 
-`useScribeArticle(author, rkey)` fetches by record key instead, for when you already have an `ArticleRef`. Don't pass it a slug.
+`useScribeDocument(author, rkey)` fetches by record key instead, for when you already have a `DocumentRef`. Don't pass it a slug.
 
 The composables return the full `useAsyncData` result shape: `{ data, pending, error, refresh, ... }`.
 
@@ -79,7 +79,7 @@ The composables return the full `useAsyncData` result shape: `{ data, pending, e
 Pass `useAsyncData` options as an optional third argument:
 
 ```ts
-const { data: site, pending } = useScribeSite(
+const { data: publication, pending } = useScribePublication(
   "alice.bsky.social",
   "https://alice.bsky.social",
   { lazy: true }
@@ -101,32 +101,32 @@ export default defineNuxtConfig({
 
 ## Open Graph and Twitter Card meta tags
 
-`articleSeoMeta` and `siteSeoMeta` return a camelCase object shaped for Nuxt's `useSeoMeta()` composable. They produce Open Graph and Twitter Card tags for rich link previews when sharing article URLs on Bluesky and other platforms.
+`documentSeoMeta` and `publicationSeoMeta` return a camelCase object shaped for Nuxt's `useSeoMeta()` composable. They produce Open Graph and Twitter Card tags for rich link previews when sharing Document URLs on Bluesky and other platforms. Add the canonical link and the `site.standard` link tags with `useHead` and `standardSiteLinks` (re-exported).
 
 ```vue
 <!-- pages/blog/[slug].vue -->
 <script setup lang="ts">
-import { articleSeoMeta } from "@skyscribe-sdk/nuxt";
-import { fetchArticleBySlug, fetchSite } from "@skyscribe-sdk/core";
+import { documentSeoMeta } from "@skyscribe-sdk/nuxt";
+import { fetchDocumentBySlug, fetchPublication } from "@skyscribe-sdk/core";
 
 const route = useRoute();
-const [{ article }, site] = await Promise.all([
-  fetchArticleBySlug("alice.bsky.social", "https://alice.bsky.social", route.params.slug as string),
-  fetchSite("alice.bsky.social", "https://alice.bsky.social"),
+const [document, publication] = await Promise.all([
+  fetchDocumentBySlug("alice.bsky.social", "https://alice.bsky.social", route.params.slug as string),
+  fetchPublication("alice.bsky.social", "https://alice.bsky.social"),
 ]);
 
-useSeoMeta(articleSeoMeta(article, site));
+useSeoMeta(documentSeoMeta(document, publication));
 </script>
 ```
 
-If the author gave the article SEO Settings in SkyScribe (`article.seo`), `articleSeoMeta` uses its SEO title and description and adds `robots: "noindex"` when asked.
+If the author gave the Document SEO Settings in SkyScribe (`document.seo`), `documentSeoMeta` uses its SEO title and description and adds `robots: "noindex"` when asked.
 
-`siteSeoMeta` covers index and group pages:
+`publicationSeoMeta` covers the home and Category pages:
 
 ```ts
-import { siteSeoMeta } from "@skyscribe-sdk/nuxt";
+import { publicationSeoMeta } from "@skyscribe-sdk/nuxt";
 
-useSeoMeta(siteSeoMeta(site));
+useSeoMeta(publicationSeoMeta(publication));
 ```
 
 These functions are **not** auto-imported — use an explicit import from `@skyscribe-sdk/nuxt`.
@@ -145,13 +145,13 @@ Figures appear once your site serves `/.well-known/site.standard.publication` wi
 
 ## Auto-imports
 
-The composables are auto-imported: `useScribeSite`, `useScribeArticleBySlug`, `useScribeArticle`, `useScribePublicationUri`, `useScribeDocumentUri` (version 1.3.0 or later; earlier versions didn't ship them) and `useSiteAnalytics` (1.4.0 or later).
+The composables are auto-imported: `useScribePublication`, `useScribeDocumentBySlug`, `useScribeDocument`, `useScribePublicationUri`, `useScribeDocumentUri` (version 1.3.0 or later; earlier versions didn't ship them) and `useSiteAnalytics` (1.4.0 or later).
 
 Utility functions and meta helpers require an explicit import:
 
 ```ts
-import { toSlug, flattenArticles } from "@skyscribe-sdk/core";
-import { articleSeoMeta, siteSeoMeta } from "@skyscribe-sdk/nuxt";
+import { toSlug, flattenDocuments } from "@skyscribe-sdk/core";
+import { documentSeoMeta, publicationSeoMeta } from "@skyscribe-sdk/nuxt";
 ```
 
 ## TypeScript types
@@ -159,9 +159,11 @@ import { articleSeoMeta, siteSeoMeta } from "@skyscribe-sdk/nuxt";
 All types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from "@skyscribe-sdk/nuxt";
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from "@skyscribe-sdk/nuxt";
 ```
 
 ## License
 
 [MIT](https://github.com/ACregan/skyscribe-sdk/blob/main/LICENSE)
+
+Upgrading from 1.x? The old names (`useScribeSite`, `useScribeArticle`, `useScribeArticleBySlug`, `siteSeoMeta`, `articleSeoMeta`) still work and stay auto-imported, marked `@deprecated`. See [Upgrading to 5.0](https://sdk.skyscribe.app/upgrading-to-5).

@@ -1,0 +1,112 @@
+# Upgrading to 5.0
+
+Version 5 renames the API to the names SkyScribe and the [site.standard](https://standard.site) records use: a **Publication** (was Site) holds **Categories** (was Groups), which hold **Documents** (was Articles). The same thing now has the same name in the SDK, in SkyScribe and on the PDS.
+
+<Callout type="warning" title="Upgrade every package together">
+  `@skyscribe-sdk/core` 5 needs `react` 4, `react-router-framework` 3, and `next`, `vue`, `nuxt` and `angular` 2. Older `react-router-framework`, `next` and `angular` versions accept any core version, so a core-only upgrade installs cleanly and then breaks at runtime. `social` and `styles` don't change.
+</Callout>
+
+## The path
+
+1. **Upgrade every `@skyscribe-sdk` package at once.** The old function names still work, marked `@deprecated`, so your editor strikes them through but nothing else changes, apart from the renamed fields below.
+2. **Fix the type errors.** They are all [renamed fields](#fields) on the objects the SDK returns. Every one fails at typecheck, none silently.
+3. **Clear the strikethroughs** using the [tables below](#functions). Where a deprecated name read a route param (`articleSlug`, `groupSlug`), rename the route segment at the same time: see [Route params](#route-params).
+
+The deprecated names are removed in the next major.
+
+## Types
+
+| 4.x | 5.0 |
+| --- | --- |
+| `Site` | `StandardPublication` |
+| `Article` | `StandardDocument` |
+| `SiteGroup` | `Category` |
+| `ArticleRef` | `DocumentRef` |
+| `ArticleContributor` | `DocumentContributor` |
+| `ArticleResult` (`{ article, uri }`) | the `StandardDocument`, which has its own `uri` |
+| `ArticleWithUri` (react-router-framework) | the `StandardDocument`; `documentUri` is now `uri` |
+| `SiteRecord` | removed: use `StandardPublication` |
+
+Only the two record types carry the `Standard` prefix, because a bare `Document` would clash with the browser's global `Document` type.
+
+## Fields
+
+These have no deprecated alias: keeping both would double what every loader sends to the browser.
+
+| 4.x | 5.0 |
+| --- | --- |
+| `site.title` | `publication.name` (the spec's field) |
+| `site.url` | `publication.domain`: still a bare domain, e.g. `norobots.blog` |
+| `site.urlPrefix` | `publication.basePath` |
+| `site.groups` | `publication.categories` |
+| `group.articles` | `category.documents` |
+| `articleRef.splashImageUrl` | `documentRef.coverImageUrl` |
+| `site.ungroupedArticles` | removed (it was always empty) |
+| `article` | `document.uri` is new |
+
+`url` became `domain` rather than keeping its name because the record's own `url` field is a full `https://` URL. If you built links with `` `https://${site.url}` ``, use `buildPublicationUrl(publication)`, or `` `https://${publication.domain}` ``.
+
+## Functions
+
+### `@skyscribe-sdk/core`
+
+| 4.x | 5.0 |
+| --- | --- |
+| `fetchSite` | `fetchPublication` |
+| `fetchArticle` | `fetchDocument` |
+| `fetchArticleBySlug` → `{ article, uri }` | `fetchDocumentBySlug` → the `StandardDocument` |
+| `listSites` / `listArticles` | `listPublications` / `listDocuments` |
+| `flattenArticles(site.groups)` | `flattenDocuments(publication.categories)` |
+| `generateSiteMeta` / `generateArticleMeta` | `generatePublicationMeta` / `generateDocumentMeta` |
+| `generateSiteJsonLd` / `generateArticleJsonLd` | `generatePublicationJsonLd` / `generateDocumentJsonLd` |
+| `buildSiteUrl` | `buildPublicationUrl` |
+
+New: `standardSiteLinks(publication, document?)`. See [Meta tags](/guides/meta-tags#sitestandard-link-tags).
+
+### Adapters
+
+| Package | 4.x | 5.0 |
+| ------- | --- | --- |
+| react | `useSite` → `{ site }` | `usePublication` → `{ publication }` |
+| react | `useArticle` → `{ article }` | `useDocument` → `{ document }` |
+| react | `useArticleBySlug` → `{ article, uri }` | `useDocumentBySlug` → `{ document }` |
+| react-router-framework | `createSiteLoader` | `createPublicationLoader` |
+| react-router-framework | `createArticleRouteLoader` | `createDocumentRouteLoader` |
+| react-router-framework | `siteMeta` / `articleMeta` | `publicationMeta` / `documentMeta` |
+| next | `createScribeSite` | `createScribePublication` |
+| next | `generateGroupParams` / `generateArticleParams` / `generateGroupArticleParams` | `generateCategoryParams` / `generateDocumentParams` / `generateCategoryDocumentParams` |
+| next | `generateSiteMetadata` / `generateGroupMetadata` / `generateArticleMetadata` | `generatePublicationMetadata` / `generateCategoryMetadata` / `generateDocumentMetadata` |
+| next | `siteMetadata` / `articleMetadata` | `publicationMetadata` / `documentMetadata` |
+| vue, nuxt | `useScribeSite` / `useScribeArticle` / `useScribeArticleBySlug` | `useScribePublication` / `useScribeDocument` / `useScribeDocumentBySlug` |
+| nuxt | `siteSeoMeta` / `articleSeoMeta` | `publicationSeoMeta` / `documentSeoMeta` |
+| angular | `injectSite` / `injectArticle` / `injectArticleBySlug` | `injectPublication` / `injectDocument` / `injectDocumentBySlug` |
+| angular | `ScribeService.getSite` / `getArticle` / `getArticleBySlug` | `getPublication` / `getDocument` / `getDocumentBySlug` |
+
+The deprecated names keep their old result keys (`site`, `article`, `uri`) and their old data shapes, so step 1 changes nothing in your components. The new names return `publication` and `document`, and a Document's AT URI is `document.uri`. The "Scribe" in names like `useScribePublication` stays: it means the helper understands SkyScribe's `scribe` extension to the records.
+
+`useScribeDocumentUri`, `injectDocumentUri`, `getDocumentUri`, `useScribePublicationUri` and the other `…Uri` helpers keep their names. So do `ScribeContent`, `SiteAnalytics` and everything else for Site Analytics, which is named after the SkyScribe feature.
+
+## Route params
+
+Two adapters read your route params by name. Their new versions use the new names:
+
+| Package | Deprecated name reads | New name reads |
+| ------- | --------------------- | -------------- |
+| react-router-framework | `createArticleRouteLoader`: `params.articleSlug` | `createDocumentRouteLoader`: `params.documentSlug` |
+| next | `createScribeSite().generate*Params` return `{ groupSlug, articleSlug }` | `createScribePublication().generate*Params` return `{ categorySlug, documentSlug }` |
+
+A wrong name fails when the page loads ("Missing route param") or at `next build`, not at typecheck, so switch the function and rename the route segment in the same change:
+
+```ts
+// app/routes.ts (React Router)
+route(":categorySlug/:documentSlug", "routes/document.tsx"),
+
+// routes/document.tsx
+export const loader = createDocumentRouteLoader(AUTHOR, PUBLICATION_URL);
+```
+
+In Next.js, rename the folders: `app/[groupSlug]/[articleSlug]` becomes `app/[categorySlug]/[documentSlug]`. To keep your existing segment names instead, pass them: `createDocumentRouteLoader(AUTHOR, PUBLICATION_URL, "articleSlug")`.
+
+## New in 5.0: the site.standard link tags
+
+`generatePublicationMeta`, `generateDocumentMeta` and the adapters built on them (`publicationMeta`, `documentMeta`) now add `<link rel="site.standard.publication">` to every page, and `<link rel="site.standard.document">` to Document pages. Bluesky reads them to show a richer link card when someone shares your page. If you use these helpers, you get them by upgrading. Otherwise, see [Meta tags](/guides/meta-tags#sitestandard-link-tags).

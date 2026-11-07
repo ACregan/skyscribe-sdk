@@ -6,12 +6,12 @@ For **SvelteKit**, **Astro**, **Remix**, or any other framework that loads data 
 
 ```ts
 // src/routes/blog/+page.server.ts
-import { fetchSite } from '@skyscribe-sdk/core';
+import { fetchPublication } from '@skyscribe-sdk/core';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ request }) => {
-  const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal);
-  return { site };
+  const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social', request.signal);
+  return { publication };
 };
 ```
 
@@ -22,36 +22,36 @@ export const load: PageServerLoad = async ({ request }) => {
   export let data: PageData;
 </script>
 
-<h1>{data.site.title}</h1>
-{#each data.site.groups as group}
+<h1>{data.publication.name}</h1>
+{#each data.publication.categories as category}
   <section>
-    <h2>{group.title}</h2>
+    <h2>{category.title}</h2>
     <ul>
-      {#each group.articles as article}
-        <li><a href="/blog/{group.slug}/{article.slug}">{article.title}</a></li>
+      {#each category.documents as ref}
+        <li><a href="/blog/{category.slug}/{ref.slug}">{ref.title}</a></li>
       {/each}
     </ul>
   </section>
 {/each}
 ```
 
-For article pages, look the article up by the slug in `params`:
+For Document pages, look the Document up by the slug in `params`:
 
 ```ts
-// src/routes/blog/[group]/[slug]/+page.server.ts
+// src/routes/blog/[category]/[slug]/+page.server.ts
 import { error } from '@sveltejs/kit';
-import { fetchArticleBySlug, NotFoundError } from '@skyscribe-sdk/core';
+import { fetchDocumentBySlug, NotFoundError } from '@skyscribe-sdk/core';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, request }) => {
   try {
-    const { article } = await fetchArticleBySlug(
+    const document = await fetchDocumentBySlug(
       'alice.bsky.social',
       'https://alice.bsky.social',
       params.slug,
       request.signal,
     );
-    return { article };
+    return { document };
   } catch (err) {
     if (err instanceof NotFoundError) error(404, 'Not found');
     throw err;
@@ -64,36 +64,36 @@ export const load: PageServerLoad = async ({ params, request }) => {
 ```astro
 ---
 // src/pages/blog/index.astro
-import { fetchSite } from '@skyscribe-sdk/core';
+import { fetchPublication } from '@skyscribe-sdk/core';
 
-const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
+const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
 ---
 
-<h1>{site.title}</h1>
-{site.groups.map((group) => (
+<h1>{publication.name}</h1>
+{publication.categories.map((category) => (
   <section>
-    <h2>{group.title}</h2>
+    <h2>{category.title}</h2>
     <ul>
-      {group.articles.map((article) => (
-        <li><a href={`/blog/${group.slug}/${article.slug}`}>{article.title}</a></li>
+      {category.documents.map((ref) => (
+        <li><a href={`/blog/${category.slug}/${ref.slug}`}>{ref.title}</a></li>
       ))}
     </ul>
   </section>
 ))}
 ```
 
-For static article pages, `getStaticPaths` already has each article's `ArticleRef`, so pass its location along and fetch the article directly. Take the account from the ref's AT URI rather than assuming the site owner's: an article credited to a contributor can live in their account.
+For static Document pages, `getStaticPaths` already has each Document's `DocumentRef`, so pass its location along and fetch the Document directly. Take the account from the ref's AT URI rather than assuming the Publication owner's: a Document credited to a contributor can live in their account.
 
 ```astro
 ---
-// src/pages/blog/[group]/[slug].astro
-import { fetchSite, fetchArticle, slugFromUri } from '@skyscribe-sdk/core';
+// src/pages/blog/[category]/[slug].astro
+import { fetchPublication, fetchDocument, slugFromUri } from '@skyscribe-sdk/core';
 
 export async function getStaticPaths() {
-  const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
-  return site.groups.flatMap((group) =>
-    group.articles.map((ref) => ({
-      params: { group: group.slug, slug: ref.slug },
+  const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
+  return publication.categories.flatMap((category) =>
+    category.documents.map((ref) => ({
+      params: { category: category.slug, slug: ref.slug },
       // at://{did}/site.standard.document/{rkey}
       props: { did: ref.uri.split('/')[2], rkey: slugFromUri(ref.uri) },
     }))
@@ -101,16 +101,16 @@ export async function getStaticPaths() {
 }
 
 const { did, rkey } = Astro.props;
-const article = await fetchArticle(did, rkey);
+const document = await fetchDocument(did, rkey);
 ---
 
 <article>
-  <h1>{article.title}</h1>
-  <div class="scribe-content" set:html={article.content} />
+  <h1>{document.title}</h1>
+  <div class="scribe-content" set:html={document.content} />
 </article>
 ```
 
-If you render articles from accounts you don't control, sanitise `content` first (see [Rendering the HTML](/quickstart#3-fetch-an-article)).
+If you render Documents from accounts you don't control, sanitise `content` first (see [Rendering the HTML](/quickstart#3-fetch-a-document)).
 
 ## Site Analytics
 
@@ -123,4 +123,4 @@ import { siteAnalyticsScriptTag, loadSiteAnalytics } from '@skyscribe-sdk/core';
 // or call loadSiteAnalytics() from a script that runs in the browser.
 ```
 
-Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+Figures only appear once your website serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.

@@ -1,6 +1,6 @@
 # Next.js
 
-`@skyscribe-sdk/next` is for the **Next.js 13+ App Router**. Its `createScribeSite` factory gives you ready-made `generateStaticParams` and `generateMetadata` implementations, and `articleMetadata` / `siteMetadata` build complete Open Graph metadata from fetched data. You fetch the content itself with `@skyscribe-sdk/core`, which the package installs for you.
+`@skyscribe-sdk/next` is for the **Next.js 13+ App Router**. Its `createScribePublication` factory gives you ready-made `generateStaticParams` and `generateMetadata` implementations, and `documentMetadata` / `publicationMetadata` build complete Open Graph metadata from fetched data. You fetch the content itself with `@skyscribe-sdk/core`, which the package installs for you.
 
 ## Install
 
@@ -10,44 +10,44 @@ npm install @skyscribe-sdk/next
 
 ## Setup
 
-Call `createScribeSite` once per site, outside your components:
+Call `createScribePublication` once per Publication, outside your components:
 
 ```ts
 // lib/scribe.ts
-import { createScribeSite } from '@skyscribe-sdk/next';
+import { createScribePublication } from '@skyscribe-sdk/next';
 
 export const AUTHOR = 'alice.bsky.social';
-export const SITE_URL = 'https://alice.bsky.social';
+export const PUBLICATION_URL = 'https://alice.bsky.social';
 
-export const scribe = createScribeSite(AUTHOR, SITE_URL);
+export const scribe = createScribePublication(AUTHOR, PUBLICATION_URL);
 ```
 
 <Callout type="note" title="Route param names">
-  The generated params are named `groupSlug` and `articleSlug`, so your folders must be `[groupSlug]` and `[articleSlug]`. The examples use Next.js 15, where `params` is a Promise. On Next.js 13 and 14 it's a plain object; `await` works on both.
+  The generated params are named `categorySlug` and `documentSlug`, so your folders must be `[categorySlug]` and `[documentSlug]`. The examples use Next.js 15, where `params` is a Promise. On Next.js 13 and 14 it's a plain object; `await` works on both.
 </Callout>
 
-## Site index page
+## Publication home page
 
 ```tsx
 // app/blog/page.tsx
-import { fetchSite } from '@skyscribe-sdk/core';
-import { scribe, AUTHOR, SITE_URL } from '@/lib/scribe';
+import { fetchPublication } from '@skyscribe-sdk/core';
+import { scribe, AUTHOR, PUBLICATION_URL } from '@/lib/scribe';
 
-export const generateMetadata = scribe.generateSiteMetadata;
+export const generateMetadata = scribe.generatePublicationMetadata;
 
 export default async function BlogPage() {
-  const site = await fetchSite(AUTHOR, SITE_URL);
+  const publication = await fetchPublication(AUTHOR, PUBLICATION_URL);
 
   return (
     <main>
-      <h1>{site.title}</h1>
-      {site.groups.map((group) => (
-        <section key={group.slug}>
-          <h2>{group.title}</h2>
+      <h1>{publication.name}</h1>
+      {publication.categories.map((category) => (
+        <section key={category.slug}>
+          <h2>{category.title}</h2>
           <ul>
-            {group.articles.map((article) => (
-              <li key={article.uri}>
-                <a href={`/blog/${group.slug}/${article.slug}`}>{article.title}</a>
+            {category.documents.map((ref) => (
+              <li key={ref.uri}>
+                <a href={`/blog/${category.slug}/${ref.slug}`}>{ref.title}</a>
               </li>
             ))}
           </ul>
@@ -58,36 +58,36 @@ export default async function BlogPage() {
 }
 ```
 
-## Group page
+## Category page
 
 ```tsx
-// app/blog/[groupSlug]/page.tsx
+// app/blog/[categorySlug]/page.tsx
 import { notFound } from 'next/navigation';
-import { fetchSite } from '@skyscribe-sdk/core';
-import { scribe, AUTHOR, SITE_URL } from '@/lib/scribe';
+import { fetchPublication } from '@skyscribe-sdk/core';
+import { scribe, AUTHOR, PUBLICATION_URL } from '@/lib/scribe';
 
-type Props = { params: Promise<{ groupSlug: string }> };
+type Props = { params: Promise<{ categorySlug: string }> };
 
-export const generateStaticParams = scribe.generateGroupParams;
+export const generateStaticParams = scribe.generateCategoryParams;
 
 export async function generateMetadata({ params }: Props) {
-  const { groupSlug } = await params;
-  return scribe.generateGroupMetadata(groupSlug);
+  const { categorySlug } = await params;
+  return scribe.generateCategoryMetadata(categorySlug);
 }
 
-export default async function GroupPage({ params }: Props) {
-  const { groupSlug } = await params;
-  const site = await fetchSite(AUTHOR, SITE_URL);
-  const group = site.groups.find((g) => g.slug === groupSlug);
-  if (!group) notFound();
+export default async function CategoryPage({ params }: Props) {
+  const { categorySlug } = await params;
+  const publication = await fetchPublication(AUTHOR, PUBLICATION_URL);
+  const category = publication.categories.find((c) => c.slug === categorySlug);
+  if (!category) notFound();
 
   return (
     <section>
-      <h1>{group.title}</h1>
+      <h1>{category.title}</h1>
       <ul>
-        {group.articles.map((article) => (
-          <li key={article.uri}>
-            <a href={`/blog/${group.slug}/${article.slug}`}>{article.title}</a>
+        {category.documents.map((ref) => (
+          <li key={ref.uri}>
+            <a href={`/blog/${category.slug}/${ref.slug}`}>{ref.title}</a>
           </li>
         ))}
       </ul>
@@ -96,69 +96,79 @@ export default async function GroupPage({ params }: Props) {
 }
 ```
 
-## Article page
+## Document page
 
 ```tsx
-// app/blog/[groupSlug]/[articleSlug]/page.tsx
-import { fetchArticleBySlug } from '@skyscribe-sdk/core';
-import { scribe, AUTHOR, SITE_URL } from '@/lib/scribe';
+// app/blog/[categorySlug]/[documentSlug]/page.tsx
+import { fetchDocumentBySlug } from '@skyscribe-sdk/core';
+import { scribe, AUTHOR, PUBLICATION_URL } from '@/lib/scribe';
 
-type Props = { params: Promise<{ groupSlug: string; articleSlug: string }> };
+type Props = { params: Promise<{ categorySlug: string; documentSlug: string }> };
 
-export const generateStaticParams = scribe.generateGroupArticleParams;
+export const generateStaticParams = scribe.generateCategoryDocumentParams;
 
 export async function generateMetadata({ params }: Props) {
-  const { articleSlug } = await params;
-  return scribe.generateArticleMetadata(articleSlug);
+  const { documentSlug } = await params;
+  return scribe.generateDocumentMetadata(documentSlug);
 }
 
-export default async function ArticlePage({ params }: Props) {
-  const { articleSlug } = await params;
-  const { article } = await fetchArticleBySlug(AUTHOR, SITE_URL, articleSlug);
+export default async function DocumentPage({ params }: Props) {
+  const { documentSlug } = await params;
+  const document = await fetchDocumentBySlug(AUTHOR, PUBLICATION_URL, documentSlug);
 
   return (
     <article>
-      <h1>{article.title}</h1>
-      {article.description && <p>{article.description}</p>}
-      <div className="scribe-content" dangerouslySetInnerHTML={{ __html: article.content }} />
+      <h1>{document.title}</h1>
+      {document.description && <p>{document.description}</p>}
+      <div className="scribe-content" dangerouslySetInnerHTML={{ __html: document.content }} />
     </article>
   );
 }
 ```
 
-If you render articles from accounts you don't control, sanitise `content` first (see [Rendering the HTML](/quickstart#3-fetch-an-article)).
+If you render Documents from accounts you don't control, sanitise `content` first (see [Rendering the HTML](/quickstart#3-fetch-a-document)).
 
 ## Richer metadata
 
-The factory's `generate*Metadata` functions work from the Site record alone: title, description and the splash image. For canonical URLs, `og:type`, Twitter Cards and the article's cover image, fetch the article and use `articleMetadata`:
+The factory's `generate*Metadata` functions work from the Publication record alone: title, description and the image. For canonical URLs, `og:type`, Twitter Cards and the Document's own cover image, fetch the Document and use `documentMetadata`:
 
 ```ts
-import { fetchArticleBySlug, fetchSite } from '@skyscribe-sdk/core';
-import { articleMetadata } from '@skyscribe-sdk/next';
+import { fetchDocumentBySlug, fetchPublication } from '@skyscribe-sdk/core';
+import { documentMetadata } from '@skyscribe-sdk/next';
 
 export async function generateMetadata({ params }: Props) {
-  const { articleSlug } = await params;
-  const [{ article }, site] = await Promise.all([
-    fetchArticleBySlug(AUTHOR, SITE_URL, articleSlug),
-    fetchSite(AUTHOR, SITE_URL),
+  const { documentSlug } = await params;
+  const [document, publication] = await Promise.all([
+    fetchDocumentBySlug(AUTHOR, PUBLICATION_URL, documentSlug),
+    fetchPublication(AUTHOR, PUBLICATION_URL),
   ]);
-  const base = articleMetadata(article, site);
-  return { ...base, title: `${article.title} | My Blog` };
+  const base = documentMetadata(document, publication);
+  return { ...base, title: `${document.title} | My Blog` };
 }
 ```
 
-`siteMetadata(site)` does the same for site-level pages.
+`publicationMetadata(publication)` does the same for the home and Category pages.
+
+`Metadata` has no field for the [site.standard link tags](/guides/meta-tags#sitestandard-link-tags), so render them in the page or a layout. React 19 (Next.js 15) moves them into the `<head>`:
+
+```tsx
+import { standardSiteLinks } from '@skyscribe-sdk/next';
+
+{standardSiteLinks(publication, document).map(({ rel, href }) => (
+  <link key={rel} rel={rel} href={href} />
+))}
+```
 
 ## Publication verification route
 
-The [`site.standard` spec](https://standard.site/docs/verification/) lets apps confirm that a website belongs to a Publication by requesting `/.well-known/site.standard.publication`. `createWellKnownHandler` returns a route handler that serves the Publication's AT URI there. Add it even if you don't use [Site Analytics](/guides/site-analytics): readers and aggregators that show `site.standard` content check it, and Site Analytics only shows figures once it names your Publication. A SkyScribe Publication's URL is a bare domain, so the file is always at the root, even when your articles live under a path prefix.
+The [`site.standard` spec](https://standard.site/docs/verification/) lets apps confirm that a website belongs to a Publication by requesting `/.well-known/site.standard.publication`. `createWellKnownHandler` returns a route handler that serves the Publication's AT URI there. Add it even if you don't use [Site Analytics](/guides/site-analytics): readers and aggregators that show `site.standard` content check it, and Site Analytics only shows figures once it names your Publication. A SkyScribe Publication's URL is a bare domain, so the file is always at the root, even when your Documents live under a base path.
 
 ```ts
 // app/.well-known/site.standard.publication/route.ts
 import { createWellKnownHandler } from '@skyscribe-sdk/next';
-import { AUTHOR, SITE_URL } from '@/lib/scribe';
+import { AUTHOR, PUBLICATION_URL } from '@/lib/scribe';
 
-export const GET = createWellKnownHandler(AUTHOR, SITE_URL);
+export const GET = createWellKnownHandler(AUTHOR, PUBLICATION_URL);
 ```
 
 ## ISR (Incremental Static Regeneration)
@@ -182,12 +192,12 @@ import { SiteAnalytics } from '@skyscribe-sdk/react';
 <SiteAnalytics />
 ```
 
-Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+Figures only appear once your website serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
 
 ## TypeScript types
 
 The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from '@skyscribe-sdk/next';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/next';
 ```

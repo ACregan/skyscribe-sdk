@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@skyscribe-sdk/social)](https://www.npmjs.com/package/@skyscribe-sdk/social)
 [![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/ACregan/skyscribe-sdk/blob/main/LICENSE)
 
-React components for adding social interactions — likes, shares, and follows — to [SkyScribe](https://skyscribe.app) articles. Works with any React-based framework (React Router, Next.js, etc.).
+React components for adding social interactions — likes, shares, and follows — to [SkyScribe](https://skyscribe.app) Documents. Works with any React-based framework (React Router, Next.js, etc.).
 
 Interactions are powered by the AT Protocol via `social.skyscribe.app`. When a user clicks a button, a popup opens for them to sign in with their Bluesky account. The result is written to their AT Protocol repository and reported back to the originating page. A button only works on its own Publication's website (the Publication's `url`, or a SkyScribe Site showing it). `SubscribeButton` is the **Follow** button.
 
@@ -19,7 +19,7 @@ Requires React 18 or later as a peer dependency.
 
 ### `LikeButton`
 
-Creates an AT Protocol `app.bsky.feed.like` record ("recommend") for an article when clicked.
+Creates an AT Protocol `app.bsky.feed.like` record ("recommend") for a Document when clicked.
 
 ```tsx
 import { LikeButton } from "@skyscribe-sdk/social";
@@ -35,7 +35,7 @@ import { LikeButton } from "@skyscribe-sdk/social";
 | ---- | ---- | -------- | ----------- |
 | `documentUri` | `string` | ✓ | AT URI of the `site.standard.document` record |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
-| `title` | `string` | ✓ | Article title — shown in the like popup |
+| `title` | `string` | ✓ | The Document's title — shown in the like popup |
 | `serviceUrl` | `string` | — | Override the social service URL. Defaults to `https://social.skyscribe.app` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-like-button` class |
 | `children` | `ReactNode \| ((isLiked: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Like"` / `"Liked ✓"` |
@@ -56,13 +56,13 @@ Or pass a **static node** to replace the label entirely:
 
 ```tsx
 <LikeButton documentUri={documentUri} publicationUri={publicationUri} title={title}>
-  ♥ Recommend this article
+  ♥ Recommend this document
 </LikeButton>
 ```
 
 ### `ShareButton`
 
-Opens a popup for the user to share the article via their Bluesky account.
+Opens a popup for the user to share the Document via their Bluesky account.
 
 ```tsx
 import { ShareButton } from "@skyscribe-sdk/social";
@@ -78,8 +78,8 @@ import { ShareButton } from "@skyscribe-sdk/social";
 | ---- | ---- | -------- | ----------- |
 | `documentUri` | `string` | ✓ | AT URI of the `site.standard.document` record |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
-| `title` | `string` | ✓ | Article title — shown in the share popup |
-| `canonicalUrl` | `string` | — | Canonical URL of the article. Defaults to `window.location.href` |
+| `title` | `string` | ✓ | The Document's title — shown in the share popup |
+| `canonicalUrl` | `string` | — | Canonical URL of the Document. Defaults to `window.location.href` |
 | `serviceUrl` | `string` | — | Override the social service URL. Defaults to `https://social.skyscribe.app` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-share-button` class |
 | `children` | `ReactNode \| ((isShared: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Share"` / `"Shared ✓"` |
@@ -90,7 +90,7 @@ import { ShareButton } from "@skyscribe-sdk/social";
 
 ```tsx
 <ShareButton documentUri={documentUri} publicationUri={publicationUri} title={title}>
-  {(isShared) => (isShared ? "Thanks for sharing! ✓" : "Share this article")}
+  {(isShared) => (isShared ? "Thanks for sharing! ✓" : "Share this document")}
 </ShareButton>
 ```
 
@@ -123,7 +123,7 @@ import { SubscribeButton } from "@skyscribe-sdk/social";
 
 ```tsx
 <SubscribeButton publicationUri={publicationUri} title={title}>
-  {(isSubscribed) => (isSubscribed ? "Following ✓" : "Follow this site")}
+  {(isSubscribed) => (isSubscribed ? "Following ✓" : "Follow this publication")}
 </SubscribeButton>
 ```
 
@@ -135,7 +135,7 @@ All three buttons accept an `onSuccess` callback fired after the action complete
 <LikeButton
   documentUri={documentUri}
   publicationUri={publicationUri}
-  title={article.title}
+  title={document.title}
   onSuccess={() => toast("Thanks for the like!")}
 />
 
@@ -163,7 +163,7 @@ export async function loader({ request, params }) {
 <LikeButton
   documentUri={documentUri}
   publicationUri={publicationUri}
-  title={article.title}
+  title={document.title}
   defaultLiked={defaultLiked}
 />
 ```
@@ -185,18 +185,18 @@ When `defaultLiked` / `defaultSubscribed` is provided, the component uses it as 
 
 ## Getting the AT URIs
 
-Use `fetchArticleBySlug` and `fetchSite` from `@skyscribe-sdk/core` to obtain the URIs needed by the components:
+Use `fetchDocumentBySlug` and `fetchPublication` from `@skyscribe-sdk/core` to obtain the URIs needed by the components:
 
 ```ts
-import { fetchArticleBySlug, fetchSite } from "@skyscribe-sdk/core";
+import { fetchDocumentBySlug, fetchPublication } from "@skyscribe-sdk/core";
 
-const [{ uri: documentUri }, site] = await Promise.all([
-  fetchArticleBySlug(author, siteUrl, articleSlug, signal),
-  fetchSite(author, siteUrl, signal),
+const [{ uri: documentUri }, publication] = await Promise.all([
+  fetchDocumentBySlug(author, publicationUrl, documentSlug, signal),
+  fetchPublication(author, publicationUrl, signal),
 ]);
 
 // documentUri → LikeButton, ShareButton
-// site.uri    → LikeButton, ShareButton, SubscribeButton
+// publication.uri    → LikeButton, ShareButton, SubscribeButton
 ```
 
 ## Storage utilities

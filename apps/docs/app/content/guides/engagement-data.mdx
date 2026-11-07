@@ -1,6 +1,6 @@
 # Engagement data
 
-The Social service has a `GET /counts` endpoint that returns totals for likes, shares and subscribes, for any Site or article. Use it to show live numbers alongside your content.
+The Social service has a `GET /counts` endpoint that returns totals for likes, shares and subscribes, for any Publication or Document. Use it to show live numbers alongside your content.
 
 <Callout>
   This endpoint is separate from the `@skyscribe-sdk/social` React components. The components handle signing readers in and recording their action; `GET /counts` only reads totals, and needs no authentication.
@@ -19,8 +19,8 @@ No API key or token is needed. It answers browser requests from any website (see
 | Param | Required | Description |
 |-------|----------|-------------|
 | `action_type` | yes | `recommend`, `subscribe`, or `share` |
-| `publication_uri` | no | Only count actions on this Site: the AT URI of its `site.standard.publication` record |
-| `document_uri` | no | Only count actions on this article: the AT URI of its `site.standard.document` record |
+| `publication_uri` | no | Only count actions on this Publication: the AT URI of its `site.standard.publication` record |
+| `document_uri` | no | Only count actions on this Document: the AT URI of its `site.standard.document` record |
 | `origin` | no | Only count actions made from this website, e.g. `https://norobots.blog` |
 | `from` | no | Start of the window: ISO 8601, a Unix timestamp in seconds, or relative (`-7d`) |
 | `to` | no | End of the window, in the same formats. Defaults to now |
@@ -34,7 +34,7 @@ No API key or token is needed. It answers browser requests from any website (see
 
 ## Basic usage
 
-Fetch the total number of likes for an article:
+Fetch the total number of likes for a Document:
 
 ```ts
 const res = await fetch(
@@ -88,7 +88,7 @@ const delta = thisWeek.count - lastWeek.count;
 
 ## Grouped results
 
-Add `group_by` to break the count down by article, reader or day. The response then has a `groups` array as well as the `total`:
+Add `group_by` to break the count down by Document, reader or day. The response then has a `groups` array as well as the `total`:
 
 ```json
 {
@@ -100,7 +100,7 @@ Add `group_by` to break the count down by article, reader or day. The response t
 }
 ```
 
-**Most shared articles in the past 30 days:**
+**Most shared Documents in the past 30 days:**
 
 ```ts
 const res = await fetch(
@@ -121,25 +121,25 @@ const { groups } = await res.json();
 
 ## Fetching counts in your loader
 
-For SSR frameworks, fetch counts in your route loader alongside the article to avoid client-side waterfalls:
+For SSR frameworks, fetch counts in your route loader alongside the Document to avoid client-side waterfalls:
 
 ```ts
 // app/routes/blog.$slug.tsx (React Router v7/v8)
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { article, uri: documentUri } = await fetchArticleBySlug(
+  const document = await fetchDocumentBySlug(
     'alice.bsky.social',
     'https://alice.bsky.social',
     params.slug,
     request.signal,
   );
   const likeCount = await fetch(
-    `https://social.skyscribe.app/counts?action_type=recommend&document_uri=${encodeURIComponent(documentUri)}`
+    `https://social.skyscribe.app/counts?action_type=recommend&document_uri=${encodeURIComponent(document.uri)}`
   ).then((r) => r.json()).then((d) => d.count as number).catch(() => null);
-  return { article, likeCount };
+  return { document, likeCount };
 }
 ```
 
-The `.catch(() => null)` means a Social service outage can't break your article page.
+The `.catch(() => null)` means a Social service outage can't break your Document page.
 
 ## CORS
 
@@ -151,16 +151,16 @@ The endpoint allows **60 requests per minute per IP address**. Beyond that you g
 
 ## Getting the AT URIs
 
-The AT URIs for `publication_uri` and `document_uri` come from your Site and article data:
+The AT URIs for `publication_uri` and `document_uri` come from your Publication and Document:
 
 ```ts
-import { fetchSite, fetchArticleBySlug } from '@skyscribe-sdk/core';
+import { fetchPublication, fetchDocumentBySlug } from '@skyscribe-sdk/core';
 
-const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
-// site.uri → publication_uri
+const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
+// publication.uri → publication_uri
 
-const { article, uri: documentUri } = await fetchArticleBySlug('alice.bsky.social', 'https://alice.bsky.social', slug);
-// documentUri → document_uri
+const document = await fetchDocumentBySlug('alice.bsky.social', 'https://alice.bsky.social', slug);
+// document.uri → document_uri
 ```
 
 See [Concepts](/concepts) for more on AT URIs.

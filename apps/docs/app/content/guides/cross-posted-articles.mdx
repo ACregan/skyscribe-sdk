@@ -1,6 +1,6 @@
-# Cross-posted articles
+# Cross-posted documents
 
-When an author shares an article to Bluesky from SkyScribe, the `Article` returned by `@skyscribe-sdk/core` includes a `bskyPostRef` field. Use it to link to the Bluesky post, so readers can continue the conversation there.
+When an author shares a Document to Bluesky from SkyScribe, the `StandardDocument` returned by `@skyscribe-sdk/core` includes a `bskyPostRef` field. Use it to link to the Bluesky post, so readers can continue the conversation there.
 
 ## The `bskyPostRef` field
 
@@ -14,7 +14,7 @@ interface Article {
 }
 ```
 
-`bskyPostRef` is only present on articles the author has shared to Bluesky (see [Sharing](https://skyscribe.app/users-guide/authoring/sharing) in the SkyScribe User Guide), so always check for it before using it.
+`bskyPostRef` is only present on Documents the author has shared to Bluesky (see [Sharing](https://skyscribe.app/users-guide/authoring/sharing) in the SkyScribe User Guide), so always check for it before using it.
 
 ## Constructing the Bluesky post URL
 
@@ -41,12 +41,12 @@ function bskyPostUrl(atUri: string): string {
 
 ## Rendering a "View discussion" link
 
-Check for `bskyPostRef` before rendering. If it's absent, the article wasn't shared and there's no post to link to.
+Check for `bskyPostRef` before rendering. If it's absent, the Document wasn't shared and there's no post to link to.
 
 ```tsx
-// In your article component, using bskyPostUrl from above:
-{article.bskyPostRef && (
-  <a href={bskyPostUrl(article.bskyPostRef.uri)} target="_blank" rel="noopener noreferrer">
+// In your document component, using bskyPostUrl from above:
+{document.bskyPostRef && (
+  <a href={bskyPostUrl(document.bskyPostRef.uri)} target="_blank" rel="noopener noreferrer">
     View discussion on Bluesky
   </a>
 )}
@@ -60,7 +60,7 @@ Check for `bskyPostRef` before rendering. If it's absent, the article wasn't sha
 
 Everything above is about *reading* an existing `bskyPostRef`, which is all a website that displays content needs. If you're building your own publishing tool instead of using SkyScribe's **Share to Bluesky**, `@skyscribe-sdk/core` exports `crossPostToBluesky` for creating the post.
 
-It needs an authenticated AT Protocol agent for the author's own account: it's the one write operation in an otherwise read-only SDK. The URIs and CIDs are the strong references your tool got back when it wrote or read the document and publication records (the SDK's `Article` and `Site` types don't carry CIDs).
+It needs an authenticated AT Protocol agent for the author's own account: it's the one write operation in an otherwise read-only SDK. The URIs and CIDs are the strong references your tool got back when it wrote or read the document and publication records (the SDK's `StandardDocument` and `StandardPublication` types don't carry CIDs).
 
 ```ts
 import { crossPostToBluesky, buildCanonicalUrl } from '@skyscribe-sdk/core';
@@ -71,10 +71,10 @@ const ref = await crossPostToBluesky(agent, {
   documentCid,
   publicationUri,
   publicationCid,
-  canonicalUrl: buildCanonicalUrl(article, site),
-  title: article.title,
-  text: `New post: ${article.title}`,
-  description: article.description,
+  canonicalUrl: buildCanonicalUrl(document, publication),
+  title: document.title,
+  text: `New post: ${document.title}`,
+  description: document.description,
 });
 
 // ref → { uri: "at://did:plc:.../app.bsky.feed.post/3mp...", cid: "..." }

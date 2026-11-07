@@ -17,14 +17,14 @@ export default defineNuxtConfig({
 });
 ```
 
-That's it: `useScribeSite`, `useScribeArticleBySlug`, `useScribeArticle`, `useScribePublicationUri` and `useScribeDocumentUri` are now available in any component or page without importing them.
+That's it: `useScribePublication`, `useScribeDocumentBySlug`, `useScribeDocument`, `useScribePublicationUri` and `useScribeDocumentUri` are now available in any component or page without importing them.
 
-## `useScribeSite`
+## `useScribePublication`
 
 ```vue
 <!-- pages/blog/index.vue -->
 <script setup lang="ts">
-const { data: site, pending, error } = await useScribeSite(
+const { data: publication, pending, error } = await useScribePublication(
   'alice.bsky.social',
   'https://alice.bsky.social'
 );
@@ -33,13 +33,13 @@ const { data: site, pending, error } = await useScribeSite(
 <template>
   <p v-if="pending">Loading…</p>
   <p v-else-if="error">Error: {{ error.message }}</p>
-  <main v-else-if="site">
-    <h1>{{ site.title }}</h1>
-    <section v-for="group in site.groups" :key="group.slug">
-      <h2>{{ group.title }}</h2>
+  <main v-else-if="publication">
+    <h1>{{ publication.name }}</h1>
+    <section v-for="category in publication.categories" :key="category.slug">
+      <h2>{{ category.title }}</h2>
       <ul>
-        <li v-for="article in group.articles" :key="article.uri">
-          <NuxtLink :to="`/blog/${group.slug}/${article.slug}`">{{ article.title }}</NuxtLink>
+        <li v-for="ref in category.documents" :key="ref.uri">
+          <NuxtLink :to="`/blog/${category.slug}/${ref.slug}`">{{ ref.title }}</NuxtLink>
         </li>
       </ul>
     </section>
@@ -47,46 +47,45 @@ const { data: site, pending, error } = await useScribeSite(
 </template>
 ```
 
-## Article pages
+## Document pages
 
-An article page usually gets the article's **slug** from the URL. `useScribeArticleBySlug` looks it up in the Site; `data` holds the article and its AT URI:
+A Document page usually gets the Document's **slug** from the URL. `useScribeDocumentBySlug` looks it up in the Publication; `data` holds the Document (its `uri` is its AT URI):
 
 ```vue
-<!-- pages/blog/[group]/[slug].vue -->
+<!-- pages/blog/[category]/[slug].vue -->
 <script setup lang="ts">
 const route = useRoute();
 
-const { data, pending, error } = await useScribeArticleBySlug(
+const { data: document, pending, error } = await useScribeDocumentBySlug(
   'alice.bsky.social',
   'https://alice.bsky.social',
   route.params.slug as string,
 );
-const article = computed(() => data.value?.article);
 </script>
 
 <template>
   <p v-if="pending">Loading…</p>
   <p v-else-if="error">Error: {{ error.message }}</p>
-  <article v-else-if="article">
-    <h1>{{ article.title }}</h1>
-    <p v-if="article.description">{{ article.description }}</p>
-    <div class="scribe-content" v-html="article.content" />
+  <article v-else-if="document">
+    <h1>{{ document.title }}</h1>
+    <p v-if="document.description">{{ document.description }}</p>
+    <div class="scribe-content" v-html="document.content" />
   </article>
 </template>
 ```
 
-If you render articles from accounts you don't control, sanitise `content` before passing it to `v-html` (see [Rendering the HTML](/quickstart#3-fetch-an-article)).
+If you render Documents from accounts you don't control, sanitise `content` before passing it to `v-html` (see [Rendering the HTML](/quickstart#3-fetch-a-document)).
 
-### `useScribeArticle`
+### `useScribeDocument`
 
-`useScribeArticle(author, rkey)` fetches an article by its account and **record key (rkey)**, skipping the Site lookup. Use it when you already have an `ArticleRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)`. Don't pass a slug: articles published with current tooling have opaque rkeys, so a slug only finds very old articles.
+`useScribeDocument(author, rkey)` fetches a Document by its account and **record key (rkey)**, skipping the Publication lookup. Use it when you already have a `DocumentRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)`. Don't pass a slug: Documents published with current tooling have opaque rkeys, so a slug only finds very old Documents.
 
 ## `useAsyncData` options
 
 Every composable accepts an optional last argument that's passed on to `useAsyncData`:
 
 ```ts
-const { data: site } = await useScribeSite('alice.bsky.social', 'https://alice.bsky.social', {
+const { data: publication } = await useScribePublication('alice.bsky.social', 'https://alice.bsky.social', {
   lazy: true,          // don't block navigation
   server: false,       // client-only fetch
 });
@@ -94,7 +93,7 @@ const { data: site } = await useScribeSite('alice.bsky.social', 'https://alice.b
 
 ## SEO meta
 
-`articleSeoMeta(article, site)` and `siteSeoMeta(site)` return objects ready for Nuxt's `useSeoMeta`. `useSeoMeta` has no field for a canonical link or structured data, so add those with `useHead`, using the re-exported `buildCanonicalUrl` and `generateArticleJsonLd`. See the [meta tags guide](/guides/meta-tags).
+`documentSeoMeta(document, publication)` and `publicationSeoMeta(publication)` return objects ready for Nuxt's `useSeoMeta`. `useSeoMeta` has no field for a canonical link, the [site.standard link tags](/guides/meta-tags#sitestandard-link-tags) or structured data, so add those with `useHead`, using the re-exported `buildCanonicalUrl`, `standardSiteLinks` and `generateDocumentJsonLd`. See the [meta tags guide](/guides/meta-tags).
 
 ## Site Analytics
 
@@ -107,12 +106,12 @@ useSiteAnalytics();
 </script>
 ```
 
-Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+Figures only appear once your website serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
 
 ## TypeScript types
 
 The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from '@skyscribe-sdk/nuxt';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/nuxt';
 ```

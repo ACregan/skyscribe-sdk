@@ -14,7 +14,7 @@ React buttons that let readers like, share and follow with their Bluesky account
 function LikeButton(props: LikeButtonProps): JSX.Element
 ```
 
-A button that records a like (a `site.standard.graph.recommend` record in the reader's account) for an article. It opens a sign-in popup at `social.skyscribe.app`, then switches to its confirmed state.
+A button that records a like (a `site.standard.graph.recommend` record in the reader's account) for a Document. It opens a sign-in popup at `social.skyscribe.app`, then switches to its confirmed state.
 
 **`LikeButtonProps`**
 
@@ -22,7 +22,7 @@ A button that records a like (a `site.standard.graph.recommend` record in the re
 | ---- | ---- | -------- | ----------- |
 | `documentUri` | `string` | ✓ | AT URI of the `site.standard.document` record |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
-| `title` | `string` | ✓ | Article title, shown in the popup |
+| `title` | `string` | ✓ | The Document's title, shown in the popup |
 | `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.skyscribe.app"` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-like-button` class |
 | `children` | `ReactNode \| ((isLiked: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Like"` / `"Liked ✓"` |
@@ -39,7 +39,7 @@ import { LikeButton } from '@skyscribe-sdk/social';
 />
 ```
 
-**Getting the URIs:** `fetchArticleBySlug` from `@skyscribe-sdk/core` returns `{ article, uri }`, where `uri` is the document AT URI. `fetchSite` returns a `Site` object whose `uri` is the publication AT URI. If you're using `@skyscribe-sdk/react-router-framework`, `createArticleRouteLoader` includes `documentUri` in the loader return.
+**Getting the URIs:** the `StandardDocument` from `fetchDocumentBySlug` (or any of the adapters) has its AT URI as `document.uri`, and the `StandardPublication` from `fetchPublication` has its AT URI as `publication.uri`.
 
 **Saved state:** once liked, the result is stored in `localStorage` under `scribe:recommended:{documentUri}`, so the button shows as liked on later visits.
 
@@ -53,7 +53,7 @@ import { LikeButton } from '@skyscribe-sdk/social';
 function ShareButton(props: ShareButtonProps): JSX.Element
 ```
 
-A button that opens a popup for the reader to share the article as a Bluesky post. After a successful share it shows its confirmed state for 3 seconds, then resets so the reader can share again.
+A button that opens a popup for the reader to share the Document as a Bluesky post. After a successful share it shows its confirmed state for 3 seconds, then resets so the reader can share again.
 
 **`ShareButtonProps`**
 
@@ -61,8 +61,8 @@ A button that opens a popup for the reader to share the article as a Bluesky pos
 | ---- | ---- | -------- | ----------- |
 | `documentUri` | `string` | ✓ | AT URI of the `site.standard.document` record |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
-| `title` | `string` | ✓ | Article title, shown in the popup |
-| `canonicalUrl` | `string` | — | Canonical URL of the article. Defaults to `window.location.href` |
+| `title` | `string` | ✓ | The Document's title, shown in the popup |
+| `canonicalUrl` | `string` | — | Canonical URL of the Document. Defaults to `window.location.href` |
 | `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.skyscribe.app"` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-share-button` class |
 | `children` | `ReactNode \| ((isShared: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Share"` / `"Shared ✓"` |
@@ -89,14 +89,14 @@ import { ShareButton } from '@skyscribe-sdk/social';
 function SubscribeButton(props: SubscribeButtonProps): JSX.Element
 ```
 
-A button that subscribes the reader to a Site. It opens a sign-in popup, then switches to its confirmed state. It's a toggle: **when the reader is already subscribed, clicking it opens a popup to confirm unsubscribing.**
+A button that subscribes the reader to a Publication. It opens a sign-in popup, then switches to its confirmed state. It's a toggle: **when the reader is already subscribed, clicking it opens a popup to confirm unsubscribing.**
 
 **`SubscribeButtonProps`**
 
 | Prop | Type | Required | Description |
 | ---- | ---- | -------- | ----------- |
 | `publicationUri` | `string` | ✓ | AT URI of the `site.standard.publication` record |
-| `title` | `string` | ✓ | Site name, shown in the subscribe and unsubscribe popups |
+| `title` | `string` | ✓ | The Publication's name, shown in the subscribe and unsubscribe popups |
 | `serviceUrl` | `string` | — | Override the social service base URL. Defaults to `"https://social.skyscribe.app"` |
 | `className` | `string` | — | Additional CSS class appended to the base `scribe-atp-subscribe-button` class |
 | `children` | `ReactNode \| ((isSubscribed: boolean) => ReactNode)` | — | Custom button label. Omit to use the defaults `"Follow"` / `"Following ✓"` (since 1.6.0; `"Subscribe"` / `"Subscribed ✓"` before). The render prop receives `isSubscribed` so you can show different copy in each state |
@@ -113,7 +113,7 @@ import { SubscribeButton } from '@skyscribe-sdk/social';
 />
 ```
 
-**Getting the `publicationUri`:** a `Site` from `fetchSite` has it as `site.uri`. `resolvePublicationUri` returns it without the rest of the Site.
+**Getting the `publicationUri`:** a `StandardPublication` from `fetchPublication` has it as `publication.uri`. `resolvePublicationUri` returns it without the rest of the Publication.
 
 **Saved state:** stored in `localStorage` under `scribe:subscribed:{publicationUri}`, and cleared after the reader unsubscribes.
 

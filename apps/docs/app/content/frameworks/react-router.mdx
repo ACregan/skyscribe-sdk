@@ -12,30 +12,30 @@
 npm install @skyscribe-sdk/react-router-framework
 ```
 
-## Site index route
+## Publication home route
 
-`createSiteLoader` creates a loader for a route that shows the whole site: its groups and article listings.
+`createPublicationLoader` creates a loader for a route that shows the whole Publication: its Categories and their Documents.
 
 ```tsx
 // app/routes/blog.tsx
-import { createSiteLoader } from '@skyscribe-sdk/react-router-framework';
+import { createPublicationLoader } from '@skyscribe-sdk/react-router-framework';
 import { useLoaderData } from 'react-router';
 
-export const loader = createSiteLoader('alice.bsky.social', 'https://alice.bsky.social');
+export const loader = createPublicationLoader('alice.bsky.social', 'https://alice.bsky.social');
 
 export default function Blog() {
-  const site = useLoaderData<typeof loader>();
+  const publication = useLoaderData<typeof loader>();
 
   return (
     <main>
-      <h1>{site.title}</h1>
-      {site.groups.map((group) => (
-        <section key={group.slug}>
-          <h2>{group.title}</h2>
+      <h1>{publication.name}</h1>
+      {publication.categories.map((category) => (
+        <section key={category.slug}>
+          <h2>{category.title}</h2>
           <ul>
-            {group.articles.map((article) => (
-              <li key={article.uri}>
-                <a href={`/blog/${group.slug}/${article.slug}`}>{article.title}</a>
+            {category.documents.map((ref) => (
+              <li key={ref.uri}>
+                <a href={`/blog/${category.slug}/${ref.slug}`}>{ref.title}</a>
               </li>
             ))}
           </ul>
@@ -46,19 +46,19 @@ export default function Blog() {
 }
 ```
 
-## Article route
+## Document route
 
-`createArticleRouteLoader` creates a loader for a route whose URL contains the article's slug. It looks the slug up in the Site, fetches the article, and returns an `ArticleWithUri`: the article plus its AT URI as `documentUri`.
+`createDocumentRouteLoader` creates a loader for a route whose URL contains the Document's slug. It looks the slug up in the Publication, fetches the Document, and returns the `StandardDocument`, with its AT URI as `uri`.
 
 ```tsx
-// app/routes/blog.$group.$articleSlug.tsx
-import { createArticleRouteLoader } from '@skyscribe-sdk/react-router-framework';
+// app/routes/blog.$categorySlug.$documentSlug.tsx
+import { createDocumentRouteLoader } from '@skyscribe-sdk/react-router-framework';
 import { useLoaderData } from 'react-router';
 
-export const loader = createArticleRouteLoader('alice.bsky.social', 'https://alice.bsky.social');
+export const loader = createDocumentRouteLoader('alice.bsky.social', 'https://alice.bsky.social');
 
-export default function Article() {
-  const { title, content, documentUri } = useLoaderData<typeof loader>();
+export default function DocumentPage() {
+  const { title, content, uri } = useLoaderData<typeof loader>();
 
   return (
     <article>
@@ -69,41 +69,43 @@ export default function Article() {
 }
 ```
 
-The slug is read from the `articleSlug` route param by default. If your param has a different name, pass it as the third argument: `createArticleRouteLoader(author, siteUrl, 'slug')`.
+The slug is read from the `documentSlug` route param by default, so name the segment `$documentSlug` (or `:documentSlug` in `routes.ts`). If your param has a different name, pass it as the third argument: `createDocumentRouteLoader(author, publicationUrl, 'slug')`.
 
-Pass `documentUri` to `@skyscribe-sdk/social`'s `LikeButton` if you want [social buttons](/guides/social) on the article page. If you render articles from accounts you don't control, sanitise `content` first (see [Rendering the HTML](/quickstart#3-fetch-an-article)).
+Pass `uri` to `@skyscribe-sdk/social`'s `LikeButton` as `documentUri` if you want [social buttons](/guides/social) on the Document page. If you render Documents from accounts you don't control, sanitise `content` first (see [Rendering the HTML](/quickstart#3-fetch-a-document)).
 
 ## Open Graph meta tags
 
-`articleMeta` returns Open Graph and Twitter Card tags for rich link previews. It needs the `site` as well, so fetch both in your loader:
+`documentMeta` returns Open Graph and Twitter Card tags for rich link previews, and the [site.standard link tags](/guides/meta-tags#sitestandard-link-tags). It needs the Publication as well, so fetch both in your loader:
 
 ```tsx
-import { createArticleRouteLoader, articleMeta } from '@skyscribe-sdk/react-router-framework';
-import { fetchSite } from '@skyscribe-sdk/core';
-import type { Route } from './+types/Article';
+import { createDocumentRouteLoader, documentMeta } from '@skyscribe-sdk/react-router-framework';
+import { fetchPublication } from '@skyscribe-sdk/core';
+import type { Route } from './+types/blog.$categorySlug.$documentSlug';
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const [articleData, site] = await Promise.all([
-    createArticleRouteLoader('alice.bsky.social', 'https://alice.bsky.social')({ request, params }),
-    fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal),
+const loadDocument = createDocumentRouteLoader('alice.bsky.social', 'https://alice.bsky.social');
+
+export async function loader(args: Route.LoaderArgs) {
+  const [document, publication] = await Promise.all([
+    loadDocument(args),
+    fetchPublication('alice.bsky.social', 'https://alice.bsky.social', args.request.signal),
   ]);
-  return { ...articleData, publicationUri: site.uri, site };
+  return { document, publication };
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
   if (!loaderData) return [{ title: 'My Blog' }];
   return [
-    ...articleMeta(loaderData, loaderData.site),
-    { title: `${loaderData.title} | My Blog` },
+    ...documentMeta(loaderData.document, loaderData.publication),
+    { title: `${loaderData.document.title} | My Blog` },
   ];
 }
 ```
 
-`siteMeta(site)` does the same for site-level pages. See the [meta tags guide](/guides/meta-tags) for more.
+`publicationMeta(publication)` does the same for the home and Category pages, and `standardSiteLinks(publication)` gives just the link tags. See the [meta tags guide](/guides/meta-tags) for more.
 
 ## Publication verification route
 
-The [`site.standard` spec](https://standard.site/docs/verification/) lets apps confirm that a website really belongs to a Publication by requesting `/.well-known/site.standard.publication`, which should return the Publication's AT URI. `createWellKnownLoader` serves exactly that. Add it even if you don't use [Site Analytics](/guides/site-analytics): readers and aggregators that show `site.standard` content check it, and Site Analytics only shows figures once it names your Publication. A SkyScribe Publication's URL is a bare domain, so the file is always at the root, even when your articles live under a path prefix.
+The [`site.standard` spec](https://standard.site/docs/verification/) lets apps confirm that a website really belongs to a Publication by requesting `/.well-known/site.standard.publication`, which should return the Publication's AT URI. `createWellKnownLoader` serves exactly that. Add it even if you don't use [Site Analytics](/guides/site-analytics): readers and aggregators that show `site.standard` content check it, and Site Analytics only shows figures once it names your Publication. A SkyScribe Publication's URL is a bare domain, so the file is always at the root, even when your Documents live under a base path.
 
 ```ts
 // app/routes.ts
@@ -126,12 +128,12 @@ import { SiteAnalytics } from '@skyscribe-sdk/react';
 <SiteAnalytics />
 ```
 
-Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+Figures only appear once your website serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
 
 ## TypeScript types
 
-The main types from `@skyscribe-sdk/core` are re-exported, plus `ArticleWithUri`:
+The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup, ArticleWithUri } from '@skyscribe-sdk/react-router-framework';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/react-router-framework';
 ```

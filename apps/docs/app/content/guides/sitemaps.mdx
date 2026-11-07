@@ -1,19 +1,19 @@
 # Sitemaps
 
-`@skyscribe-sdk/core` exports `getSitemapEntries`, which takes a fetched `Site` and returns an array of `{ url, lastmod? }` objects. You build the XML from them yourself, so you keep full control of the output and can merge in your own pages.
+`@skyscribe-sdk/core` exports `getSitemapEntries`, which takes a fetched `StandardPublication` and returns an array of `{ url, lastmod? }` objects. You build the XML from them yourself, so you keep full control of the output and can merge in your own pages.
 
 ## Basic usage
 
 ```ts
-import { fetchSite, getSitemapEntries } from '@skyscribe-sdk/core';
+import { fetchPublication, getSitemapEntries } from '@skyscribe-sdk/core';
 
-const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
-const entries = getSitemapEntries(site, { baseUrl: 'https://alice.example.com' });
+const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
+const entries = getSitemapEntries(publication, { baseUrl: 'https://alice.example.com' });
 
 // entries is: Array<{ url: string; lastmod?: string }>
 ```
 
-Two kinds of article are left out: one whose canonical URL is another website's (an imported article whose author kept the original as canonical), and one whose author turned on **noindex** in its SEO Settings. Both still appear on your site and in your feed: they just aren't offered to search engines.
+Two kinds of Document are left out: one whose canonical URL is another website's (an imported Document whose author kept the original as canonical), and one whose author turned on **noindex** in its SEO Settings. Both still appear on your site and in your feed: they just aren't offered to search engines.
 
 ## Wiring into your framework
 
@@ -21,12 +21,12 @@ Two kinds of article are left out: one whose canonical URL is another website's 
   <Tab label="React Router v7/v8">
     ```ts
     // app/routes/sitemap.ts
-    import { fetchSite, getSitemapEntries } from '@skyscribe-sdk/core';
+    import { fetchPublication, getSitemapEntries } from '@skyscribe-sdk/core';
 
     export async function loader({ request }: { request: Request }) {
       const origin = new URL(request.url).origin;
-      const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal);
-      const entries = getSitemapEntries(site, { baseUrl: origin });
+      const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social', request.signal);
+      const entries = getSitemapEntries(publication, { baseUrl: origin });
 
       const xml = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -47,12 +47,12 @@ Two kinds of article are left out: one whose canonical URL is another website's 
   <Tab label="Next.js App Router">
     ```ts
     // app/sitemap.xml/route.ts
-    import { fetchSite, getSitemapEntries } from '@skyscribe-sdk/core';
+    import { fetchPublication, getSitemapEntries } from '@skyscribe-sdk/core';
 
     export async function GET(request: Request) {
       const origin = new URL(request.url).origin;
-      const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal);
-      const entries = getSitemapEntries(site, { baseUrl: origin });
+      const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social', request.signal);
+      const entries = getSitemapEntries(publication, { baseUrl: origin });
 
       const xml = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -73,12 +73,12 @@ Two kinds of article are left out: one whose canonical URL is another website's 
   <Tab label="SvelteKit">
     ```ts
     // src/routes/sitemap.xml/+server.ts
-    import { fetchSite, getSitemapEntries } from '@skyscribe-sdk/core';
+    import { fetchPublication, getSitemapEntries } from '@skyscribe-sdk/core';
     import type { RequestHandler } from './$types';
 
     export const GET: RequestHandler = async ({ url }) => {
-      const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
-      const entries = getSitemapEntries(site, { baseUrl: url.origin });
+      const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
+      const entries = getSitemapEntries(publication, { baseUrl: url.origin });
 
       const xml = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -100,10 +100,10 @@ Two kinds of article are left out: one whose canonical URL is another website's 
 
 ## Adding your own pages
 
-`getSitemapEntries` only knows about the Site's content. Append any other pages your website has, such as an about page:
+`getSitemapEntries` only knows about the Publication's Documents. Append any other pages your website has, such as an about page:
 
 ```ts
-const entries = getSitemapEntries(site, { baseUrl: origin });
+const entries = getSitemapEntries(publication, { baseUrl: origin });
 
 const allEntries = [
   ...entries,
@@ -115,12 +115,12 @@ const allEntries = [
 
 `getSitemapEntries` returns, in order:
 - the home page: `baseUrl`
-- the path-prefix root, if the Site has a `urlPrefix`: `{baseUrl}/{urlPrefix}`
-- each Group's page: `{baseUrl}/{urlPrefix}/{group slug}`
-- each published article: `{baseUrl}/{urlPrefix}/{group slug}/{article slug}`
+- the base path root, if the Publication has a `basePath`: `{baseUrl}/{basePath}`
+- each Category's page: `{baseUrl}/{basePath}/{category slug}`
+- each published Document: `{baseUrl}/{basePath}/{category slug}/{document slug}`
 
-Article entries have a `lastmod` date (`YYYY-MM-DD`) taken from the article's `updatedAt`, when it's set. Drafts aren't in the Site record, so they're never included.
+Document entries have a `lastmod` date (`YYYY-MM-DD`) taken from the Document's `updatedAt`, when it's set. Drafts aren't in the Publication record, so they're never included.
 
 <Callout>
-  The URLs follow the standard layout. If your website uses different paths for Group pages, or doesn't have them, filter or rewrite the entries before building the XML.
+  The URLs follow the standard layout. If your website uses different paths for Category pages, or doesn't have them, filter or rewrite the entries before building the XML.
 </Callout>

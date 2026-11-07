@@ -103,7 +103,7 @@ The SDK serves it for you:
 - Next.js: [`createWellKnownHandler`](/frameworks/next#publication-verification-route)
 - Anything else: look the URI up with [`resolvePublicationUri`](/api/core#resolvepublicationuri) and return it from a route at that path with `Content-Type: text/plain`.
 
-A SkyScribe Publication's URL is a bare domain, so the file is always at the root, `/.well-known/site.standard.publication`, even when your articles live under a path such as `/blog`.
+A SkyScribe Publication's URL is a bare domain, so the file is always at the root, `/.well-known/site.standard.publication`, even when your Documents live under a path such as `/blog`.
 
 SkyScribe checks the address in your Publication's settings, follows redirects, and also counts visits to `www.` plus that address. A successful check is remembered for a day. A failed one is retried after a minute, so once you've deployed the fix, reload the Insights tab.
 

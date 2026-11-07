@@ -1,6 +1,6 @@
 # Vue
 
-`@skyscribe-sdk/vue` provides `useScribeSite`, `useScribeArticleBySlug` and `useScribeArticle` composables for Vue 3. Each returns reactive refs for `site` / `article`, `loading` and `error`, and aborts the in-flight request when the component unmounts.
+`@skyscribe-sdk/vue` provides `useScribePublication`, `useScribeDocumentBySlug` and `useScribeDocument` composables for Vue 3. Each returns reactive refs for `publication` / `document`, `loading` and `error`, and aborts the in-flight request when the component unmounts.
 
 <Callout>
   For **Nuxt 3**, use [`@skyscribe-sdk/nuxt`](/frameworks/nuxt) instead: its composables use `useAsyncData`, so content is fetched during server rendering, and they're auto-imported.
@@ -14,25 +14,25 @@ npm install @skyscribe-sdk/vue
 
 Requires Vue 3 or later.
 
-## `useScribeSite`
+## `useScribePublication`
 
 ```vue
 <script setup lang="ts">
-import { useScribeSite } from '@skyscribe-sdk/vue';
+import { useScribePublication } from '@skyscribe-sdk/vue';
 
-const { site, loading, error } = useScribeSite('alice.bsky.social', 'https://alice.bsky.social');
+const { publication, loading, error } = useScribePublication('alice.bsky.social', 'https://alice.bsky.social');
 </script>
 
 <template>
   <p v-if="loading">Loading…</p>
   <p v-else-if="error">Error: {{ error.message }}</p>
-  <main v-else-if="site">
-    <h1>{{ site.title }}</h1>
-    <section v-for="group in site.groups" :key="group.slug">
-      <h2>{{ group.title }}</h2>
+  <main v-else-if="publication">
+    <h1>{{ publication.name }}</h1>
+    <section v-for="category in publication.categories" :key="category.slug">
+      <h2>{{ category.title }}</h2>
       <ul>
-        <li v-for="article in group.articles" :key="article.uri">
-          <a :href="`/${group.slug}/${article.slug}`">{{ article.title }}</a>
+        <li v-for="ref in category.documents" :key="ref.uri">
+          <a :href="`/${category.slug}/${ref.slug}`">{{ ref.title }}</a>
         </li>
       </ul>
     </section>
@@ -40,16 +40,16 @@ const { site, loading, error } = useScribeSite('alice.bsky.social', 'https://ali
 </template>
 ```
 
-## `useScribeArticleBySlug`
+## `useScribeDocumentBySlug`
 
-Article pages usually have the article's slug from the URL. `useScribeArticleBySlug` looks it up in the Site and returns the article with its AT URI:
+Document pages usually have the Document's slug from the URL. `useScribeDocumentBySlug` looks it up in the Publication and returns the Document (its `uri` is its AT URI):
 
 ```vue
 <script setup lang="ts">
-import { useScribeArticleBySlug } from '@skyscribe-sdk/vue';
+import { useScribeDocumentBySlug } from '@skyscribe-sdk/vue';
 
 const props = defineProps<{ slug: string }>();
-const { article, uri, loading, error } = useScribeArticleBySlug(
+const { document, loading, error } = useScribeDocumentBySlug(
   'alice.bsky.social',
   'https://alice.bsky.social',
   props.slug,
@@ -59,33 +59,33 @@ const { article, uri, loading, error } = useScribeArticleBySlug(
 <template>
   <p v-if="loading">Loading…</p>
   <p v-else-if="error">Error: {{ error.message }}</p>
-  <article v-else-if="article">
-    <h1>{{ article.title }}</h1>
-    <p v-if="article.description">{{ article.description }}</p>
-    <div class="scribe-content" v-html="article.content" />
+  <article v-else-if="document">
+    <h1>{{ document.title }}</h1>
+    <p v-if="document.description">{{ document.description }}</p>
+    <div class="scribe-content" v-html="document.content" />
   </article>
 </template>
 ```
 
-If you render articles from accounts you don't control, sanitise `content` before passing it to `v-html` (see [Rendering the HTML](/quickstart#3-fetch-an-article)).
+If you render Documents from accounts you don't control, sanitise `content` before passing it to `v-html` (see [Rendering the HTML](/quickstart#3-fetch-a-document)).
 
-## `useScribeArticle`
+## `useScribeDocument`
 
-If you already have an `ArticleRef`, `useScribeArticle` skips the Site lookup. It takes the article's account and **record key (rkey)**, both found in `ArticleRef.uri` (`at://{did}/site.standard.document/{rkey}`). Take the account from there: an article credited to a contributor can live in their account.
+If you already have a `DocumentRef`, `useScribeDocument` skips the Publication lookup. It takes the Document's account and **record key (rkey)**, both found in `DocumentRef.uri` (`at://{did}/site.standard.document/{rkey}`). Take the account from there: a Document credited to a contributor can live in their account.
 
 ```ts
-import { useScribeArticle } from '@skyscribe-sdk/vue';
+import { useScribeDocument } from '@skyscribe-sdk/vue';
 import { slugFromUri } from '@skyscribe-sdk/core';
 
-const did = articleRef.uri.split('/')[2];
-const { article } = useScribeArticle(did, slugFromUri(articleRef.uri));
+const did = documentRef.uri.split('/')[2];
+const { document } = useScribeDocument(did, slugFromUri(documentRef.uri));
 ```
 
-Don't pass a slug to `useScribeArticle`: articles published with current tooling have opaque rkeys, so a slug only finds very old articles.
+Don't pass a slug to `useScribeDocument`: Documents published with current tooling have opaque rkeys, so a slug only finds very old Documents.
 
 ## Just the AT URI: `useScribePublicationUri` / `useScribeDocumentUri`
 
-`@skyscribe-sdk/social`'s buttons are React components, so you can't use them in a Vue template. If you're building your own like or subscribe UI, `useScribePublicationUri` and `useScribeDocumentUri` resolve just the AT URI you need. `useScribeDocumentUri` takes the article's **slug**:
+`@skyscribe-sdk/social`'s buttons are React components, so you can't use them in a Vue template. If you're building your own like or subscribe UI, `useScribePublicationUri` and `useScribeDocumentUri` resolve just the AT URI you need. `useScribeDocumentUri` takes the Document's **slug**:
 
 ```vue
 <script setup lang="ts">
@@ -116,12 +116,12 @@ import { SiteAnalytics } from '@skyscribe-sdk/vue';
 </template>
 ```
 
-Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+Figures only appear once your website serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
 
 ## TypeScript types
 
 The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from '@skyscribe-sdk/vue';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/vue';
 ```

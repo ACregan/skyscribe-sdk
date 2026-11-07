@@ -3,7 +3,7 @@
 A service (Observables) and injection functions (Signals) for Angular 16+. Install with `npm install @skyscribe-sdk/angular`. See the [Angular guide](/frameworks/angular) for walkthroughs.
 
 <Callout type="note">
-  To fetch an article by the slug in its URL, use `getArticleBySlug` or `injectArticleBySlug` (since 1.1.0). `getArticle` and `injectArticle` take the article's **record key (rkey)** instead.
+  To fetch a Document by the slug in its URL, use `getDocumentBySlug` or `injectDocumentBySlug`. `getDocument` and `injectDocument` take the Document's **record key (rkey)** instead.
 </Callout>
 
 ## Observable API: `ScribeService`
@@ -19,115 +19,114 @@ import { ScribeService } from '@skyscribe-sdk/angular';
 const scribe = inject(ScribeService);
 ```
 
-#### `getSite`
+#### `getPublication`
 
 ```ts
-getSite(author: string, publicationUrl: string): Observable<Site>
+getPublication(author: string, publicationUrl: string): Observable<StandardPublication>
 ```
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
 
 Subscribe with the `async` pipe, which unsubscribes when the component is destroyed.
 
-#### `getArticleBySlug`
+#### `getDocumentBySlug`
 
 ```ts
-getArticleBySlug(author: string, publicationUrl: string, articleSlug: string): Observable<ArticleResult>
+getDocumentBySlug(author: string, publicationUrl: string, documentSlug: string): Observable<StandardDocument>
 ```
 
-Looks an article up by its slug in the Site at `publicationUrl`, and emits `{ article, uri }`: the article and its AT URI. Since 1.1.0.
+Looks a Document up by its slug in the Publication at `publicationUrl`, and emits it. Its `uri` is its AT URI.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
-| `articleSlug` | `string` | The article's slug, as in its URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
+| `documentSlug` | `string` | The Document's slug, as in its URL |
 
-#### `getArticle`
+#### `getDocument`
 
 ```ts
-getArticle(author: string, rkey: string): Observable<Article>
+getDocument(author: string, rkey: string): Observable<StandardDocument>
 ```
 
-Fetches an article by its **rkey**.
+Fetches a Document by its **rkey**.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `author` | `string` | Handle or DID of the account the article is stored in |
-| `rkey` | `string` | The article's record key. Take both from an `ArticleRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)` |
+| `author` | `string` | Handle or DID of the account the Document is stored in |
+| `rkey` | `string` | The Document's record key. Take both from a `DocumentRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)` |
 
 #### `getPublicationUri` / `getDocumentUri`
 
 ```ts
 getPublicationUri(author: string, publicationUrl: string): Observable<string>
-getDocumentUri(author: string, publicationUrl: string, articleSlug: string): Observable<string>
+getDocumentUri(author: string, publicationUrl: string, documentSlug: string): Observable<string>
 ```
 
-Return just the AT URI of a Site, or of an article looked up by its **slug**. The Observable versions of `injectPublicationUri` and `injectDocumentUri` below.
+Return just the AT URI of a Publication, or of a Document looked up by its **slug**. The Observable versions of `injectPublicationUri` and `injectDocumentUri` below.
 
 ---
 
 ## Signals API
 
-### `injectSite`
+### `injectPublication`
 
 ```ts
-function injectSite(author: string, publicationUrl: string): {
-  site: Signal<Site | null>;
+function injectPublication(author: string, publicationUrl: string): {
+  publication: Signal<StandardPublication | null>;
   loading: Signal<boolean>;
   error: Signal<Error | null>;
 }
 ```
 
-Must be called in an injection context. Fetches a Site straight away and returns readonly signals. The request is aborted when the host component is destroyed.
+Must be called in an injection context. Fetches a Publication straight away and returns readonly signals. The request is aborted when the host component is destroyed.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
 
 ---
 
-### `injectArticleBySlug`
+### `injectDocumentBySlug`
 
 ```ts
-function injectArticleBySlug(author: string, publicationUrl: string, articleSlug: string): {
-  article: Signal<Article | null>;
-  uri: Signal<string | null>;
+function injectDocumentBySlug(author: string, publicationUrl: string, documentSlug: string): {
+  document: Signal<StandardDocument | null>;  // document()?.uri is its AT URI
   loading: Signal<boolean>;
   error: Signal<Error | null>;
 }
 ```
 
-Must be called in an injection context. Looks an article up by its slug in the Site at `publicationUrl` and returns readonly signals, including its AT URI as `uri`. The request is aborted when the host component is destroyed. Since 1.1.0.
+Must be called in an injection context. Looks a Document up by its slug in the Publication at `publicationUrl` and returns readonly signals. The request is aborted when the host component is destroyed.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
-| `articleSlug` | `string` | The article's slug, as in its URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
+| `documentSlug` | `string` | The Document's slug, as in its URL |
 
 ---
 
-### `injectArticle`
+### `injectDocument`
 
 ```ts
-function injectArticle(author: string, rkey: string): {
-  article: Signal<Article | null>;
+function injectDocument(author: string, rkey: string): {
+  document: Signal<StandardDocument | null>;
   loading: Signal<boolean>;
   error: Signal<Error | null>;
 }
 ```
 
-Must be called in an injection context. Fetches an article by its **rkey** straight away and returns readonly signals. The request is aborted when the host component is destroyed.
+Must be called in an injection context. Fetches a Document by its **rkey** straight away and returns readonly signals. The request is aborted when the host component is destroyed.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `author` | `string` | Handle or DID of the account the article is stored in |
-| `rkey` | `string` | The article's record key. Take both from an `ArticleRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)` |
+| `author` | `string` | Handle or DID of the account the Document is stored in |
+| `rkey` | `string` | The Document's record key. Take both from a `DocumentRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)` |
 
 ---
 
@@ -141,12 +140,12 @@ function injectPublicationUri(author: string, publicationUrl: string): {
 }
 ```
 
-Must be called in an injection context. Resolves just the AT URI of a Site record (using `resolvePublicationUri`), without returning the whole `Site`. The request is aborted when the host component is destroyed.
+Must be called in an injection context. Resolves just the AT URI of a Publication (using `resolvePublicationUri`), without returning the whole `StandardPublication`. The request is aborted when the host component is destroyed.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
 
 Use it when the AT URI is all you need, for example for your own subscribe UI.
 
@@ -158,7 +157,7 @@ Use it when the AT URI is all you need, for example for your own subscribe UI.
 function injectDocumentUri(
   author: string,
   publicationUrl: string,
-  articleSlug: string
+  documentSlug: string
 ): {
   uri: Signal<string | null>;
   loading: Signal<boolean>;
@@ -166,13 +165,13 @@ function injectDocumentUri(
 }
 ```
 
-Must be called in an injection context. Resolves just the AT URI of an article, looked up by its **slug** (it uses `fetchArticleBySlug` and keeps only the `uri`). The request is aborted when the host component is destroyed.
+Must be called in an injection context. Resolves just the AT URI of a Document, looked up by its **slug** (it uses `fetchDocumentBySlug` and keeps only the `uri`). The request is aborted when the host component is destroyed.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
-| `articleSlug` | `string` | The article's slug, as in its URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
+| `documentSlug` | `string` | The Document's slug, as in its URL |
 
 Use it when the AT URI is all you need, for example for your own like UI.
 
@@ -183,7 +182,11 @@ Use it when the AT URI is all you need, for example for your own like UI.
 The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup, ArticleResult } from '@skyscribe-sdk/angular';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/angular';
 ```
 
 See the [core reference](/api/core#types) for type definitions.
+
+## Deprecated names
+
+`ScribeService.getSite`, `getArticle` and `getArticleBySlug` (still emitting `{ article, uri }`), and `injectSite` (`site`), `injectArticle` (`article`) and `injectArticleBySlug` (`article` and `uri`) still work, marked `@deprecated`, until the next major. See [Upgrading to 5.0](/upgrading-to-5).
