@@ -28,16 +28,16 @@ import { ScribeService } from "@skyscribe-sdk/angular";
   standalone: true,
   imports: [AsyncPipe, NgIf, NgFor],
   template: `
-    <ng-container *ngIf="site$ | async as site">
-      <h1>{{ site.title }}</h1>
+    <ng-container *ngIf="publication$ | async as publication">
+      <h1>{{ publication.name }}</h1>
       <ul>
-        <li *ngFor="let group of site.groups">{{ group.title }}</li>
+        <li *ngFor="let category of publication.categories">{{ category.title }}</li>
       </ul>
     </ng-container>
   `,
 })
 export class BlogComponent {
-  site$ = inject(ScribeService).getSite("alice.bsky.social", "https://alice.bsky.social");
+  publication$ = inject(ScribeService).getPublication("alice.bsky.social", "https://alice.bsky.social");
 }
 ```
 
@@ -45,7 +45,7 @@ For explicit subscription management:
 
 ```ts
 export class BlogComponent implements OnInit, OnDestroy {
-  site: Site | null = null;
+  publication: StandardPublication | null = null;
   loading = true;
   error: Error | null = null;
 
@@ -54,8 +54,8 @@ export class BlogComponent implements OnInit, OnDestroy {
   constructor(private scribe: ScribeService) {}
 
   ngOnInit() {
-    this.sub = this.scribe.getSite("alice.bsky.social", "https://alice.bsky.social").subscribe({
-      next:  (site) => { this.site = site; this.loading = false; },
+    this.sub = this.scribe.getPublication("alice.bsky.social", "https://alice.bsky.social").subscribe({
+      next:  (publication) => { this.publication = publication; this.loading = false; },
       error: (err)  => { this.error = err; this.loading = false; },
     });
   }
@@ -66,22 +66,22 @@ export class BlogComponent implements OnInit, OnDestroy {
 }
 ```
 
-`getArticleBySlug` follows the same pattern, emitting `{ article, uri }`:
+`getDocumentBySlug` follows the same pattern, emitting the Document (its `uri` is its AT URI):
 
 ```ts
-result$ = inject(ScribeService).getArticleBySlug("alice.bsky.social", "https://alice.bsky.social", "my-first-post");
+document$ = inject(ScribeService).getDocumentBySlug("alice.bsky.social", "https://alice.bsky.social", "my-first-post");
 ```
 
-`getArticle(author, rkey)` and `injectArticle(author, rkey)` fetch by record key instead, for when you already have an `ArticleRef`. Don't pass them a slug.
+`getDocument(author, rkey)` and `injectDocument(author, rkey)` fetch by record key instead, for when you already have a `DocumentRef`. Don't pass them a slug.
 
-## Signals API — `injectSite` / `injectArticleBySlug`
+## Signals API — `injectPublication` / `injectDocumentBySlug`
 
 Injection functions that return readonly signals. The fetch is aborted automatically when the host component is destroyed.
 
 ```ts
 import { Component } from "@angular/core";
 import { NgIf } from "@angular/common";
-import { injectArticleBySlug } from "@skyscribe-sdk/angular";
+import { injectDocumentBySlug } from "@skyscribe-sdk/angular";
 
 @Component({
   standalone: true,
@@ -89,22 +89,22 @@ import { injectArticleBySlug } from "@skyscribe-sdk/angular";
   template: `
     <p *ngIf="vm.loading()">Loading…</p>
     <p *ngIf="vm.error()">{{ vm.error()!.message }}</p>
-    <article *ngIf="vm.article() as article">
-      <h1>{{ article.title }}</h1>
-      <div [innerHTML]="article.content"></div>
+    <article *ngIf="vm.document() as doc">
+      <h1>{{ doc.title }}</h1>
+      <div [innerHTML]="doc.content"></div>
     </article>
   `,
 })
-export class ArticleComponent {
-  vm = injectArticleBySlug("alice.bsky.social", "https://alice.bsky.social", "my-first-post");
+export class DocumentComponent {
+  vm = injectDocumentBySlug("alice.bsky.social", "https://alice.bsky.social", "my-first-post");
 }
 ```
 
-`injectSite` returns `{ site, loading, error }` as readonly signals:
+`injectPublication` returns `{ publication, loading, error }` as readonly signals:
 
 ```ts
-vm = injectSite("alice.bsky.social", "https://alice.bsky.social");
-// vm.site(), vm.loading(), vm.error()
+vm = injectPublication("alice.bsky.social", "https://alice.bsky.social");
+// vm.publication(), vm.loading(), vm.error()
 ```
 
 > **Note:** Injection functions must be called in an injection context — inside a constructor or class field initialiser. They cannot be called inside lifecycle hooks or event handlers.
@@ -114,7 +114,7 @@ vm = injectSite("alice.bsky.social", "https://alice.bsky.social");
 All types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from "@skyscribe-sdk/angular";
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from "@skyscribe-sdk/angular";
 ```
 
 ## License

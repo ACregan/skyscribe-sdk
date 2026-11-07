@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchArticleBySlug: vi.fn(),
+  fetchDocumentBySlug: vi.fn(),
 }));
 
 vi.mock("#app", () => ({
   useAsyncData: vi.fn(),
 }));
 
-import { fetchArticleBySlug } from "@skyscribe-sdk/core";
+import { fetchDocumentBySlug } from "@skyscribe-sdk/core";
 import { useAsyncData } from "#app";
 import { useScribeDocumentUri } from "./useScribeDocumentUri.js";
 
-const mockFetchArticleBySlug = vi.mocked(fetchArticleBySlug);
+const mockFetchArticleBySlug = vi.mocked(fetchDocumentBySlug);
 const mockUseAsyncData = vi.mocked(useAsyncData);
 
 beforeEach(() => {
@@ -30,9 +30,9 @@ describe("useScribeDocumentUri", () => {
     );
   });
 
-  it("handler calls fetchArticleBySlug and returns the uri", async () => {
+  it("handler calls fetchDocumentBySlug and returns the uri", async () => {
     const documentUri = "at://did:plc:abc/site.standard.document/3jxtctq7kqm2y";
-    mockFetchArticleBySlug.mockResolvedValueOnce({ article: {} as never, uri: documentUri });
+    mockFetchArticleBySlug.mockResolvedValueOnce({ uri: documentUri } as never);
     (mockUseAsyncData as any).mockImplementation((_key: any, handler: any) => {
       handler();
       return {};

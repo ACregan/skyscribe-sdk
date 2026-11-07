@@ -1,74 +1,102 @@
 import type { DocumentSeo } from "./seo.js";
 
-export interface ArticleContributor {
+// Names follow the site.standard spec where it has one (Publication,
+// Document) and SkyScribe's term where it doesn't (Category): ADR 0005.
+
+export interface DocumentContributor {
   did: string;
   role?: string;
   displayName?: string;
 }
 
-export interface ArticleRef {
+/** A snapshot of a Document cached inside its Publication's record, enough
+ * to list Documents without fetching each one. */
+export interface DocumentRef {
   uri: string;
   title: string;
   slug?: string;
-  splashImageUrl: string | null;
+  coverImageUrl: string | null;
   description?: string | null;
   tags?: string[];
-  contributors?: ArticleContributor[];
+  contributors?: DocumentContributor[];
   createdAt: string;
   publishedAt?: string;
   updatedAt?: string;
-  /** The article's canonical URL is another site's: it was imported into
-   * SkyScribe and its author chose to keep the original as canonical.
+  /** The Document's canonical URL is another website's: it was imported
+   * into SkyScribe and its author chose to keep the original as canonical.
    * Sitemaps leave it out (getSitemapEntries does). Absent means this
-   * site's own URL is canonical. */
+   * Publication's own URL is canonical. */
   canonicalElsewhere?: true;
-  /** The article's SEO Settings ask search engines to leave it out
+  /** The Document's SEO Settings ask search engines to leave it out
    * (skyscribe-app ADR 0099). Sitemaps leave it out (getSitemapEntries
-   * does); it still appears on the site and in RSS. */
+   * does); it still appears on the website and in RSS. */
   noindex?: true;
 }
 
-export interface SiteGroup {
+/** A named, ordered set of Documents within a Publication. A SkyScribe
+ * extension: site.standard has no equivalent. */
+export interface Category {
   slug: string;
   title: string;
-  articles: ArticleRef[];
+  documents: DocumentRef[];
 }
 
-export interface Site {
+/** A `site.standard.publication` record, as the SDK returns it. */
+export interface StandardPublication {
+  /** The record's AT URI. */
   uri: string;
-  title: string;
-  url: string;
-  urlPrefix: string;
+  /** The spec's `name`. */
+  name: string;
+  /** The bare domain its website lives on, e.g. "norobots.blog": no
+   * protocol, no path. buildPublicationUrl() gives the full URL. */
+  domain: string;
+  /** The path its Documents live under, e.g. "blog"; "" when none. */
+  basePath: string;
   description?: string;
   splashImageUrl?: string;
   logoImageUrl?: string;
-  groups: SiteGroup[];
-  ungroupedArticles: ArticleRef[];
+  categories: Category[];
 }
 
-export interface Article {
+/** A `site.standard.document` record, as the SDK returns it. */
+export interface StandardDocument {
+  /** The record's AT URI. */
+  uri: string;
   title: string;
   content: string;
   path: string;
+  /** The spec's `site`: the owning Publication's AT URI once published. */
   site: string;
   canonicalUrl?: string;
   textContent?: string;
   coverImageUrl?: string;
   description?: string;
   tags?: string[];
-  contributors?: ArticleContributor[];
+  contributors?: DocumentContributor[];
   bskyPostRef?: { uri: string; cid: string };
   /** SEO Settings from the record's `scribe.seo`: only the valid parts,
-   * absent when it has none. generateArticleMeta applies them. */
+   * absent when it has none. generateDocumentMeta applies them. */
   seo?: DocumentSeo;
   createdAt?: string;
   publishedAt: string;
   updatedAt: string;
 }
 
-export interface SiteRecord extends Site {}
+// ── Deprecated names (ADR 0005): removed in the next major ──────────────
 
+/** @deprecated Use `StandardPublication`. */
+export type Site = StandardPublication;
+/** @deprecated Use `Category`. */
+export type SiteGroup = Category;
+/** @deprecated Use `DocumentRef`. */
+export type ArticleRef = DocumentRef;
+/** @deprecated Use `StandardDocument`. */
+export type Article = StandardDocument;
+/** @deprecated Use `DocumentContributor`. */
+export type ArticleContributor = DocumentContributor;
+/** @deprecated `fetchDocumentBySlug` returns the `StandardDocument`, which
+ * carries its own `uri`. Only the deprecated `fetchArticleBySlug` returns this. */
 export interface ArticleResult {
-  article: Article;
+  article: StandardDocument;
   uri: string;
 }

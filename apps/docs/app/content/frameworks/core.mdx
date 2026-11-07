@@ -10,69 +10,69 @@ Every framework adapter is a thin wrapper around this package. If your framework
 npm install @skyscribe-sdk/core
 ```
 
-## Fetch a site
+## Fetch a Publication
 
 ```ts
-import { fetchSite } from '@skyscribe-sdk/core';
+import { fetchPublication } from '@skyscribe-sdk/core';
 
-const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
+const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
 
-console.log(site.title);
-console.log(site.description);
-console.log(site.url);        // e.g. "alice.bsky.social"
-console.log(site.urlPrefix);  // e.g. "blog" or ""
+console.log(publication.name);
+console.log(publication.description);
+console.log(publication.domain);    // e.g. "alice.bsky.social"
+console.log(publication.basePath);  // e.g. "blog" or ""
 
-for (const group of site.groups) {
-  for (const article of group.articles) {
-    console.log(article.title, article.slug, article.description);
+for (const category of publication.categories) {
+  for (const ref of category.documents) {
+    console.log(ref.title, ref.slug, ref.description);
   }
 }
 ```
 
-## Fetch an article
+## Fetch a Document
 
-Look an article up by its slug, which is what appears in your URLs:
+Look a Document up by its slug, which is what appears in your URLs:
 
 ```ts
-import { fetchArticleBySlug } from '@skyscribe-sdk/core';
+import { fetchDocumentBySlug } from '@skyscribe-sdk/core';
 
-const { article } = await fetchArticleBySlug(
+const document = await fetchDocumentBySlug(
   'alice.bsky.social',
   'https://alice.bsky.social',
   'my-first-post',
 );
 
-console.log(article.title);
-console.log(article.description);
-console.log(article.content);  // Full HTML
-console.log(article.createdAt);
+console.log(document.title);
+console.log(document.description);
+console.log(document.content);  // Full HTML
+console.log(document.createdAt);
 ```
 
-If you already have an `ArticleRef`, `fetchArticle` skips the Site lookup. It takes the account and record key (rkey), both found in the ref's AT URI (`at://{did}/site.standard.document/{rkey}`). Take the account from there rather than assuming the site owner's: an article credited to a contributor can live in their account.
+If you already have a `DocumentRef`, `fetchDocument` skips the Publication lookup. It takes the account and record key (rkey), both found in the ref's AT URI (`at://{did}/site.standard.document/{rkey}`). Take the account from there rather than assuming the Publication owner's: a Document credited to a contributor can live in their account.
 
 ```ts
-import { fetchArticle, slugFromUri } from '@skyscribe-sdk/core';
+import { fetchDocument, slugFromUri } from '@skyscribe-sdk/core';
 
-const ref = site.groups[0].articles[0];
-const article = await fetchArticle(ref.uri.split('/')[2], slugFromUri(ref.uri));
+const ref = publication.categories[0].documents[0];
+const document = await fetchDocument(ref.uri.split('/')[2], slugFromUri(ref.uri));
 ```
 
 <Callout type="warning">
-  Don't pass a slug to `fetchArticle`: articles published with current tooling have opaque rkeys like `3mp47vvkh342n`, so a slug only finds very old articles. Use `fetchArticleBySlug` when you have a slug.
+  Don't pass a slug to `fetchDocument`: Documents published with current tooling have opaque rkeys like `3mp47vvkh342n`, so a slug only finds very old Documents. Use `fetchDocumentBySlug` when you have a slug.
 </Callout>
 
-Before rendering `article.content`, read [Rendering the HTML](/quickstart#3-fetch-an-article): if you show articles from accounts you don't control, sanitise it first.
+Before rendering `document.content`, read [Rendering the HTML](/quickstart#3-fetch-a-document): if you show Documents from accounts you don't control, sanitise it first.
 
 ## Utilities
 
 ```ts
-import { slugFromUri, flattenArticles } from '@skyscribe-sdk/core';
+import { slugFromUri, flattenDocuments } from '@skyscribe-sdk/core';
 
 // The last segment of an AT URI: the record's rkey
 slugFromUri('at://did:plc:abc/site.standard.document/3mp47vvkh342n') // → "3mp47vvkh342n"
 
-// All published articles across all groups, in order
-const allArticles = flattenArticles(site.groups);
+// All published Documents across all Categories, in order
+const allDocuments = flattenDocuments(publication.categories);
 ```
 
 ## Cancelling requests
@@ -81,11 +81,11 @@ Every fetch function accepts an optional `AbortSignal` as its last argument:
 
 ```ts
 // On the server: cancel if the visitor navigates away
-const site = await fetchSite(author, 'https://alice.bsky.social', request.signal);
+const publication = await fetchPublication(author, 'https://alice.bsky.social', request.signal);
 
 // In the browser: cancel on unmount or when parameters change
 const controller = new AbortController();
-const site = await fetchSite(author, 'https://alice.bsky.social', controller.signal);
+const publication = await fetchPublication(author, 'https://alice.bsky.social', controller.signal);
 controller.abort();
 ```
 
@@ -107,12 +107,12 @@ loadSiteAnalytics();
 import { siteAnalyticsScriptTag } from '@skyscribe-sdk/core';
 ```
 
-Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+Figures only appear once your website serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
 
 ## TypeScript types
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from '@skyscribe-sdk/core';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/core';
 ```
 
 See the [API reference](/api/core) for the full type definitions.

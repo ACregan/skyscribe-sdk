@@ -3,9 +3,9 @@
 Every fetch function in `@skyscribe-sdk/core` accepts an optional `AbortSignal` as its last argument. When the signal fires, any in-flight HTTP requests are cancelled immediately.
 
 ```ts
-fetchSite(author, publicationUrl, signal?)
-fetchArticleBySlug(author, publicationUrl, articleSlug, signal?)
-fetchArticle(author, rkey, signal?)
+fetchPublication(author, publicationUrl, signal?)
+fetchDocumentBySlug(author, publicationUrl, documentSlug, signal?)
+fetchDocument(author, rkey, signal?)
 ```
 
 ## When you need this
@@ -18,9 +18,9 @@ fetchArticle(author, rkey, signal?)
 
 If you use a framework adapter, you don't need to manage signals yourself:
 
-- **React hooks** (`useSite`, `useArticleBySlug`, `useArticle`): abort on unmount, and re-fetch (aborting the old request) when their arguments change
+- **React hooks** (`usePublication`, `useDocumentBySlug`, `useDocument`): abort on unmount, and re-fetch (aborting the old request) when their arguments change
 - **React Router loaders**: pass `request.signal` through
-- **Angular signals** (`injectSite`, `injectArticleBySlug`, `injectArticle`): abort when the host component is destroyed
+- **Angular signals** (`injectPublication`, `injectDocumentBySlug`, `injectDocument`): abort when the host component is destroyed
 - **Angular Observables** (`ScribeService`): abort when you unsubscribe, including when an `async` pipe's component is destroyed
 - **Vue composables**: abort on unmount. They take plain values and don't re-fetch when those change, so re-create the component (for example with a `:key`) to fetch something else
 - **Nuxt composables**: don't cancel. `useAsyncData` runs the fetch once during server rendering and reuses the result on the client
@@ -36,13 +36,13 @@ Pass `request.signal` from the incoming request:
 ```ts
 // React Router v7/v8
 export async function loader({ request }: LoaderFunctionArgs) {
-  return fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal);
+  return fetchPublication('alice.bsky.social', 'https://alice.bsky.social', request.signal);
 }
 
 // Next.js App Router route handler
 export async function GET(request: Request) {
-  const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal);
-  return Response.json(site);
+  const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social', request.signal);
+  return Response.json(publication);
 }
 ```
 
@@ -53,7 +53,7 @@ Create an `AbortController` and abort when needed:
 ```ts
 // Cancel on component unmount (vanilla JS)
 const controller = new AbortController();
-const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social', controller.signal);
+const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social', controller.signal);
 
 // Later, when the component unmounts or the visitor navigates away:
 controller.abort();
@@ -65,7 +65,7 @@ In React you can do this inside `useEffect`:
 useEffect(() => {
   const controller = new AbortController();
 
-  fetchSite('alice.bsky.social', 'https://alice.bsky.social', controller.signal)
+  fetchPublication('alice.bsky.social', 'https://alice.bsky.social', controller.signal)
     .then(setSite)
     .catch((err) => {
       if (err.name !== 'AbortError') throw err;
@@ -76,7 +76,7 @@ useEffect(() => {
 ```
 
 <Callout>
-  `@skyscribe-sdk/react`'s `useSite` and `useArticle` already handle this `AbortController` lifecycle, so you rarely need to write it yourself.
+  `@skyscribe-sdk/react`'s `usePublication` and `useDocument` already handle this `AbortController` lifecycle, so you rarely need to write it yourself.
 </Callout>
 
 ## Handling AbortError
@@ -85,7 +85,7 @@ When a signal fires, the promise rejects with an `AbortError`. Check for it and 
 
 ```ts
 try {
-  const site = await fetchSite(author, publicationUrl, controller.signal);
+  const publication = await fetchPublication(author, publicationUrl, controller.signal);
 } catch (err) {
   if (err instanceof Error && err.name === 'AbortError') {
     return; // normal: the request was cancelled

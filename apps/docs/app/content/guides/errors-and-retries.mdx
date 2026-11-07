@@ -1,20 +1,20 @@
 # Errors and retries
 
-`fetchSite`, `fetchArticle`, `fetchArticleBySlug`, `resolvePublicationUri`, `listSites`, `listArticles`, and `fetchProfile` throw one of three typed errors, all exported from `@skyscribe-sdk/core`:
+`fetchPublication`, `fetchDocument`, `fetchDocumentBySlug`, `resolvePublicationUri`, `listPublications`, `listDocuments`, and `fetchProfile` throw one of three typed errors, all exported from `@skyscribe-sdk/core`:
 
 | Error | Thrown when | Should you retry? |
 | ----- | ----------- | ------------------ |
-| `NotFoundError` | The fetch worked, but the site or article doesn't exist (bad slug, deleted record) | No: it will fail the same way every time |
+| `NotFoundError` | The fetch worked, but the Publication or Document doesn't exist (bad slug, deleted record) | No: it will fail the same way every time |
 | `PdsFetchError` | The PDS responded, but with an error status. The service is up; this operation failed | Yes: it's usually temporary |
 | `PdsUnreachableError` | The request never got a response: DNS failure, connection refused, timeout | Yes, but it suggests a wider outage rather than one bad request |
 
 `PdsUnreachableError` extends `PdsFetchError`, so `instanceof PdsFetchError` matches both. Check `instanceof PdsUnreachableError` first if your UI wants to say something more specific, like "the service is down" rather than "something went wrong loading this".
 
 ```ts
-import { fetchSite, NotFoundError, PdsFetchError, PdsUnreachableError } from '@skyscribe-sdk/core';
+import { fetchPublication, NotFoundError, PdsFetchError, PdsUnreachableError } from '@skyscribe-sdk/core';
 
 try {
-  const site = await fetchSite(author, publicationUrl, signal);
+  const publication = await fetchPublication(author, publicationUrl, signal);
 } catch (err) {
   if (err instanceof NotFoundError) {
     // show a 404: retrying won't help
@@ -52,9 +52,9 @@ function withRetry<T>(
 ```
 
 ```ts
-import { fetchSite, withRetry } from '@skyscribe-sdk/core';
+import { fetchPublication, withRetry } from '@skyscribe-sdk/core';
 
-const site = await withRetry(() => fetchSite(author, publicationUrl, signal), { signal });
+const publication = await withRetry(() => fetchPublication(author, publicationUrl, signal), { signal });
 ```
 
 It never retries `NotFoundError`: retrying a real 404 only delays showing it. It also stops as soon as the `signal` is aborted, rather than retrying a request nobody is waiting for. Everything else is retried, including plain `Error`s.
@@ -69,15 +69,15 @@ It never retries `NotFoundError`: retrying a real 404 only delays showing it. It
 // React Router v7/v8 framework mode
 export async function loader({ request }: Route.LoaderArgs) {
   try {
-    const site = await fetchSite(author, publicationUrl, request.signal);
-    return { status: 'ok' as const, site };
+    const publication = await fetchPublication(author, publicationUrl, request.signal);
+    return { status: 'ok' as const, publication };
   } catch (err) {
     if (err instanceof NotFoundError) throw new Response('Not found', { status: 404 });
     // Stream the retries (don't await) so the page shell renders
     // immediately and a <Suspense> fallback covers the wait.
     return {
       status: 'retrying' as const,
-      site: withRetry(() => fetchSite(author, publicationUrl, request.signal), {
+      publication: withRetry(() => fetchPublication(author, publicationUrl, request.signal), {
         attempts: 4,
         signal: request.signal,
       }),

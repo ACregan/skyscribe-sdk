@@ -1,4 +1,4 @@
-import type { Site } from "./types.js";
+import type { StandardPublication } from "./types.js";
 
 export interface SitemapEntry {
   url: string;
@@ -9,26 +9,26 @@ export interface GetSitemapEntriesOptions {
   baseUrl: string;
 }
 
-function groupUrl(baseUrl: string, urlPrefix: string, groupSlug: string): string {
-  const prefix = urlPrefix ? `${urlPrefix}/` : "";
-  return `${baseUrl}/${prefix}${groupSlug}`;
+function categoryUrl(baseUrl: string, basePath: string, categorySlug: string): string {
+  const prefix = basePath ? `${basePath}/` : "";
+  return `${baseUrl}/${prefix}${categorySlug}`;
 }
 
-function articleUrl(
+function documentUrl(
   baseUrl: string,
-  urlPrefix: string,
-  groupSlug: string,
-  articleSlug: string
+  basePath: string,
+  categorySlug: string,
+  documentSlug: string
 ): string {
-  const prefix = urlPrefix ? `${urlPrefix}/` : "";
-  return `${baseUrl}/${prefix}${groupSlug}/${articleSlug}`;
+  const prefix = basePath ? `${basePath}/` : "";
+  return `${baseUrl}/${prefix}${categorySlug}/${documentSlug}`;
 }
 
 export function getSitemapEntries(
-  site: Site,
+  publication: StandardPublication,
   options: GetSitemapEntriesOptions
 ): SitemapEntry[] {
-  const prefix = site.urlPrefix ?? "";
+  const prefix = publication.basePath ?? "";
   const entries: SitemapEntry[] = [];
 
   // Homepage
@@ -39,21 +39,21 @@ export function getSitemapEntries(
     entries.push({ url: `${options.baseUrl}/${prefix}` });
   }
 
-  // Group pages and article pages
-  for (const group of site.groups) {
-    entries.push({ url: groupUrl(options.baseUrl, prefix, group.slug) });
+  // Category pages and Document pages
+  for (const category of publication.categories) {
+    entries.push({ url: categoryUrl(options.baseUrl, prefix, category.slug) });
 
-    for (const article of group.articles) {
-      // Its canonical URL is another site's (an imported article whose
-      // author kept the original as canonical): this site's copy isn't
-      // the page to offer search engines.
-      if (article.canonicalElsewhere) continue;
+    for (const ref of category.documents) {
+      // Its canonical URL is another website's (an imported Document whose
+      // author kept the original as canonical): this copy isn't the page
+      // to offer search engines.
+      if (ref.canonicalElsewhere) continue;
       // Its SEO Settings ask search engines to leave it out.
-      if (article.noindex) continue;
-      const url = articleUrl(options.baseUrl, prefix, group.slug, article.slug ?? "");
+      if (ref.noindex) continue;
+      const url = documentUrl(options.baseUrl, prefix, category.slug, ref.slug ?? "");
       const lastmod =
-        article.updatedAt && article.updatedAt.length > 0
-          ? new Date(article.updatedAt).toISOString().split("T")[0]
+        ref.updatedAt && ref.updatedAt.length > 0
+          ? new Date(ref.updatedAt).toISOString().split("T")[0]
           : undefined;
       entries.push({ url, ...(lastmod && { lastmod }) });
     }

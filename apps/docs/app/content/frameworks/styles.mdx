@@ -1,6 +1,6 @@
 # Styles
 
-`@skyscribe-sdk/styles` is a plain CSS package: no JavaScript, no build step, no framework dependency. It styles article content (code blocks, blockquotes, lists, checklists, images) inside any element with the `scribe-content` class. Install it alongside whichever framework adapter you're using:
+`@skyscribe-sdk/styles` is a plain CSS package: no JavaScript, no build step, no framework dependency. It styles Document content (code blocks, blockquotes, lists, checklists, images) inside any element with the `scribe-content` class. Install it alongside whichever framework adapter you're using:
 
 ```bash
 npm install @skyscribe-sdk/styles
@@ -14,7 +14,7 @@ Import the stylesheet once, then use `@skyscribe-sdk/react`'s `<ScribeContent>` 
 import { ScribeContent } from '@skyscribe-sdk/react';
 import '@skyscribe-sdk/styles';
 
-<ScribeContent html={article.content} />
+<ScribeContent html={document.content} />
 ```
 
 ## Vue
@@ -25,7 +25,7 @@ import '@skyscribe-sdk/styles';
 </script>
 
 <template>
-  <div class="scribe-content" v-html="article.content" />
+  <div class="scribe-content" v-html="document.content" />
 </template>
 ```
 
@@ -41,7 +41,7 @@ Add the stylesheet to your global styles in `angular.json`:
 ```
 
 ```html
-<div class="scribe-content" [innerHTML]="article.content"></div>
+<div class="scribe-content" [innerHTML]="doc.content"></div>
 ```
 
 ## Next.js
@@ -56,20 +56,20 @@ import '@skyscribe-sdk/styles';
 In server components, render the HTML into an element with the `scribe-content` class:
 
 ```tsx
-<div className="scribe-content" dangerouslySetInnerHTML={{ __html: article.content }} />
+<div className="scribe-content" dangerouslySetInnerHTML={{ __html: document.content }} />
 ```
 
 (`@skyscribe-sdk/react`'s package entry also contains client-side hooks, so keep its `<ScribeContent>` for client components.)
 
 ## Plain HTML / any other framework
 
-Import the stylesheet, and apply the `scribe-content` class to whichever element you render `article.content` into:
+Import the stylesheet, and apply the `scribe-content` class to whichever element you render `document.content` into:
 
 ```html
 <link rel="stylesheet" href="/node_modules/@skyscribe-sdk/styles/src/index.css" />
 <!-- or, if bundling: import "@skyscribe-sdk/styles"; -->
 
-<div class="scribe-content"><!-- article.content HTML here --></div>
+<div class="scribe-content"><!-- document.content HTML here --></div>
 ```
 
 ## Theming and the full list of styled elements

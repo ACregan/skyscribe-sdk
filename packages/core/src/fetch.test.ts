@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fetchSite, fetchArticle, fetchArticleBySlug, resolvePublicationUri, _clearAllCaches } from "./fetch.js";
+import { fetchPublication, fetchDocument, fetchDocumentBySlug, fetchArticleBySlug, resolvePublicationUri, _clearAllCaches } from "./fetch.js";
 import { resolveIdentifier } from "./resolve.js";
 
 vi.mock("./resolve.js", () => ({
@@ -39,12 +39,12 @@ const makeScribeRecord = (overrides: object = {}) => ({
   },
 });
 
-describe("fetchSite", () => {
+describe("fetchPublication", () => {
   it("fetches via listRecords and filters by url field", async () => {
     mockFetch.mockResolvedValueOnce(makeListResponse([makeScribeRecord()]));
 
-    const result = await fetchSite("did:plc:testuser", "https://example.com");
-    expect(result.title).toBe("Test Site");
+    const result = await fetchPublication("did:plc:testuser", "https://example.com");
+    expect(result.name).toBe("Test Site");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         href: expect.stringContaining("listRecords"),
@@ -56,7 +56,7 @@ describe("fetchSite", () => {
   it("fetches from site.standard.publication collection", async () => {
     mockFetch.mockResolvedValueOnce(makeListResponse([makeScribeRecord()]));
 
-    await fetchSite("did:plc:testuser", "https://example.com");
+    await fetchPublication("did:plc:testuser", "https://example.com");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         href: expect.stringContaining("site.standard.publication"),
@@ -78,14 +78,14 @@ describe("fetchSite", () => {
       }])
     );
 
-    const result = await fetchSite("did:plc:testuser", "https://example.com");
+    const result = await fetchPublication("did:plc:testuser", "https://example.com");
     expect(result.description).toBe("Top-level description");
   });
 
   it("returns undefined description when neither top-level nor scribe field is present", async () => {
     mockFetch.mockResolvedValueOnce(makeListResponse([makeScribeRecord()]));
 
-    const result = await fetchSite("did:plc:testuser", "https://example.com");
+    const result = await fetchPublication("did:plc:testuser", "https://example.com");
     expect(result.description).toBeUndefined();
   });
 
@@ -99,7 +99,7 @@ describe("fetchSite", () => {
       ])
     );
 
-    const result = await fetchSite("did:plc:testuser", "https://example.com");
+    const result = await fetchPublication("did:plc:testuser", "https://example.com");
     expect(result.description).toBe("Legacy nested description");
   });
 
@@ -118,7 +118,7 @@ describe("fetchSite", () => {
       ])
     );
 
-    const result = await fetchSite("did:plc:testuser", "https://example.com");
+    const result = await fetchPublication("did:plc:testuser", "https://example.com");
     expect(result.description).toBe("Top-level wins");
   });
 
@@ -134,31 +134,31 @@ describe("fetchSite", () => {
       }])
     );
 
-    const result = await fetchSite("did:plc:testuser", "https://norobots.blog");
-    expect(result.url).toBe("norobots.blog");
-    expect(result.urlPrefix).toBe("posts");
+    const result = await fetchPublication("did:plc:testuser", "https://norobots.blog");
+    expect(result.domain).toBe("norobots.blog");
+    expect(result.basePath).toBe("posts");
   });
 
   it("strips trailing slash from publicationUrl when matching", async () => {
     mockFetch.mockResolvedValueOnce(makeListResponse([makeScribeRecord()]));
 
-    const result = await fetchSite("did:plc:testuser", "https://example.com/");
-    expect(result.title).toBe("Test Site");
+    const result = await fetchPublication("did:plc:testuser", "https://example.com/");
+    expect(result.name).toBe("Test Site");
   });
 
   it("throws NotFoundError when no publication matches the url", async () => {
     mockFetch.mockResolvedValueOnce(makeListResponse([]));
 
     await expect(
-      fetchSite("did:plc:testuser", "https://notfound.example.com")
-    ).rejects.toMatchObject({ name: "NotFoundError", message: expect.stringContaining("Site not found") });
+      fetchPublication("did:plc:testuser", "https://notfound.example.com")
+    ).rejects.toMatchObject({ name: "NotFoundError", message: expect.stringContaining("Publication not found") });
   });
 
   it("throws PdsFetchError when listRecords fetch fails", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, statusText: "Server Error" });
 
     await expect(
-      fetchSite("did:plc:testuser", "https://example.com")
+      fetchPublication("did:plc:testuser", "https://example.com")
     ).rejects.toMatchObject({ name: "PdsFetchError", message: expect.stringContaining("Failed to fetch publications") });
   });
 
@@ -166,11 +166,11 @@ describe("fetchSite", () => {
     mockFetch.mockRejectedValueOnce(new TypeError("fetch failed"));
 
     await expect(
-      fetchSite("did:plc:testuser", "https://example.com")
+      fetchPublication("did:plc:testuser", "https://example.com")
     ).rejects.toMatchObject({ name: "PdsUnreachableError" });
   });
 
-  it("normalises missing groups and ungroupedArticles to empty arrays", async () => {
+  it("normalises missing Categories to an empty array", async () => {
     mockFetch.mockResolvedValueOnce(
       makeListResponse([{
         uri: "at://did:plc:testuser/site.standard.publication/3abc",
@@ -181,20 +181,19 @@ describe("fetchSite", () => {
       }])
     );
 
-    const result = await fetchSite("did:plc:testuser", "https://example.com");
-    expect(result.groups).toEqual([]);
-    expect(result.ungroupedArticles).toEqual([]);
+    const result = await fetchPublication("did:plc:testuser", "https://example.com");
+    expect(result.categories).toEqual([]);
   });
 
   it("reuses the cached AT URI on a second call via getRecord instead of listRecords", async () => {
     mockFetch.mockResolvedValueOnce(makeListResponse([makeScribeRecord()]));
-    await fetchSite("did:plc:testuser", "https://example.com");
+    await fetchPublication("did:plc:testuser", "https://example.com");
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ value: makeScribeRecord().value }),
     });
-    await fetchSite("did:plc:testuser", "https://example.com");
+    await fetchPublication("did:plc:testuser", "https://example.com");
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(mockFetch.mock.calls[1][0].href).toContain("getRecord");
@@ -204,7 +203,7 @@ describe("fetchSite", () => {
   it("self-heals when the cached AT URI no longer resolves (record deleted/recreated elsewhere)", async () => {
     // First call caches the original AT URI.
     mockFetch.mockResolvedValueOnce(makeListResponse([makeScribeRecord()]));
-    const first = await fetchSite("did:plc:testuser", "https://example.com");
+    const first = await fetchPublication("did:plc:testuser", "https://example.com");
     expect(first.uri).toBe("at://did:plc:testuser/site.standard.publication/3jxtctq7kqm2y");
 
     // Second call: getRecord against the cached (now-deleted) rkey fails...
@@ -220,9 +219,9 @@ describe("fetchSite", () => {
       }])
     );
 
-    const second = await fetchSite("did:plc:testuser", "https://example.com");
+    const second = await fetchPublication("did:plc:testuser", "https://example.com");
     expect(second.uri).toBe("at://did:plc:testuser/site.standard.publication/3newrkey");
-    expect(second.title).toBe("Recreated Site");
+    expect(second.name).toBe("Recreated Site");
     expect(mockFetch).toHaveBeenCalledTimes(3);
 
     // A third call should now be served from the freshly-repaired cache via getRecord.
@@ -235,13 +234,13 @@ describe("fetchSite", () => {
         },
       }),
     });
-    await fetchSite("did:plc:testuser", "https://example.com");
+    await fetchPublication("did:plc:testuser", "https://example.com");
     expect(mockFetch).toHaveBeenCalledTimes(4);
     expect(mockFetch.mock.calls[3][0].href).toContain("getRecord");
   });
 });
 
-describe("fetchArticle", () => {
+describe("fetchDocument", () => {
   it("fetches an article record from site.standard.document collection", async () => {
     const rawRecord = {
       title: "Hello World",
@@ -260,7 +259,7 @@ describe("fetchArticle", () => {
       json: async () => ({ value: rawRecord }),
     });
 
-    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    const result = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(result.title).toBe("Hello World");
     expect(result.content).toBe("<p>Hi</p>");
     expect(result.path).toBe("/essays/hello-world");
@@ -284,7 +283,7 @@ describe("fetchArticle", () => {
       }),
     });
 
-    await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         href: expect.stringContaining("site.standard.document"),
@@ -309,7 +308,7 @@ describe("fetchArticle", () => {
       }),
     });
 
-    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    const result = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(result.canonicalUrl).toBe("https://example.com/test");
   });
 
@@ -328,7 +327,7 @@ describe("fetchArticle", () => {
       }),
     });
 
-    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    const result = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(result.canonicalUrl).toBeUndefined();
   });
 
@@ -347,7 +346,7 @@ describe("fetchArticle", () => {
       }),
     });
 
-    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    const result = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(result.content).toBe("<p>Body</p>");
   });
 
@@ -366,7 +365,7 @@ describe("fetchArticle", () => {
       }),
     });
 
-    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    const result = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(result.content).toBe("");
   });
 
@@ -386,7 +385,7 @@ describe("fetchArticle", () => {
       }),
     });
 
-    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    const result = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(result.coverImageUrl).toBe("https://images.example.com/cover.jpg");
   });
 
@@ -406,7 +405,7 @@ describe("fetchArticle", () => {
       }),
     });
 
-    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    const result = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(result.seo).toEqual({ title: "SEO title", noindex: true });
   });
 
@@ -425,15 +424,15 @@ describe("fetchArticle", () => {
       }),
     });
 
-    const result = await fetchArticle("did:plc:testuser", "3jxtctq7kqm2y");
+    const result = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
     expect(result.coverImageUrl).toBeUndefined();
   });
 
   it("throws PdsFetchError when the fetch fails", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, statusText: "Not Found" });
     await expect(
-      fetchArticle("did:plc:testuser", "missing-article")
-    ).rejects.toMatchObject({ name: "PdsFetchError", message: expect.stringContaining("Failed to fetch article") });
+      fetchDocument("did:plc:testuser", "missing-article")
+    ).rejects.toMatchObject({ name: "PdsFetchError", message: expect.stringContaining("Failed to fetch document") });
   });
 });
 
@@ -471,7 +470,7 @@ const makeArticleResponse = () => ({
   }),
 });
 
-describe("fetchArticleBySlug", () => {
+describe("fetchDocumentBySlug", () => {
   it("fetches site then article by TID rkey from ArticleRef.uri", async () => {
     mockFetch
       .mockResolvedValueOnce(makeArticleListResponse([{
@@ -483,9 +482,9 @@ describe("fetchArticleBySlug", () => {
       }]))
       .mockResolvedValueOnce(makeArticleResponse());
 
-    const result = await fetchArticleBySlug("did:plc:testuser", "https://example.com", "my-article");
+    const result = await fetchDocumentBySlug("did:plc:testuser", "https://example.com", "my-article");
 
-    expect(result.article.title).toBe("My Article");
+    expect(result.title).toBe("My Article");
     expect(result.uri).toBe("at://did:plc:testuser/site.standard.document/3jxtctq7kqm2y");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({ href: expect.stringContaining("rkey=3jxtctq7kqm2y") }),
@@ -505,7 +504,7 @@ describe("fetchArticleBySlug", () => {
       }]))
       .mockResolvedValueOnce(makeArticleResponse());
 
-    const result = await fetchArticleBySlug("did:plc:testuser", "https://example.com", "my-article");
+    const result = await fetchDocumentBySlug("did:plc:testuser", "https://example.com", "my-article");
     expect(result.uri).toBe(articleUri);
   });
 
@@ -519,43 +518,17 @@ describe("fetchArticleBySlug", () => {
       }]))
       .mockResolvedValueOnce(makeArticleResponse());
 
-    const result = await fetchArticleBySlug("did:plc:testuser", "https://example.com", "my-article");
-    expect(result.article.title).toBe("My Article");
+    const result = await fetchDocumentBySlug("did:plc:testuser", "https://example.com", "my-article");
+    expect(result.title).toBe("My Article");
   });
 
-  it("searches ungroupedArticles as well as groups", async () => {
-    mockFetch
-      .mockResolvedValueOnce(makeListResponse([{
-        uri: "at://did:plc:testuser/site.standard.publication/3jxtctq7kqm2y",
-        value: {
-          url: "https://example.com",
-          scribe: {
-            domain: "example.com",
-            basePath: "",
-            title: "Test Site",
-            groups: [],
-            ungroupedArticles: [{
-              uri: "at://did:plc:testuser/site.standard.document/3jxtctq7kqm2y",
-              title: "My Article",
-              slug: "my-article",
-              splashImageUrl: null,
-              createdAt: "2024-01-01T00:00:00Z",
-            }],
-          },
-        },
-      }]))
-      .mockResolvedValueOnce(makeArticleResponse());
-
-    const result = await fetchArticleBySlug("did:plc:testuser", "https://example.com", "my-article");
-    expect(result.article.title).toBe("My Article");
-  });
 
   it("throws NotFoundError when no article matches the slug", async () => {
     mockFetch.mockResolvedValueOnce(makeArticleListResponse([]));
 
     await expect(
-      fetchArticleBySlug("did:plc:testuser", "https://example.com", "nonexistent")
-    ).rejects.toMatchObject({ name: "NotFoundError", message: "Article not found: nonexistent" });
+      fetchDocumentBySlug("did:plc:testuser", "https://example.com", "nonexistent")
+    ).rejects.toMatchObject({ name: "NotFoundError", message: "Document not found: nonexistent" });
   });
 
   // Found live 2026-07-16: Scribe CMS's Contributors feature (sync-later
@@ -581,9 +554,9 @@ describe("fetchArticleBySlug", () => {
         }]))
         .mockResolvedValueOnce(makeArticleResponse());
 
-      const result = await fetchArticleBySlug("did:plc:siteowner", "https://example.com", "guest-post");
+      const result = await fetchDocumentBySlug("did:plc:siteowner", "https://example.com", "guest-post");
 
-      expect(result.article.title).toBe("My Article");
+      expect(result.title).toBe("My Article");
       expect(result.uri).toBe("at://did:plc:contributor/site.standard.document/3jxtctq7kqm2y");
       // The article fetch (second call) must hit the Contributor's own
       // repo, not the site owner's — the bug fetched `repo=did:plc:siteowner`
@@ -626,7 +599,7 @@ describe("resolvePublicationUri", () => {
 
     await expect(
       resolvePublicationUri("did:plc:testuser", "https://notfound.example.com")
-    ).rejects.toMatchObject({ name: "NotFoundError", message: expect.stringContaining("Site not found") });
+    ).rejects.toMatchObject({ name: "NotFoundError", message: expect.stringContaining("Publication not found") });
   });
 
   it("caches the resolved AT URI, so a second call for the same author+url doesn't refetch", async () => {
@@ -694,5 +667,79 @@ describe("resolvePublicationUri", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("record mapping (ADR 0005)", () => {
+  it("maps the record's groups and articles to categories and documents, splashImageUrl to coverImageUrl", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeArticleListResponse([
+        {
+          uri: "at://did:plc:testuser/site.standard.document/3jxtctq7kqm2y",
+          title: "My Article",
+          slug: "my-article",
+          splashImageUrl: "https://cdn.example.com/a.webp",
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+    const publication = await fetchPublication("did:plc:testuser", "https://example.com");
+    expect(publication.categories).toEqual([
+      {
+        slug: "essays",
+        title: "Essays",
+        documents: [
+          {
+            uri: "at://did:plc:testuser/site.standard.document/3jxtctq7kqm2y",
+            title: "My Article",
+            slug: "my-article",
+            coverImageUrl: "https://cdn.example.com/a.webp",
+            createdAt: "2024-01-01T00:00:00Z",
+          },
+        ],
+      },
+    ]);
+    expect(publication).not.toHaveProperty("groups");
+    expect(publication).not.toHaveProperty("ungroupedArticles");
+  });
+
+  it("prefers the spec's name over scribe.title", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeListResponse([{
+        uri: "at://did:plc:testuser/site.standard.publication/3abc",
+        value: {
+          url: "https://example.com",
+          name: "Spec Name",
+          scribe: { domain: "example.com", basePath: "", title: "Old Title" },
+        },
+      }])
+    );
+    const publication = await fetchPublication("did:plc:testuser", "https://example.com");
+    expect(publication.name).toBe("Spec Name");
+    expect(publication.domain).toBe("example.com");
+  });
+
+  it("gives a fetched Document its own AT URI", async () => {
+    mockFetch.mockResolvedValueOnce(makeArticleResponse());
+    const document = await fetchDocument("did:plc:testuser", "3jxtctq7kqm2y");
+    expect(document.uri).toBe("at://did:plc:testuser/site.standard.document/3jxtctq7kqm2y");
+  });
+
+  it("keeps the deprecated fetchArticleBySlug's { article, uri } shape", async () => {
+    mockFetch.mockResolvedValueOnce(
+      makeArticleListResponse([
+        {
+          uri: "at://did:plc:testuser/site.standard.document/3jxtctq7kqm2y",
+          title: "My Article",
+          slug: "my-article",
+          splashImageUrl: null,
+          createdAt: "2024-01-01T00:00:00Z",
+        },
+      ])
+    );
+    mockFetch.mockResolvedValueOnce(makeArticleResponse());
+    const result = await fetchArticleBySlug("did:plc:testuser", "https://example.com", "my-article");
+    expect(result.uri).toBe("at://did:plc:testuser/site.standard.document/3jxtctq7kqm2y");
+    expect(result.article.title).toBe("My Article");
   });
 });

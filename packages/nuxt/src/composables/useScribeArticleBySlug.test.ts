@@ -20,7 +20,7 @@ beforeEach(() => {
   mockUseAsyncData.mockReturnValue({ data: null, pending: false, error: null } as any);
 });
 
-describe("useScribeArticleBySlug", () => {
+describe("useScribeArticleBySlug (deprecated)", () => {
   it("keys useAsyncData by author, site URL and slug", () => {
     useScribeArticleBySlug("alice.bsky.social", "https://example.com", "hello");
     expect(mockUseAsyncData).toHaveBeenCalledWith(

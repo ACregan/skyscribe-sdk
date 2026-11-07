@@ -26,76 +26,75 @@ import { SiteAnalytics } from "@skyscribe-sdk/vue";
 
 ## Composables
 
-### `useScribeSite`
+### `useScribePublication`
 
 ```ts
-function useScribeSite(author: string, publicationUrl: string): UseScribeSiteResult
+function useScribePublication(author: string, publicationUrl: string): UseScribePublicationResult
 
-interface UseScribeSiteResult {
-  site: Ref<Site | null>;
+interface UseScribePublicationResult {
+  publication: Ref<StandardPublication | null>;
   loading: Ref<boolean>;
   error: Ref<Error | null>;
 }
 ```
 
-Fetches a Site when called and aborts the request when the component unmounts. Returns reactive refs.
+Fetches a Publication when called and aborts the request when the component unmounts. Returns reactive refs.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
 
-While loading, `site.value` is `null` and `loading.value` is `true`. On error, `error.value` is set. A cancelled request doesn't set `error`.
+While loading, `publication.value` is `null` and `loading.value` is `true`. On error, `error.value` is set. A cancelled request doesn't set `error`.
 
 ---
 
-### `useScribeArticleBySlug`
+### `useScribeDocumentBySlug`
 
 ```ts
-function useScribeArticleBySlug(
+function useScribeDocumentBySlug(
   author: string,
   publicationUrl: string,
-  articleSlug: string
-): UseScribeArticleBySlugResult
+  documentSlug: string
+): UseScribeDocumentBySlugResult
 
-interface UseScribeArticleBySlugResult {
-  article: Ref<Article | null>;
-  uri: Ref<string | null>;    // the article's AT URI
+interface UseScribeDocumentBySlugResult {
+  document: Ref<StandardDocument | null>;  // document.value.uri is its AT URI
   loading: Ref<boolean>;
   error: Ref<Error | null>;
 }
 ```
 
-Looks an article up by its slug in the Site at `publicationUrl` (using `fetchArticleBySlug`), and returns it with its AT URI. Aborts on unmount. Since 1.1.0.
+Looks a Document up by its slug in the Publication at `publicationUrl` (using `fetchDocumentBySlug`). Aborts on unmount.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
-| `articleSlug` | `string` | The article's slug, as in its URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
+| `documentSlug` | `string` | The Document's slug, as in its URL |
 
 ---
 
-### `useScribeArticle`
+### `useScribeDocument`
 
 ```ts
-function useScribeArticle(author: string, rkey: string): UseScribeArticleResult
+function useScribeDocument(author: string, rkey: string): UseScribeDocumentResult
 
-interface UseScribeArticleResult {
-  article: Ref<Article | null>;
+interface UseScribeDocumentResult {
+  document: Ref<StandardDocument | null>;
   loading: Ref<boolean>;
   error: Ref<Error | null>;
 }
 ```
 
-Fetches an article by its **record key (rkey)** when called, and aborts on unmount. Returns reactive refs.
+Fetches a Document by its **record key (rkey)** when called, and aborts on unmount. Returns reactive refs.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `author` | `string` | Handle or DID of the account the article is stored in |
-| `rkey` | `string` | The article's record key |
+| `author` | `string` | Handle or DID of the account the Document is stored in |
+| `rkey` | `string` | The Document's record key |
 
-Take both from an `ArticleRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)`. Don't pass a slug: it only finds very old articles. With a slug, use `useScribeArticleBySlug`.
+Take both from a `DocumentRef`: the account is `ref.uri.split('/')[2]` and the rkey is `slugFromUri(ref.uri)`. Don't pass a slug: it only finds very old Documents. With a slug, use `useScribeDocumentBySlug`.
 
 ---
 
@@ -114,12 +113,12 @@ interface UseScribePublicationUriResult {
 }
 ```
 
-Resolves just the AT URI of a Site record (using `resolvePublicationUri` from `@skyscribe-sdk/core`), without returning the whole `Site`. Aborts on unmount.
+Resolves just the AT URI of a Publication (using `resolvePublicationUri` from `@skyscribe-sdk/core`), without returning the whole `StandardPublication`. Aborts on unmount.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
 
 Use it when the AT URI is all you need, for example for your own subscribe UI.
 
@@ -131,7 +130,7 @@ Use it when the AT URI is all you need, for example for your own subscribe UI.
 function useScribeDocumentUri(
   author: string,
   publicationUrl: string,
-  articleSlug: string
+  documentSlug: string
 ): UseScribeDocumentUriResult
 
 interface UseScribeDocumentUriResult {
@@ -141,13 +140,13 @@ interface UseScribeDocumentUriResult {
 }
 ```
 
-Resolves just the AT URI of an article, looked up by its **slug** (it uses `fetchArticleBySlug` and keeps only the `uri`). Aborts on unmount.
+Resolves just the AT URI of a Document, looked up by its **slug** (it uses `fetchDocumentBySlug` and keeps only the `uri`). Aborts on unmount.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
-| `articleSlug` | `string` | The article's slug, as in its URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
+| `documentSlug` | `string` | The Document's slug, as in its URL |
 
 Use it when the AT URI is all you need, for example for your own like UI.
 
@@ -158,7 +157,11 @@ Use it when the AT URI is all you need, for example for your own like UI.
 The main types from `@skyscribe-sdk/core` are re-exported, along with each composable's result type:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from '@skyscribe-sdk/vue';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/vue';
 ```
 
 See the [core reference](/api/core#types) for type definitions.
+
+## Deprecated names
+
+`useScribeSite` (returning `site`), `useScribeArticle` (`article`) and `useScribeArticleBySlug` (`article` and `uri`) still work, marked `@deprecated`, until the next major. See [Upgrading to 5.0](/upgrading-to-5).

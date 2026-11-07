@@ -22,11 +22,11 @@ docs say SDK. Change them together, in the same arc.
 | Package | Path | Purpose |
 | ------- | ---- | ------- |
 | `@skyscribe-sdk/core` | `packages/core` | Pure TS fetch functions, PDS resolution, feed/sitemap generation, types. No framework deps. |
-| `@skyscribe-sdk/react` | `packages/react` | React hooks (`useSite`, `useArticle`) wrapping core. |
+| `@skyscribe-sdk/react` | `packages/react` | React hooks (`usePublication`, `useDocument`, `useDocumentBySlug`) wrapping core. |
 | `@skyscribe-sdk/react-router-framework` | `packages/react-router-framework` | Loader factories for React Router v7/v8 framework mode. |
-| `@skyscribe-sdk/angular` | `packages/angular` | Angular service (`ScribeService`) and injection functions (`injectSite`, `injectArticle`). |
-| `@skyscribe-sdk/next` | `packages/next` | Next.js 13+ App Router adapter — `createScribeSite` factory for `generateStaticParams` and `generateMetadata`. |
-| `@skyscribe-sdk/vue` | `packages/vue` | Vue 3 composables (`useScribeSite`, `useScribeArticle`). |
+| `@skyscribe-sdk/angular` | `packages/angular` | Angular service (`ScribeService`) and injection functions (`injectPublication`, `injectDocument`, `injectDocumentBySlug`). |
+| `@skyscribe-sdk/next` | `packages/next` | Next.js 13+ App Router adapter — `createScribePublication` factory for `generateStaticParams` and `generateMetadata`. |
+| `@skyscribe-sdk/vue` | `packages/vue` | Vue 3 composables (`useScribePublication`, `useScribeDocument`, `useScribeDocumentBySlug`). |
 | `@skyscribe-sdk/nuxt` | `packages/nuxt` | Nuxt 3 module — wraps vue composables with `useAsyncData` and configures auto-imports. |
 
 All framework adapters are thin wrappers around `@skyscribe-sdk/core`. New adapters should follow the same pattern: framework-idiomatic reactivity on top of the core fetch functions, with `AbortController` cleanup.
@@ -67,8 +67,8 @@ Scribe stores content in two collections on the author's Personal Data Server (P
 
   // SCRIBE EXTENSION — all site metadata lives here
   scribe: {
-    domain: string,      // domain name e.g. "norobots.blog" (→ Site.url in SDK)
-    basePath: string,    // path prefix e.g. "blog" — empty string if none (→ Site.urlPrefix)
+    domain: string,      // domain name e.g. "norobots.blog" (→ StandardPublication.domain)
+    basePath: string,    // path prefix e.g. "blog" — empty string if none (→ StandardPublication.basePath)
     title: string,
     description?: string,
     splashImageUrl?: string,
@@ -76,7 +76,7 @@ Scribe stores content in two collections on the author's Personal Data Server (P
     groups: Array<{
       slug: string,
       title: string,
-      articles: ArticleRef[],  // cached snapshots — no N+1 fetches needed
+      articles: ArticleRef[],  // cached snapshots — no N+1 fetches needed (→ Category.documents: DocumentRef[])
     }>,
     ungroupedArticles: ArticleRef[],  // legacy — no current write path populates this; always empty (ADR 0013)
     createdAt: string,
@@ -111,14 +111,14 @@ Scribe stores content in two collections on the author's Personal Data Server (P
   scribe: {
     domain?: string,        // domain name e.g. "norobots.blog" — omitted while loose (ADR 0013)
     createdAt: string,      // ISO 8601 — article creation date
-    coverImageUrl?: string, // source URL for the cover image (→ Article.coverImageUrl)
-    canonicalUrl?: string,  // fully-qualified article URL (→ Article.canonicalUrl) — omitted while loose
-    seo?: { title?: string, description?: string, noindex?: true }, // SEO Settings (ADR 0004) → Article.seo, via readDocumentSeo (invalid/over-long values dropped)
+    coverImageUrl?: string, // source URL for the cover image (→ StandardDocument.coverImageUrl)
+    canonicalUrl?: string,  // fully-qualified article URL (→ StandardDocument.canonicalUrl) — omitted while loose
+    seo?: { title?: string, description?: string, noindex?: true }, // SEO Settings (ADR 0004) → StandardDocument.seo, via readDocumentSeo (invalid/over-long values dropped)
   },
 }
 ```
 
-Article state (ADR 0013 — two states, not three):
+Document state (ADR 0013 — two states, not three):
 - **Draft** — `site` holds a loose reader URL; not referenced by any `site.standard.publication` record at all
 - **Published** — `site` holds the owning publication's AT URI; referenced in that publication's `scribe.groups[].articles`
 
@@ -126,7 +126,7 @@ An article belongs to at most one publication at a time. The old middle state (`
 
 `app.scribe.article` and `app.scribe.site` are **legacy collections — no longer used**. All content is in `site.standard.document` and `site.standard.publication`.
 
-**`ArticleRef`** — cached snapshot stored inside a publication record:
+**Document ref** — cached snapshot stored inside a publication record (the record's shape; the SDK returns it as a `DocumentRef`, with `splashImageUrl` renamed `coverImageUrl`):
 ```ts
 {
   uri: string,           // full AT URI e.g. at://did/site.standard.document/3mp4hfovqib2h
@@ -143,7 +143,7 @@ An article belongs to at most one publication at a time. The old middle state (`
 }
 ```
 
-**SEO Settings** (ADR 0004): the meta helpers (`generateArticleMeta`, Next's `articleMetadata`/`generateArticleMetadata`, Nuxt's `articleSeoMeta`) apply `Article.seo` themselves, and `getSitemapEntries` skips `noindex` refs. skyscribe-app and skyscribe-site keep their own copies of the same rules and limits (200 / 500 characters): change all three together.
+**SEO Settings** (ADR 0004): the meta helpers (`generateDocumentMeta`, Next's `documentMetadata`/`generateDocumentMetadata`, Nuxt's `documentSeoMeta`) apply `StandardDocument.seo` themselves, and `getSitemapEntries` skips `noindex` refs. skyscribe-app and skyscribe-site keep their own copies of the same rules and limits (200 / 500 characters): change all three together.
 
 AT Protocol repos are **publicly readable without authentication**. No OAuth required for reading.
 
@@ -198,11 +198,12 @@ GET {pdsUrl}/xrpc/com.atproto.repo.getRecord?repo={did}&collection=...&rkey=...
 
 ```
 packages/core/src/
-  types.ts          — ArticleRef, SiteGroup, Site, SiteRecord, Article (exported)
+  types.ts          — StandardPublication, StandardDocument, Category, DocumentRef, DocumentContributor (exported), plus the deprecated 4.x aliases
+  record.ts         — toPublication(), toDocument() (internal) — the one place raw records become SDK shapes (record field names → ADR 0005 names)
   resolve.ts        — resolveIdentifier(), resolvePds() (internal helpers)
-  fetch.ts          — fetchSite(), fetchArticle() (exported)
-  list.ts           — listSites(), listArticles() (exported) — com.atproto.repo.listRecords with cursor pagination
-  utils.ts          — toSlug(), slugFromUri(), flattenArticles() (exported)
+  fetch.ts          — fetchPublication(), fetchDocument(), fetchDocumentBySlug(), resolvePublicationUri() (exported)
+  list.ts           — listPublications(), listDocuments() (exported) — com.atproto.repo.listRecords with cursor pagination
+  utils.ts          — toSlug(), slugFromUri(), flattenDocuments() (exported)
   feed.ts           — generateFeed() (exported) — RSS 2.0, hand-rolled XML
   sitemap.ts        — getSitemapEntries() (exported) — returns SitemapEntry[] for merging into framework sitemap generators
   errors.ts         — NotFoundError, PdsFetchError, PdsUnreachableError (exported) — see "Typed errors and retry" below
@@ -216,7 +217,7 @@ packages/core/src/
 
 `resolveIdentifier(handleOrDid)` → DID (already correct in the original, just moves here).
 
-`fetchSite(author, siteSlug)` and `fetchArticle(author, articleSlug)` call `resolveIdentifier` then `resolvePds` then the XRPC endpoint. Both functions should be cancellable via `AbortSignal` passed as an optional third argument.
+`fetchPublication(author, publicationUrl)` and `fetchDocument(author, rkey)` call `resolveIdentifier` then `resolvePds` then the XRPC endpoint. Both are cancellable via an `AbortSignal` passed as an optional last argument.
 
 ### Typed errors and retry
 
@@ -232,16 +233,26 @@ Every fetch function throws one of three typed errors (all exported from `@skysc
 
 Consumer-facing usage pattern (attempt once synchronously, stream retries behind a `Suspense` boundary on failure) is documented in `scribe-atp-docs`'s "Errors and retries" guide, and implemented independently in `norobots`, `perpetual-summer-ltd`, `anthonycregan.co.uk-2025` (2-way: not-found vs. everything else), and `scribe-atp-reader` (3-way: also distinguishes `PdsUnreachableError`, since Reader visitors can trigger it more meaningfully than a fixed-author site would).
 
-## Fetching an article: slug vs. rkey
+## Names (ADR 0005)
 
-Article rkeys are opaque TIDs, so **slug-based helpers are the default for article pages**: `fetchArticleBySlug` (core), `useArticleBySlug` (react), `useScribeArticleBySlug` (vue, nuxt), `injectArticleBySlug` / `ScribeService.getArticleBySlug` (angular), `createArticleRouteLoader` (react-router-framework). They look the slug up in the Site record and return the article with its AT URI. The older `fetchArticle` / `useArticle` / `useScribeArticle` / `injectArticle` / `getArticle` take the **rkey** (their parameter was misleadingly named `articleSlug` until it was renamed in the 2026-10 release). When fetching from an `ArticleRef`, take the account from `ref.uri` as well as the rkey, because an article credited to a contributor can live in their repo.
+The public API uses the site.standard terms: `StandardPublication`, `StandardDocument`, `Category`, `DocumentRef`; `fetchPublication`, `fetchDocument`, `usePublication`, etc. The records keep their own field names (`scribe.groups`, `articles`, `splashImageUrl`); only `record.ts` maps between them. "Scribe" in a name (`ScribeContent`, `useScribePublication`) means "understands the Scribe extension". The 4.x names (`Site`, `Article`, `fetchSite`, `useSite`, …) are `@deprecated` aliases until the next major, and keep their old result keys (`site`, `article`, `uri`) and route params (`articleSlug`, `groupSlug`). New code never uses them. Deprecated adapter wrappers live in each package's `deprecated.ts` (nuxt: in `composables/`, so they stay auto-imported).
+
+## Fetching a Document: slug vs. rkey
+
+Document rkeys are opaque TIDs, so **slug-based helpers are the default for Document pages**: `fetchDocumentBySlug` (core), `useDocumentBySlug` (react), `useScribeDocumentBySlug` (vue, nuxt), `injectDocumentBySlug` / `ScribeService.getDocumentBySlug` (angular), `createDocumentRouteLoader` (react-router-framework, reads `params.documentSlug`). They look the slug up in the Publication record and return the `StandardDocument`, whose `uri` is its AT URI. `fetchDocument` / `useDocument` / `useScribeDocument` / `injectDocument` / `getDocument` take the **rkey**. When fetching from a `DocumentRef`, take the account from `ref.uri` as well as the rkey, because a Document credited to a contributor can live in their repo.
+
+## site.standard link tags
+
+`generatePublicationMeta` / `generateDocumentMeta` (and every adapter built on them) emit `<link rel="site.standard.publication">` and, on Documents, `<link rel="site.standard.document">`; `standardSiteLinks()` returns just those. Bluesky needs them server-rendered for its Standard.site link card. skyscribe-site emits the same tags through its own `siteMeta.ts`.
 
 ## `@skyscribe-sdk/react` — hooks
 
 ```
 packages/react/src/
-  useSite.ts        — useSite(author, siteSlug) → { site, loading, error }
-  useArticle.ts     — useArticle(author, articleSlug) → { article, loading, error }
+  usePublication.ts    — usePublication(author, publicationUrl) → { publication, loading, error }
+  useDocument.ts       — useDocument(author, rkey) → { document, loading, error }
+  useDocumentBySlug.ts — useDocumentBySlug(author, publicationUrl, documentSlug) → { document, loading, error }
+  deprecated.ts        — useSite / useArticle / useArticleBySlug (old result keys)
   SiteAnalytics.tsx — <SiteAnalytics /> — adds the beacon in an effect (React doesn't run client-created <script>s), renders nothing
   index.ts          — re-exports hooks and all types from core
 ```
@@ -259,12 +270,13 @@ Re-export all types from `@skyscribe-sdk/core` so consumers only need to import 
 
 ```
 packages/react-router-framework/src/
-  loaders.ts        — createSiteLoader(), createArticleLoader()
+  loaders.ts        — createPublicationLoader(), createDocumentRouteLoader(), createWellKnownLoader() (+ deprecated createSiteLoader, createArticleRouteLoader)
+  meta.ts           — publicationMeta(), documentMeta(), standardSiteLinks()
   index.ts          — re-exports loaders and all types from core
 ```
 
 Factories return a loader function compatible with React Router v7/v8 framework mode. Each factory:
-- Accepts `author` and `siteSlug`/`articleSlug` at configuration time
+- Accepts `author` and `publicationUrl` (and optionally the slug param name) at configuration time
 - Returns a loader that extracts `request.signal` and passes it to the core fetch function
 
 ## `@skyscribe-sdk/angular` — service and injection functions
@@ -272,62 +284,62 @@ Factories return a loader function compatible with React Router v7/v8 framework 
 ```
 packages/angular/src/
   scribe.service.ts     — ScribeService (@Injectable providedIn: 'root') — Observable API
-  inject-site.ts        — injectSite() — Signals API
-  inject-article.ts     — injectArticle() — Signals API
+  inject-publication.ts — injectPublication() — Signals API
+  inject-document.ts    — injectDocument() — Signals API
+  inject-document-by-slug.ts — injectDocumentBySlug() — Signals API
+  inject-fetch.ts       — injectFetch() (internal) — the shared signal/abort plumbing
+  deprecated.ts         — injectSite / injectArticle / injectArticleBySlug
   index.ts              — re-exports everything public
 ```
 
-Ships two APIs. `ScribeService` returns cold Observables; the fetch is cancelled on unsubscribe. `injectSite`/`injectArticle` return readonly signals and abort on `DestroyRef.onDestroy`. Requires `experimentalDecorators: true` and `useDefineForClassFields: false` in tsconfig.
+Ships two APIs. `ScribeService` returns cold Observables; the fetch is cancelled on unsubscribe. `injectPublication`/`injectDocument` return readonly signals and abort on `DestroyRef.onDestroy`. Requires `experimentalDecorators: true` and `useDefineForClassFields: false` in tsconfig.
 
 ## `@skyscribe-sdk/next` — Next.js App Router adapter
 
 ```
 packages/next/src/
-  create-scribe-site.ts — createScribeSite(author, siteSlug) factory
+  create-scribe-site.ts — createScribePublication(author, publicationUrl) factory (+ deprecated createScribeSite)
   index.ts              — re-exports factory and all types from core
 ```
 
-`createScribeSite` returns an object with six async functions assigned directly to Next.js named exports:
-- `generateGroupParams`, `generateArticleParams`, `generateGroupArticleParams` — for `generateStaticParams`
-- `generateSiteMetadata`, `generateGroupMetadata`, `generateArticleMetadata` — for `generateMetadata`
+`createScribePublication` returns an object of async functions assigned directly to Next.js named exports:
+- `generateCategoryParams`, `generateDocumentParams`, `generateCategoryDocumentParams` — for `generateStaticParams` (params `{ categorySlug, documentSlug }`)
+- `generatePublicationMetadata`, `generateCategoryMetadata`, `generateDocumentMetadata` — for `generateMetadata`
 
-Metadata is opinionated (complete OpenGraph by default). Uses `ArticleRef` snapshots from the site record — no per-article fetch at build time. ISR is handled by Next.js route segment config (`export const revalidate`), not by the SDK.
+Metadata is opinionated (complete OpenGraph by default). Uses `DocumentRef` snapshots from the Publication record — no per-Document fetch at build time, except `generateDocumentMetadata`, which reads the Document's SEO Settings. ISR is handled by Next.js route segment config (`export const revalidate`), not by the SDK.
 
 ## `@skyscribe-sdk/vue` — Vue 3 composables
 
 ```
 packages/vue/src/
-  useScribeSite.ts    — useScribeSite(author, siteSlug) → { site, loading, error } (Refs)
-  useScribeArticle.ts — useScribeArticle(author, articleSlug) → { article, loading, error } (Refs)
+  useScribePublication.ts    — useScribePublication(author, publicationUrl) → { publication, loading, error } (Refs)
+  useScribeDocument.ts       — useScribeDocument(author, rkey) → { document, loading, error } (Refs)
+  useScribeDocumentBySlug.ts — useScribeDocumentBySlug(author, publicationUrl, documentSlug) → { document, loading, error } (Refs)
+  deprecated.ts              — useScribeSite / useScribeArticle / useScribeArticleBySlug
   SiteAnalytics.ts    — <SiteAnalytics /> component — adds the beacon on mount, renders nothing
   index.ts            — re-exports composables and all types from core
 ```
 
-Composables use `onUnmounted` for `AbortController` cleanup. Named with `Scribe` prefix (`useScribeSite` not `useSite`) to avoid collision in Nuxt's auto-import context.
+Composables use `onUnmounted` for `AbortController` cleanup. Named with `Scribe` prefix (`useScribePublication` not `usePublication`) to avoid collision in Nuxt's auto-import context.
 
 ## `@skyscribe-sdk/nuxt` — Nuxt 3 module
 
 ```
 packages/nuxt/src/
   module.ts                        — defineNuxtModule, registers auto-imports
-  composables/useScribeSite.ts     — wraps fetchSite with useAsyncData
-  composables/useScribeArticle.ts  — wraps fetchArticle with useAsyncData
-  composables/useScribeArticleBySlug.ts — wraps fetchArticleBySlug with useAsyncData (slug from the URL)
+  composables/useScribePublication.ts    — wraps fetchPublication with useAsyncData
+  composables/useScribeDocument.ts       — wraps fetchDocument with useAsyncData
+  composables/useScribeDocumentBySlug.ts — wraps fetchDocumentBySlug with useAsyncData (slug from the URL)
+  composables/useScribeSite.ts etc.      — the deprecated 1.x composables, kept here so they stay auto-imported
   composables/useSiteAnalytics.ts  — puts the Site Analytics beacon in the head via useHead (server-rendered)
   index.ts                         — re-exports module and all types from core
 ```
 
-Full Nuxt module — registered in `nuxt.config.ts` as `modules: ['@skyscribe-sdk/nuxt']`. Auto-imports everything in `src/composables/` globally. **Packaging:** `module.ts` points `addImportsDir` at `./composables` next to the built entry, so `tsup.config.ts` builds each composable into `dist/composables/` (ESM only; a CJS copy would register each twice). Before 1.3.0 only `src/index.ts` was built and no composables shipped at all. A new composable needs no config change (the tsup config reads the folder), but check `npm pack --dry-run` lists it. Returns Nuxt conventions (`data`, `pending`, `error`). Accepts optional `useAsyncData` options as third argument. Calls `fetchSite`/`fetchArticle` from core directly (not the vue composables) to let `useAsyncData` own the SSR lifecycle.
+Full Nuxt module — registered in `nuxt.config.ts` as `modules: ['@skyscribe-sdk/nuxt']`. Auto-imports everything in `src/composables/` globally. **Packaging:** `module.ts` points `addImportsDir` at `./composables` next to the built entry, so `tsup.config.ts` builds each composable into `dist/composables/` (ESM only; a CJS copy would register each twice). Before 1.3.0 only `src/index.ts` was built and no composables shipped at all. A new composable needs no config change (the tsup config reads the folder), but check `npm pack --dry-run` lists it. Returns Nuxt conventions (`data`, `pending`, `error`). Accepts optional `useAsyncData` options as third argument. Calls `fetchPublication`/`fetchDocument` from core directly (not the vue composables) to let `useAsyncData` own the SSR lifecycle.
 
-## Relationship to scribe-cms.app
+## Scribe CMS and the old packages
 
-`scribe-cms.app` currently has an `app/hooks/` directory with the original versions of these hooks (without PDS resolution). Once this SDK is published:
-
-- `scribe-cms.app`'s `app/hooks/` directory can be removed
-- The CMS's public-read routes can import from `@skyscribe-sdk/core`
-- The `ArticleRef` and `SiteGroup` types used throughout the CMS already live in `app/hooks/types.ts` — these become the canonical definitions in `@skyscribe-sdk/core`
-
-During development, use `npm link` or workspace references to test against the CMS before publishing.
+Scribe CMS and Scribe Reader still use the deprecated `@scribe-atp/*` packages (4.x-era names) and are being retired (ADR 0003); nothing in this repo needs to stay compatible with them.
 
 ## Build setup (per package)
 

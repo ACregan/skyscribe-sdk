@@ -1,9 +1,9 @@
-import type { Site, Article, ArticleResult } from "./types.js";
+import type { StandardPublication, StandardDocument, ArticleResult } from "./types.js";
+import { toDocument, toPublication, type RawDocument, type RawPublication } from "./record.js";
 import { resolveIdentifier, resolvePds, _clearCaches as _clearResolveCaches } from "./resolve.js";
 import { slugFromUri, didFromUri } from "./utils.js";
 import { NotFoundError, PdsFetchError } from "./errors.js";
 import { pdsFetch } from "./http.js";
-import { readDocumentSeo } from "./seo.js";
 
 const PUBLICATION_URI_CACHE_TTL_MS = 60_000;
 
@@ -55,63 +55,12 @@ async function lookupPublicationRecord(
   const record = data.records.find(
     (r) => normalizeUrl(r.value.url ?? "") === normalizedUrl
   );
-  if (!record) throw new NotFoundError(`Site not found: ${publicationUrl}`);
+  if (!record) throw new NotFoundError(`Publication not found: ${publicationUrl}`);
   return record;
-}
-
-interface ScribeManifest {
-  domain: string;
-  basePath: string;
-  title: string;
-  description?: string;
-  splashImageUrl?: string;
-  logoImageUrl?: string;
-  groups?: Site["groups"];
-  ungroupedArticles?: Site["ungroupedArticles"];
-}
-
-interface RawPublication {
-  url?: string;
-  name?: string;
-  description?: string;
-  scribe: ScribeManifest;
-}
-
-interface RawDocumentScribe {
-  coverImageUrl?: string;
-  createdAt?: string;
-  canonicalUrl?: string;
-  seo?: unknown;
-}
-
-interface RawDocument {
-  title: string;
-  path: string;
-  site: string;
-  publishedAt: string;
-  description?: string;
-  content?: { $type: string; html?: string } | unknown;
-  textContent?: string;
-  bskyPostRef?: { uri: string; cid: string };
-  tags?: string[];
-  contributors?: { did: string; role?: string; displayName?: string }[];
-  updatedAt: string;
-  scribe?: RawDocumentScribe;
 }
 
 function normalizeUrl(url: string): string {
   return url.replace(/\/+$/, "");
-}
-
-function extractHtml(content: RawDocument["content"]): string {
-  if (
-    content !== null &&
-    typeof content === "object" &&
-    (content as Record<string, unknown>)["$type"] === "app.scribe.content.html"
-  ) {
-    return String((content as Record<string, unknown>)["html"] ?? "");
-  }
-  return "";
 }
 
 export async function resolvePublicationUri(
@@ -156,11 +105,11 @@ async function fetchCachedPublicationRecord(
   return { uri: cachedUri, value: data.value };
 }
 
-export async function fetchSite(
+export async function fetchPublication(
   author: string,
   publicationUrl: string,
   signal?: AbortSignal
-): Promise<Site> {
+): Promise<StandardPublication> {
   const normalizedUrl = normalizeUrl(publicationUrl);
   const did = await resolveIdentifier(author, signal);
   const pdsUrl = await resolvePds(did, signal);
@@ -171,33 +120,17 @@ export async function fetchSite(
     record = await lookupPublicationRecord(pdsUrl, did, normalizedUrl, publicationUrl, signal);
     setCachedPublicationUri(cacheKey, record.uri);
   }
-
-  const scribe = record.value.scribe;
-
-  return {
-    uri: record.uri,
-    title: scribe.title,
-    url: scribe.domain,
-    urlPrefix: scribe.basePath,
-    // Spec puts description at the top level (site.standard.publication);
-    // scribe.description is a legacy location a prior CMS version wrote
-    // instead — kept as a fallback until existing records are migrated.
-    description: record.value.description ?? scribe.description,
-    splashImageUrl: scribe.splashImageUrl,
-    logoImageUrl: scribe.logoImageUrl,
-    groups: scribe.groups ?? [],
-    ungroupedArticles: scribe.ungroupedArticles ?? [],
-  };
+  return toPublication(record.uri, record.value);
 }
 
-// Fetches by record key (rkey). Current articles have opaque TID rkeys, so
-// a human-readable slug only matches very old records: use
-// fetchArticleBySlug for slugs.
-export async function fetchArticle(
+// Fetches by record key (rkey). Current Documents have opaque TID rkeys,
+// so a human-readable slug only matches very old records: use
+// fetchDocumentBySlug for slugs.
+export async function fetchDocument(
   author: string,
   rkey: string,
   signal?: AbortSignal
-): Promise<Article> {
+): Promise<StandardDocument> {
   const did = await resolveIdentifier(author, signal);
   const pdsUrl = await resolvePds(did, signal);
 
@@ -207,55 +140,46 @@ export async function fetchArticle(
   url.searchParams.set("rkey", rkey);
 
   const res = await pdsFetch(url, { signal });
-  if (!res.ok) throw new PdsFetchError(`Failed to fetch article: ${res.statusText}`);
+  if (!res.ok) throw new PdsFetchError(`Failed to fetch document: ${res.statusText}`);
 
   const data = (await res.json()) as { value: RawDocument };
-  const raw = data.value;
-  return {
-    title: raw.title,
-    content: extractHtml(raw.content),
-    path: raw.path,
-    site: raw.site,
-    canonicalUrl: raw.scribe?.canonicalUrl,
-    textContent: raw.textContent,
-    publishedAt: raw.publishedAt,
-    description: raw.description,
-    coverImageUrl: raw.scribe?.coverImageUrl,
-    tags: raw.tags,
-    contributors: raw.contributors,
-    bskyPostRef: raw.bskyPostRef,
-    seo: readDocumentSeo(raw.scribe?.seo),
-    createdAt: raw.scribe?.createdAt,
-    updatedAt: raw.updatedAt,
-  };
+  return toDocument(`at://${did}/site.standard.document/${rkey}`, data.value);
 }
 
+export async function fetchDocumentBySlug(
+  author: string,
+  publicationUrl: string,
+  documentSlug: string,
+  signal?: AbortSignal
+): Promise<StandardDocument> {
+  const publication = await fetchPublication(author, publicationUrl, signal);
+
+  const ref = publication.categories
+    .flatMap((c) => c.documents)
+    .find((r) => r.slug === documentSlug || slugFromUri(r.uri) === documentSlug);
+
+  if (!ref) throw new NotFoundError(`Document not found: ${documentSlug}`);
+
+  // ref.uri names the Document's own repo: usually the Publication owner's,
+  // but a Contributor's when Scribe CMS's Contributors feature published it
+  // there. Resolve from that URI's own DID, not the Publication's `author`.
+  return fetchDocument(didFromUri(ref.uri), slugFromUri(ref.uri), signal);
+}
+
+// ── Deprecated names (ADR 0005): removed in the next major ──────────────
+
+/** @deprecated Use `fetchPublication`. */
+export const fetchSite = fetchPublication;
+/** @deprecated Use `fetchDocument`. */
+export const fetchArticle = fetchDocument;
+/** @deprecated Use `fetchDocumentBySlug`, which returns the
+ * `StandardDocument` itself (it carries its own `uri`). */
 export async function fetchArticleBySlug(
   author: string,
   publicationUrl: string,
   articleSlug: string,
   signal?: AbortSignal
 ): Promise<ArticleResult> {
-  const site = await fetchSite(author, publicationUrl, signal);
-
-  const allRefs = [
-    ...site.ungroupedArticles,
-    ...site.groups.flatMap((g) => g.articles),
-  ];
-
-  const ref = allRefs.find(
-    (r) => r.slug === articleSlug || slugFromUri(r.uri) === articleSlug
-  );
-
-  if (!ref) throw new NotFoundError(`Article not found: ${articleSlug}`);
-
-  // ref.uri names the document's own repo — usually the site owner's, but
-  // Scribe CMS's Contributors feature (sync-later publish) can point it at
-  // a Contributor's repo instead. Resolve from that URI's own DID, not the
-  // site's `author`, so a Contributor-authored article on someone else's
-  // site resolves from the repo it actually lives in.
-  const documentDid = didFromUri(ref.uri);
-  const rkey = slugFromUri(ref.uri);
-  const article = await fetchArticle(documentDid, rkey, signal);
-  return { article, uri: ref.uri };
+  const article = await fetchDocumentBySlug(author, publicationUrl, articleSlug, signal);
+  return { article, uri: article.uri };
 }

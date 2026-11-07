@@ -2,10 +2,6 @@
 
 This guide uses `@skyscribe-sdk/core`, the framework-agnostic package. If you're using React, Angular, Vue, Next.js, Nuxt or React Router, the [framework guides](/frameworks/core) wrap these same functions in your framework's idioms.
 
-<Callout type="note">
-  The SDK calls a Publication a **Site**, a Category a **Group**, and a Document an **Article**. See the table in [Concepts](/concepts#skyscribes-names-and-the-sdks-names).
-</Callout>
-
 ## 1. Install the package
 
 <Tabs>
@@ -20,72 +16,72 @@ This guide uses `@skyscribe-sdk/core`, the framework-agnostic package. If you're
   </Tab>
 </Tabs>
 
-## 2. Fetch a Site
+## 2. Fetch a Publication
 
-A Site is identified by two things: the author's handle (or DID), and the site's canonical HTTPS URL.
+A Publication is identified by two things: the author's handle (or DID), and the Publication's canonical HTTPS URL.
 
 ```ts
-import { fetchSite } from "@skyscribe-sdk/core";
+import { fetchPublication } from "@skyscribe-sdk/core";
 
 const author = "anthonycregan.dev";
-const site = await fetchSite(author, "https://anthonycregan.co.uk");
+const publication = await fetchPublication(author, "https://anthonycregan.co.uk");
 
-console.log(site.title);
-console.log(site.description);
+console.log(publication.name);
+console.log(publication.description);
 
-// Published articles, organised into groups
-for (const group of site.groups) {
-  console.log(group.title);
-  for (const article of group.articles) {
-    console.log(article.title, article.slug);
+// Published Documents, organised into Categories
+for (const category of publication.categories) {
+  console.log(category.title);
+  for (const document of category.documents) {
+    console.log(document.title, document.slug);
   }
 }
 ```
 
-## 3. Fetch an Article
+## 3. Fetch a Document
 
-With an article's slug (from the Site's `ArticleRef` list, or from your URL), fetch the full article, including its HTML content:
+With a Document's slug (from the Publication's `DocumentRef` list, or from your URL), fetch the full Document, including its HTML content:
 
 ```ts
-import { fetchArticleBySlug } from "@skyscribe-sdk/core";
+import { fetchDocumentBySlug } from "@skyscribe-sdk/core";
 
-const { article, uri } = await fetchArticleBySlug(
+const document = await fetchDocumentBySlug(
   "anthonycregan.dev",
   "https://anthonycregan.co.uk",
   "my-first-post",
 );
 
-console.log(article.title);
-console.log(article.description);
-console.log(article.content); // Full HTML
-console.log(article.createdAt);
-console.log(uri); // The article's AT URI
+console.log(document.title);
+console.log(document.description);
+console.log(document.content); // Full HTML
+console.log(document.createdAt);
+console.log(document.uri); // The Document's AT URI
 ```
 
-`fetchArticleBySlug` looks the slug up in the Site record, then fetches the article record it points to. If you already have the record's rkey (from an AT URI), `fetchArticle(author, rkey)` fetches it directly.
+`fetchDocumentBySlug` looks the slug up in the Publication record, then fetches the Document record it points to. If you already have the record's rkey (from an AT URI), `fetchDocument(author, rkey)` fetches it directly.
 
 <Callout type="warning" title="Rendering the HTML">
-  SkyScribe sanitises article HTML when the author saves it, but the SDK returns whatever is stored in the author's account, and any app can write to an account's records. Rendering your own account's content as-is is fine. If you render articles from accounts you don't control, sanitise the HTML first, for example with [DOMPurify](https://github.com/cure53/DOMPurify).
+  SkyScribe sanitises Document HTML when the author saves it, but the SDK returns whatever is stored in the author's account, and any app can write to an account's records. Rendering your own account's content as-is is fine. If you render Documents from accounts you don't control, sanitise the HTML first, for example with [DOMPurify](https://github.com/cure53/DOMPurify).
 </Callout>
 
 To render it, use `dangerouslySetInnerHTML` in React, `v-html` in Vue, or `[innerHTML]` in Angular.
 
-## 4. Build URLs for Articles
+## 4. Build URLs for Documents
 
-Use the Site's `url` and `urlPrefix` fields to build canonical article URLs:
+Use the Publication's `domain` and `basePath` fields to build canonical Document URLs:
 
 ```ts
-import type { Site } from "@skyscribe-sdk/core";
+import type { StandardPublication } from "@skyscribe-sdk/core";
 
-function articleUrl(
-  site: Site,
-  groupSlug: string,
-  articleSlug: string,
+function documentUrl(
+  publication: StandardPublication,
+  categorySlug: string,
+  documentSlug: string,
 ): string {
-  const base = site.urlPrefix
-    ? `https://${site.url}/${site.urlPrefix}`
-    : `https://${site.url}`;
-  return `${base}/${groupSlug}/${articleSlug}`;
+  const base = publication.basePath
+    ? `https://${publication.domain}/${publication.basePath}`
+    : `https://${publication.domain}`;
+  return `${base}/${categorySlug}/${documentSlug}`;
 }
 ```
 
@@ -98,7 +94,7 @@ Every fetch function accepts an optional `AbortSignal` as its last argument. Pas
 ```ts
 const controller = new AbortController();
 
-const site = await fetchSite(
+const publication = await fetchPublication(
   author,
   "https://anthonycregan.co.uk",
   controller.signal,

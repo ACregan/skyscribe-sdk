@@ -1,38 +1,20 @@
-import type { Site, SiteRecord, ArticleRef, ArticleContributor } from "./types.js";
+import type { StandardPublication, DocumentRef, DocumentContributor } from "./types.js";
+import { toPublication, type RawPublication } from "./record.js";
 import { resolveIdentifier, resolvePds } from "./resolve.js";
 import { slugFromUri } from "./utils.js";
 import { PdsFetchError } from "./errors.js";
 import { pdsFetch } from "./http.js";
 import { readDocumentSeo } from "./seo.js";
 
-interface ScribeManifest {
-  domain: string;
-  basePath: string;
-  title: string;
-  description?: string;
-  splashImageUrl?: string;
-  logoImageUrl?: string;
-  groups?: Site["groups"];
-  ungroupedArticles?: Site["ungroupedArticles"];
-}
-
-interface RawPublication {
-  // Spec-compliant top-level field (site.standard.publication#description).
-  // Prefer this over scribe.description below — see listSites() mapping.
-  // Optional because plenty of existing records still only have the
-  // scribe.description a prior version wrote instead of this field.
-  description?: string;
-  scribe: ScribeManifest;
-}
-
-interface RawDocument {
+// listRecords returns more legacy shapes than getRecord callers see.
+interface RawListedDocument {
   title: string;
   path?: string;
   site: string;
   publishedAt?: string;
   description?: string | null;
   tags?: string[];
-  contributors?: ArticleContributor[];
+  contributors?: DocumentContributor[];
   updatedAt?: string;
   // Scribe-specific fields live in the `scribe` extension object.
   scribe?: { createdAt?: string; coverImageUrl?: string; seo?: unknown };
@@ -83,45 +65,34 @@ async function listAllRecords<T>(
   return results;
 }
 
-export async function listSites(
+export async function listPublications(
   author: string,
   signal?: AbortSignal
-): Promise<SiteRecord[]> {
+): Promise<StandardPublication[]> {
   const did = await resolveIdentifier(author, signal);
   const pdsUrl = await resolvePds(did, signal);
   const records = await listAllRecords<RawPublication>(pdsUrl, did, "site.standard.publication", signal);
 
+  // Only records with the Scribe extension: other site.standard apps'
+  // Publications lack the domain, base path and Categories.
   return records
     .filter(({ value }) => value.scribe != null)
-    .map(({ uri, value }) => ({
-      uri,
-      title: value.scribe.title,
-      url: value.scribe.domain,
-      urlPrefix: value.scribe.basePath,
-      // Spec puts description at the top level (site.standard.publication);
-      // scribe.description is a legacy location a prior CMS version wrote
-      // instead — kept as a fallback until existing records are migrated.
-      description: value.description ?? value.scribe.description,
-      splashImageUrl: value.scribe.splashImageUrl,
-      logoImageUrl: value.scribe.logoImageUrl,
-      groups: value.scribe.groups ?? [],
-      ungroupedArticles: value.scribe.ungroupedArticles ?? [],
-    }));
+    .map(({ uri, value }) => toPublication(uri, value));
 }
 
-export async function listArticles(
+export async function listDocuments(
   author: string,
   signal?: AbortSignal
-): Promise<ArticleRef[]> {
+): Promise<DocumentRef[]> {
   const did = await resolveIdentifier(author, signal);
   const pdsUrl = await resolvePds(did, signal);
-  const records = await listAllRecords<RawDocument>(pdsUrl, did, "site.standard.document", signal);
+  const records = await listAllRecords<RawListedDocument>(pdsUrl, did, "site.standard.document", signal);
 
   return records.map(({ uri, value }) => ({
     uri,
     title: value.title,
     slug: slugForDocument(uri, value.path),
-    splashImageUrl: value.scribe?.coverImageUrl ?? value.splashImageUrl ?? null,
+    coverImageUrl: value.scribe?.coverImageUrl ?? value.splashImageUrl ?? null,
     description: value.description,
     tags: value.tags,
     contributors: value.contributors,
@@ -131,3 +102,10 @@ export async function listArticles(
     ...(readDocumentSeo(value.scribe?.seo)?.noindex ? { noindex: true as const } : {}),
   }));
 }
+
+// ── Deprecated names (ADR 0005): removed in the next major ──────────────
+
+/** @deprecated Use `listPublications`. */
+export const listSites = listPublications;
+/** @deprecated Use `listDocuments`. */
+export const listArticles = listDocuments;

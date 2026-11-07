@@ -1,6 +1,6 @@
 # React
 
-`@skyscribe-sdk/react` provides `useSite`, `useArticleBySlug` and `useArticle` hooks for React SPAs and client-rendered components. Each hook manages loading state, error state and request cancellation for you.
+`@skyscribe-sdk/react` provides `usePublication`, `useDocumentBySlug` and `useDocument` hooks for React SPAs and client-rendered components. Each hook manages loading state, error state and request cancellation for you.
 
 <Callout>
   For **React Router v7/v8 framework (server) mode**, use [`@skyscribe-sdk/react-router-framework`](/frameworks/react-router) instead. For the **Next.js App Router**, use [`@skyscribe-sdk/next`](/frameworks/next).
@@ -14,28 +14,28 @@ npm install @skyscribe-sdk/react
 
 Requires React 18 or later.
 
-## `useSite`
+## `usePublication`
 
 ```tsx
-import { useSite } from '@skyscribe-sdk/react';
+import { usePublication } from '@skyscribe-sdk/react';
 
 function BlogIndex() {
-  const { site, loading, error } = useSite('alice.bsky.social', 'https://alice.bsky.social');
+  const { publication, loading, error } = usePublication('alice.bsky.social', 'https://alice.bsky.social');
 
   if (loading) return <p>Loading…</p>;
   if (error)   return <p>Error: {error.message}</p>;
-  if (!site)   return null;
+  if (!publication)   return null;
 
   return (
     <main>
-      <h1>{site.title}</h1>
-      {site.groups.map((group) => (
-        <section key={group.slug}>
-          <h2>{group.title}</h2>
+      <h1>{publication.name}</h1>
+      {publication.categories.map((category) => (
+        <section key={category.slug}>
+          <h2>{category.title}</h2>
           <ul>
-            {group.articles.map((article) => (
-              <li key={article.uri}>
-                <a href={`/${group.slug}/${article.slug}`}>{article.title}</a>
+            {category.documents.map((ref) => (
+              <li key={ref.uri}>
+                <a href={`/${category.slug}/${ref.slug}`}>{ref.title}</a>
               </li>
             ))}
           </ul>
@@ -46,15 +46,15 @@ function BlogIndex() {
 }
 ```
 
-## `useArticleBySlug`
+## `useDocumentBySlug`
 
-Article pages usually have the article's slug from the URL (`/essays/my-first-post`). `useArticleBySlug` looks it up in the Site and returns the article with its AT URI:
+Document pages usually have the Document's slug from the URL (`/essays/my-first-post`). `useDocumentBySlug` looks it up in the Publication and returns the Document:
 
 ```tsx
-import { useArticleBySlug, ScribeContent } from '@skyscribe-sdk/react';
+import { useDocumentBySlug, ScribeContent } from '@skyscribe-sdk/react';
 
-function ArticlePage({ slug }: { slug: string }) {
-  const { article, uri, loading, error } = useArticleBySlug(
+function DocumentPage({ slug }: { slug: string }) {
+  const { document, loading, error } = useDocumentBySlug(
     'alice.bsky.social',
     'https://alice.bsky.social',
     slug,
@@ -62,41 +62,41 @@ function ArticlePage({ slug }: { slug: string }) {
 
   if (loading) return <p>Loading…</p>;
   if (error)   return <p>Error: {error.message}</p>;
-  if (!article) return null;
+  if (!document) return null;
 
   return (
     <article>
-      <h1>{article.title}</h1>
-      {article.description && <p>{article.description}</p>}
-      <ScribeContent html={article.content} />
+      <h1>{document.title}</h1>
+      {document.description && <p>{document.description}</p>}
+      <ScribeContent html={document.content} />
     </article>
   );
 }
 ```
 
-`uri` is what [`@skyscribe-sdk/social`](/guides/social)'s buttons need as `documentUri`. If no published article has that slug, `error` is a `NotFoundError`.
+`document.uri` is what [`@skyscribe-sdk/social`](/guides/social)'s buttons need as `documentUri`. If no published Document has that slug, `error` is a `NotFoundError`.
 
-## `useArticle`
+## `useDocument`
 
-If you already have an `ArticleRef` (for example while listing a Site's articles), `useArticle` skips the Site lookup. It takes the article's account and **record key (rkey)**, both found in `ArticleRef.uri` (`at://{did}/site.standard.document/{rkey}`). Take the account from there rather than assuming the site owner's: an article credited to a contributor can live in their account.
+If you already have a `DocumentRef` (for example while listing a Publication's Documents), `useDocument` skips the Publication lookup. It takes the Document's account and **record key (rkey)**, both found in `DocumentRef.uri` (`at://{did}/site.standard.document/{rkey}`). Take the account from there rather than assuming the Publication owner's: a Document credited to a contributor can live in their account.
 
 ```tsx
-import { useArticle } from '@skyscribe-sdk/react';
+import { useDocument } from '@skyscribe-sdk/react';
 import { slugFromUri } from '@skyscribe-sdk/core';
-import type { ArticleRef } from '@skyscribe-sdk/react';
+import type { DocumentRef } from '@skyscribe-sdk/react';
 
-function ArticlePreview({ articleRef }: { articleRef: ArticleRef }) {
-  const did = articleRef.uri.split('/')[2];
-  const { article } = useArticle(did, slugFromUri(articleRef.uri));
+function DocumentPreview({ documentRef }: { documentRef: DocumentRef }) {
+  const did = documentRef.uri.split('/')[2];
+  const { document } = useDocument(did, slugFromUri(documentRef.uri));
   // …
 }
 ```
 
-Don't pass a slug to `useArticle`: articles published with current tooling have opaque rkeys, so a slug only finds very old articles.
+Don't pass a slug to `useDocument`: Documents published with current tooling have opaque rkeys, so a slug only finds very old Documents.
 
 All three hooks re-fetch when their arguments change, and abort the in-flight request when the component unmounts.
 
-`<ScribeContent>` renders article HTML inside a `scribe-content` wrapper, ready for [`@skyscribe-sdk/styles`](/frameworks/styles). If you render articles from accounts you don't control, sanitise the HTML first (see [Rendering the HTML](/quickstart#3-fetch-an-article)).
+`<ScribeContent>` renders a Document's HTML inside a `scribe-content` wrapper, ready for [`@skyscribe-sdk/styles`](/frameworks/styles). If you render Documents from accounts you don't control, sanitise the HTML first (see [Rendering the HTML](/quickstart#3-fetch-a-document)).
 
 ## Site Analytics
 
@@ -109,12 +109,12 @@ import { SiteAnalytics } from '@skyscribe-sdk/react';
 <SiteAnalytics />
 ```
 
-Figures only appear once your site serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
+Figures only appear once your website serves the Publication verification file. See the [Site Analytics guide](/guides/site-analytics) for that, privacy, and CSP.
 
 ## TypeScript types
 
 The main types from `@skyscribe-sdk/core` are re-exported, so you rarely need to import from both packages:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup, ArticleResult } from '@skyscribe-sdk/react';
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/react';
 ```

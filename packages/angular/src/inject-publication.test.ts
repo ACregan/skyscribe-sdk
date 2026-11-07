@@ -1,37 +1,37 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TestBed } from "@angular/core/testing";
-import { injectSite } from "./inject-site.js";
+import { injectPublication } from "./inject-publication.js";
+import { injectSite } from "./deprecated.js";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchSite: vi.fn(),
+  fetchPublication: vi.fn(),
 }));
 
-import { fetchSite } from "@skyscribe-sdk/core";
-const mockFetchSite = vi.mocked(fetchSite);
+import { fetchPublication } from "@skyscribe-sdk/core";
+const mockFetchSite = vi.mocked(fetchPublication);
 
 const site = {
   uri: "at://did:plc:test/site.standard.publication/testpubkey",
-  title: "Test Site",
-  url: "example.com",
-  urlPrefix: "blog",
-  groups: [],
-  ungroupedArticles: [],
+  name: "Test Site",
+  domain: "example.com",
+  basePath: "blog",
+  categories: [],
 };
 
 beforeEach(() => mockFetchSite.mockReset());
 afterEach(() => TestBed.resetTestingModule());
 
-describe("injectSite", () => {
+describe("injectPublication", () => {
   it("starts in loading state", () => {
     const { promise } = Promise.withResolvers<typeof site>();
     mockFetchSite.mockReturnValueOnce(promise);
 
     const result = TestBed.runInInjectionContext(() =>
-      injectSite("did:plc:test", "example-com")
+      injectPublication("did:plc:test", "example-com")
     );
 
     expect(result.loading()).toBe(true);
-    expect(result.site()).toBeNull();
+    expect(result.publication()).toBeNull();
     expect(result.error()).toBeNull();
   });
 
@@ -39,13 +39,13 @@ describe("injectSite", () => {
     mockFetchSite.mockResolvedValueOnce(site);
 
     const result = TestBed.runInInjectionContext(() =>
-      injectSite("did:plc:test", "example-com")
+      injectPublication("did:plc:test", "example-com")
     );
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(result.loading()).toBe(false);
-    expect(result.site()).toEqual(site);
+    expect(result.publication()).toEqual(site);
     expect(result.error()).toBeNull();
   });
 
@@ -53,14 +53,14 @@ describe("injectSite", () => {
     mockFetchSite.mockRejectedValueOnce(new Error("Network error"));
 
     const result = TestBed.runInInjectionContext(() =>
-      injectSite("did:plc:test", "example-com")
+      injectPublication("did:plc:test", "example-com")
     );
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(result.loading()).toBe(false);
     expect(result.error()?.message).toBe("Network error");
-    expect(result.site()).toBeNull();
+    expect(result.publication()).toBeNull();
   });
 
   it("aborts on destroy", () => {
@@ -69,12 +69,21 @@ describe("injectSite", () => {
     mockFetchSite.mockReturnValueOnce(promise);
 
     TestBed.runInInjectionContext(() =>
-      injectSite("did:plc:test", "example-com")
+      injectPublication("did:plc:test", "example-com")
     );
     TestBed.resetTestingModule();
 
     expect(abortSpy).toHaveBeenCalled();
     reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
     abortSpy.mockRestore();
+  });
+});
+
+describe("injectSite (deprecated)", () => {
+  it("keeps the old { site } result key", async () => {
+    mockFetchSite.mockResolvedValueOnce(site);
+    const result = TestBed.runInInjectionContext(() => injectSite("did:plc:test", "example-com"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(result.site()).toEqual(site);
   });
 });

@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { defineComponent, nextTick } from "vue";
 import { mount } from "@vue/test-utils";
-import { useScribeArticle } from "./useScribeArticle.js";
+import { useScribeDocument } from "./useScribeDocument.js";
+import { useScribeArticle } from "./deprecated.js";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchArticle: vi.fn(),
+  fetchDocument: vi.fn(),
 }));
 
-import { fetchArticle } from "@skyscribe-sdk/core";
-const mockFetchArticle = vi.mocked(fetchArticle);
+import { fetchDocument } from "@skyscribe-sdk/core";
+const mockFetchArticle = vi.mocked(fetchDocument);
 
 const mockArticle = {
+  uri: "at://did:plc:test/site.standard.document/hello",
   title: "Hello World",
   content: "<p>Hello</p>",
   path: "/hello",
@@ -21,10 +23,10 @@ const mockArticle = {
 };
 
 function makeWrapper(author: string, slug: string) {
-  let result: ReturnType<typeof useScribeArticle>;
+  let result: ReturnType<typeof useScribeDocument>;
   const Component = defineComponent({
     setup() {
-      result = useScribeArticle(author, slug);
+      result = useScribeDocument(author, slug);
       return result;
     },
     template: "<div/>",
@@ -37,12 +39,12 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe("useScribeArticle", () => {
+describe("useScribeDocument", () => {
   it("starts with loading true and article null", () => {
     mockFetchArticle.mockReturnValue(new Promise(() => {}));
     const { getResult } = makeWrapper("alice.bsky.social", "hello");
     expect(getResult().loading.value).toBe(true);
-    expect(getResult().article.value).toBeNull();
+    expect(getResult().document.value).toBeNull();
     expect(getResult().error.value).toBeNull();
   });
 
@@ -51,7 +53,7 @@ describe("useScribeArticle", () => {
     const { getResult } = makeWrapper("alice.bsky.social", "hello");
     await nextTick();
     await nextTick();
-    expect(getResult().article.value).toEqual(mockArticle);
+    expect(getResult().document.value).toEqual(mockArticle);
     expect(getResult().loading.value).toBe(false);
   });
 
@@ -85,7 +87,7 @@ describe("useScribeArticle", () => {
     expect(getResult().error.value).toBeNull();
   });
 
-  it("calls fetchArticle with author and articleSlug", () => {
+  it("calls fetchDocument with author and articleSlug", () => {
     mockFetchArticle.mockReturnValue(new Promise(() => {}));
     makeWrapper("alice.bsky.social", "hello");
     expect(mockFetchArticle).toHaveBeenCalledWith(
@@ -93,5 +95,21 @@ describe("useScribeArticle", () => {
       "hello",
       expect.any(AbortSignal)
     );
+  });
+});
+
+describe("useScribeArticle (deprecated)", () => {
+  it("keeps the old { article } result key", async () => {
+    mockFetchArticle.mockResolvedValueOnce(mockArticle);
+    let result!: ReturnType<typeof useScribeArticle>;
+    mount(defineComponent({
+      setup() {
+        result = useScribeArticle("alice.bsky.social", "hello");
+        return result;
+      },
+      template: "<div/>",
+    }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(result.article.value).toEqual(mockArticle);
   });
 });

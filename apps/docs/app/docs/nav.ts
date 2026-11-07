@@ -49,7 +49,13 @@ export const docsSections: DocsSection[] = [
         slug: "quickstart",
         title: "Quickstart",
         description:
-          "Fetch a Site and an Article in under five minutes with @skyscribe-sdk/core.",
+          "Fetch a Publication and a Document in under five minutes with @skyscribe-sdk/core.",
+      },
+      {
+        slug: "upgrading-to-5",
+        title: "Upgrading to 5.0",
+        description:
+          "Version 5 renamed the API to the site.standard terms: every rename, and the order to make them in.",
       },
       {
         slug: "migrating",
@@ -68,12 +74,12 @@ export const docsSections: DocsSection[] = [
         slug: "frameworks/core",
         title: "Vanilla TypeScript",
         description:
-          "The framework-agnostic package: fetchSite, fetchArticle, and the types.",
+          "The framework-agnostic package: fetchPublication, fetchDocument, and the types.",
       },
       {
         slug: "frameworks/react",
         title: "React",
-        description: "useSite and useArticle hooks for client-rendered React.",
+        description: "usePublication and useDocument hooks for client-rendered React.",
       },
       {
         slug: "frameworks/react-router",
@@ -91,7 +97,7 @@ export const docsSections: DocsSection[] = [
         slug: "frameworks/vue",
         title: "Vue",
         description:
-          "useScribeSite and useScribeArticle composables for Vue 3.",
+          "useScribePublication and useScribeDocument composables for Vue 3.",
       },
       {
         slug: "frameworks/nuxt",
@@ -103,7 +109,7 @@ export const docsSections: DocsSection[] = [
         slug: "frameworks/angular",
         title: "Angular",
         description:
-          "ScribeService (Observables) and injectSite / injectArticle (Signals).",
+          "ScribeService (Observables) and injectPublication / injectDocument (Signals).",
       },
       {
         slug: "frameworks/styles",
@@ -180,12 +186,12 @@ export const docsSections: DocsSection[] = [
         slug: "guides/building-urls",
         title: "Building URLs",
         description:
-          "Constructing canonical Site, Category, and Article URLs from a Site record.",
+          "Constructing canonical Publication, Category, and Document URLs from a Publication.",
       },
       {
         slug: "guides/rss",
         title: "RSS feeds",
-        description: "Generating an RSS 2.0 feed from a Site with generateFeed.",
+        description: "Generating an RSS 2.0 feed from a Publication with generateFeed.",
       },
       {
         slug: "guides/sitemaps",
@@ -196,7 +202,7 @@ export const docsSections: DocsSection[] = [
         slug: "guides/meta-tags",
         title: "Meta tags",
         description:
-          "Open Graph, Twitter Card, and canonical tags for Sites and Articles.",
+          "Open Graph, Twitter Card, canonical and site.standard link tags for Publications and Documents.",
       },
       {
         slug: "guides/errors-and-retries",
@@ -207,7 +213,7 @@ export const docsSections: DocsSection[] = [
       {
         slug: "guides/cancellation",
         title: "Request cancellation",
-        description: "Passing AbortSignals through fetchSite and fetchArticle.",
+        description: "Passing AbortSignals through fetchPublication and fetchDocument.",
       },
       {
         slug: "guides/engagement-data",
@@ -229,8 +235,8 @@ export const docsSections: DocsSection[] = [
       },
       {
         slug: "guides/cross-posted-articles",
-        title: "Cross-posted articles",
-        description: "Linking an Article back to its Bluesky post via bskyPostRef.",
+        title: "Cross-posted documents",
+        description: "Linking a Document back to its Bluesky post via bskyPostRef.",
       },
     ],
   },

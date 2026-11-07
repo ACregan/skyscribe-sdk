@@ -1,6 +1,6 @@
 import { ref, onUnmounted } from "vue";
 import type { Ref } from "vue";
-import { fetchArticleBySlug } from "@skyscribe-sdk/core";
+import { fetchDocumentBySlug } from "@skyscribe-sdk/core";
 
 export interface UseScribeDocumentUriResult {
   uri: Ref<string | null>;
@@ -11,7 +11,7 @@ export interface UseScribeDocumentUriResult {
 export function useScribeDocumentUri(
   author: string,
   publicationUrl: string,
-  articleSlug: string
+  documentSlug: string
 ): UseScribeDocumentUriResult {
   const uri = ref<string | null>(null);
   const loading = ref(true);
@@ -19,7 +19,7 @@ export function useScribeDocumentUri(
 
   const controller = new AbortController();
 
-  fetchArticleBySlug(author, publicationUrl, articleSlug, controller.signal)
+  fetchDocumentBySlug(author, publicationUrl, documentSlug, controller.signal)
     .then(({ uri: documentUri }) => {
       uri.value = documentUri;
       loading.value = false;

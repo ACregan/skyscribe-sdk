@@ -17,37 +17,37 @@ npm install @skyscribe-sdk/react
 
 ### `ScribeContent`
 
-Renders an article's HTML in a `<div class="scribe-content">` (so `@skyscribe-sdk/styles` applies), with Embeds (videos, music, code pens, Bluesky posts and link cards) shown as their players. Videos, music and pens show a Poster until clicked, so no player loads unasked.
+Renders a Document's HTML in a `<div class="scribe-content">` (so `@skyscribe-sdk/styles` applies), with Embeds (videos, music, code pens, Bluesky posts and link cards) shown as their players. Videos, music and pens show a Poster until clicked, so no player loads unasked.
 
 ```tsx
 import { ScribeContent } from "@skyscribe-sdk/react";
 import "@skyscribe-sdk/styles";
 
-<ScribeContent html={article.content} />
+<ScribeContent html={document.content} />
 
 // Load every player with the page instead of Posters
-<ScribeContent html={article.content} clickToLoad={false} />
+<ScribeContent html={document.content} clickToLoad={false} />
 
 // Keep Embeds as the links they're stored as
-<ScribeContent html={article.content} embeds={false} />
+<ScribeContent html={document.content} embeds={false} />
 ```
 
-### `useSite`
+### `usePublication`
 
 ```tsx
-import { useSite } from "@skyscribe-sdk/react";
+import { usePublication } from "@skyscribe-sdk/react";
 
 function BlogIndex() {
-  const { site, loading, error } = useSite("alice.bsky.social", "https://alice.bsky.social");
+  const { publication, loading, error } = usePublication("alice.bsky.social", "https://alice.bsky.social");
 
   if (loading) return <p>Loading…</p>;
   if (error)   return <p>Something went wrong: {error.message}</p>;
 
   return (
     <ul>
-      {site.groups.map((group) =>
-        group.articles.map((article) => (
-          <li key={article.uri}>{article.title}</li>
+      {publication.categories.map((category) =>
+        category.documents.map((document) => (
+          <li key={document.uri}>{document.title}</li>
         ))
       )}
     </ul>
@@ -55,15 +55,15 @@ function BlogIndex() {
 }
 ```
 
-### `useArticleBySlug`
+### `useDocumentBySlug`
 
-Looks the article up by its slug (as in its URL) and returns it with its AT URI:
+Looks the Document up by its slug (as in its URL). Its `uri` is its AT URI:
 
 ```tsx
-import { useArticleBySlug } from "@skyscribe-sdk/react";
+import { useDocumentBySlug } from "@skyscribe-sdk/react";
 
-function ArticlePage({ slug }: { slug: string }) {
-  const { article, uri, loading, error } = useArticleBySlug(
+function DocumentPage({ slug }: { slug: string }) {
+  const { document, loading, error } = useDocumentBySlug(
     "alice.bsky.social",
     "https://alice.bsky.social",
     slug
@@ -72,18 +72,18 @@ function ArticlePage({ slug }: { slug: string }) {
   if (loading) return <p>Loading…</p>;
   if (error)   return <p>Something went wrong: {error.message}</p>;
 
-  if (!article) return null;
+  if (!document) return null;
 
   return (
     <article>
-      <h1>{article.title}</h1>
-      <div dangerouslySetInnerHTML={{ __html: article.content }} />
+      <h1>{document.title}</h1>
+      <div dangerouslySetInnerHTML={{ __html: document.content }} />
     </article>
   );
 }
 ```
 
-`useArticle(author, rkey)` fetches by record key instead, for when you already have an `ArticleRef`. Don't pass it a slug.
+`useDocument(author, rkey)` fetches by record key instead, for when you already have a `DocumentRef`. Don't pass it a slug.
 
 ### `SiteAnalytics`
 
@@ -102,7 +102,7 @@ Figures appear once your site serves `/.well-known/site.standard.publication` wi
 All types from `@skyscribe-sdk/core` are re-exported so you only need one import:
 
 ```ts
-import type { Site, Article, ArticleRef, SiteGroup } from "@skyscribe-sdk/react";
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from "@skyscribe-sdk/react";
 ```
 
 ## Using with server-side rendering

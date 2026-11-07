@@ -1,19 +1,20 @@
 import { useAsyncData } from "#app";
 import type { AsyncDataOptions } from "#app";
-import { fetchArticle } from "@skyscribe-sdk/core";
-import type { Article } from "@skyscribe-sdk/core";
+import { fetchDocument } from "@skyscribe-sdk/core";
+import type { StandardDocument } from "@skyscribe-sdk/core";
 
-// Fetches by record key (rkey): current articles have opaque TID rkeys, so
-// a human-readable slug only matches very old records. Use useScribeArticleBySlug when
-// you have the slug from a URL.
+// Deprecated (ADR 0005): removed in the next major. Stays in composables/
+// so its auto-import keeps working.
+
+/** @deprecated Use `useScribeDocument`. */
 export function useScribeArticle(
   author: string,
   rkey: string,
-  options?: AsyncDataOptions<Article>
+  options?: AsyncDataOptions<StandardDocument>
 ) {
-  return useAsyncData<Article>(
+  return useAsyncData<StandardDocument>(
     `scribe:article:${author}:${rkey}`,
-    () => fetchArticle(author, rkey),
+    () => fetchDocument(author, rkey),
     options
   );
 }

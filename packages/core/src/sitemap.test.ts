@@ -1,23 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { getSitemapEntries } from "./sitemap.js";
-import type { Site } from "./types.js";
+import type { StandardPublication } from "./types.js";
 
-const mockSite: Site = {
+const mockSite: StandardPublication = {
   uri: "at://did:plc:abc/site.standard.publication/norobotspubkey",
-  title: "Test Blog",
-  url: "norobots.blog",
-  urlPrefix: "blog",
+  name: "Test Blog",
+  domain: "norobots.blog",
+  basePath: "blog",
   description: "A test blog",
-  groups: [
+  categories: [
     {
       slug: "essays",
       title: "Essays",
-      articles: [
+      documents: [
         {
           uri: "at://did:plc:abc/site.standard.document/first-post",
           title: "First Post",
           slug: "first-post",
-          splashImageUrl: null,
+          coverImageUrl: null,
           createdAt: "2024-01-01T00:00:00Z",
           publishedAt: "2024-01-01T12:00:00Z",
           updatedAt: "2024-01-15T00:00:00Z",
@@ -26,7 +26,7 @@ const mockSite: Site = {
           uri: "at://did:plc:abc/site.standard.document/second-post",
           title: "Second Post",
           slug: "second-post",
-          splashImageUrl: null,
+          coverImageUrl: null,
           createdAt: "2024-02-01T00:00:00Z",
           publishedAt: "2024-02-01T12:00:00Z",
         },
@@ -35,27 +35,17 @@ const mockSite: Site = {
     {
       slug: "notes",
       title: "Notes",
-      articles: [
+      documents: [
         {
           uri: "at://did:plc:abc/site.standard.document/note-one",
           title: "Note One",
           slug: "note-one",
-          splashImageUrl: null,
+          coverImageUrl: null,
           createdAt: "2024-03-01T00:00:00Z",
           publishedAt: "2024-03-01T12:00:00Z",
           updatedAt: "2024-03-10T00:00:00Z",
         },
       ],
-    },
-  ],
-  ungroupedArticles: [
-    {
-      uri: "at://did:plc:abc/site.standard.document/draft",
-      title: "Draft",
-      slug: "draft",
-      splashImageUrl: null,
-      createdAt: "2024-05-01T00:00:00Z",
-      publishedAt: "2024-05-01T12:00:00Z",
     },
   ],
 };
@@ -71,39 +61,39 @@ describe("getSitemapEntries", () => {
     expect(entries).toContainEqual({ url: "https://norobots.blog" });
   });
 
-  it("includes the blog index when urlPrefix is set", () => {
+  it("includes the blog index when basePath is set", () => {
     const entries = getSitemapEntries(mockSite, { baseUrl: "https://norobots.blog" });
     expect(entries).toContainEqual({ url: "https://norobots.blog/blog" });
   });
 
-  it("does not duplicate root when urlPrefix is empty", () => {
-    const siteNoPrefix: Site = { ...mockSite, urlPrefix: "" };
+  it("does not duplicate root when basePath is empty", () => {
+    const siteNoPrefix: StandardPublication = { ...mockSite, basePath: "" };
     const entries = getSitemapEntries(siteNoPrefix, { baseUrl: "https://norobots.blog" });
     const rootEntries = entries.filter(e => e.url === "https://norobots.blog");
     expect(rootEntries).toHaveLength(1);
   });
 
-  it("includes group URLs with urlPrefix", () => {
+  it("includes group URLs with basePath", () => {
     const entries = getSitemapEntries(mockSite, { baseUrl: "https://norobots.blog" });
     expect(entries).toContainEqual({ url: "https://norobots.blog/blog/essays" });
     expect(entries).toContainEqual({ url: "https://norobots.blog/blog/notes" });
   });
 
-  it("includes group URLs without urlPrefix", () => {
-    const siteNoPrefix: Site = { ...mockSite, urlPrefix: "" };
+  it("includes group URLs without basePath", () => {
+    const siteNoPrefix: StandardPublication = { ...mockSite, basePath: "" };
     const entries = getSitemapEntries(siteNoPrefix, { baseUrl: "https://norobots.blog" });
     expect(entries).toContainEqual({ url: "https://norobots.blog/essays" });
     expect(entries).toContainEqual({ url: "https://norobots.blog/notes" });
   });
 
-  it("includes article URLs with urlPrefix", () => {
+  it("includes article URLs with basePath", () => {
     const entries = getSitemapEntries(mockSite, { baseUrl: "https://norobots.blog" });
     expect(entries.some(e => e.url === "https://norobots.blog/blog/essays/first-post")).toBe(true);
     expect(entries.some(e => e.url === "https://norobots.blog/blog/notes/note-one")).toBe(true);
   });
 
-  it("includes article URLs without urlPrefix", () => {
-    const siteNoPrefix: Site = { ...mockSite, urlPrefix: "" };
+  it("includes article URLs without basePath", () => {
+    const siteNoPrefix: StandardPublication = { ...mockSite, basePath: "" };
     const entries = getSitemapEntries(siteNoPrefix, { baseUrl: "https://norobots.blog" });
     expect(entries.some(e => e.url === "https://norobots.blog/essays/first-post")).toBe(true);
     expect(entries.some(e => e.url === "https://norobots.blog/notes/note-one")).toBe(true);
@@ -128,24 +118,20 @@ describe("getSitemapEntries", () => {
     expect(secondPost).not.toHaveProperty("lastmod");
   });
 
-  it("does not include ungroupedArticles", () => {
-    const entries = getSitemapEntries(mockSite, { baseUrl: "https://norobots.blog" });
-    expect(entries.every(e => !e.url.includes("draft"))).toBe(true);
-  });
 
   it("leaves out an article whose canonical URL is another site's", () => {
-    const site: Site = {
+    const site: StandardPublication = {
       ...mockSite,
-      groups: [
+      categories: [
         {
-          ...mockSite.groups[0],
-          articles: [
-            ...mockSite.groups[0].articles,
+          ...mockSite.categories[0],
+          documents: [
+            ...mockSite.categories[0].documents,
             {
               uri: "at://did:plc:abc/site.standard.document/imported",
               title: "Imported",
               slug: "imported",
-              splashImageUrl: null,
+              coverImageUrl: null,
               createdAt: "2024-03-01T00:00:00Z",
               canonicalElsewhere: true,
             },
@@ -161,18 +147,18 @@ describe("getSitemapEntries", () => {
   });
 
   it("leaves out an article whose SEO Settings ask for noindex", () => {
-    const site: Site = {
+    const site: StandardPublication = {
       ...mockSite,
-      groups: [
+      categories: [
         {
-          ...mockSite.groups[0],
-          articles: [
-            ...mockSite.groups[0].articles,
+          ...mockSite.categories[0],
+          documents: [
+            ...mockSite.categories[0].documents,
             {
               uri: "at://did:plc:abc/site.standard.document/hidden",
               title: "Hidden",
               slug: "hidden",
-              splashImageUrl: null,
+              coverImageUrl: null,
               createdAt: "2024-03-01T00:00:00Z",
               noindex: true,
             },

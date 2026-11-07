@@ -1,16 +1,16 @@
 # RSS feeds
 
-`@skyscribe-sdk/core` exports `generateFeed`, which takes a fetched `Site` and returns a complete RSS 2.0 XML string. Call it from a server-side route handler and return the result as the response.
+`@skyscribe-sdk/core` exports `generateFeed`, which takes a fetched `StandardPublication` and returns a complete RSS 2.0 XML string. Call it from a server-side route handler and return the result as the response.
 
 ## Basic usage
 
 `generateFeed` needs a `baseUrl`: your website's origin. Pass `feedUrl` too (the feed's own URL), so the feed identifies itself to readers:
 
 ```ts
-import { fetchSite, generateFeed } from '@skyscribe-sdk/core';
+import { fetchPublication, generateFeed } from '@skyscribe-sdk/core';
 
-const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
-const xml = generateFeed(site, {
+const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
+const xml = generateFeed(publication, {
   baseUrl: 'https://alice.example.com',
   feedUrl: 'https://alice.example.com/feed.xml',
 });
@@ -20,10 +20,10 @@ The options:
 
 | Option | Default | Meaning |
 | ------ | ------- | ------- |
-| `baseUrl` | (required) | Your website's origin, used to build each article's link |
+| `baseUrl` | (required) | Your website's origin, used to build each Document's link |
 | `feedUrl` | none | The feed's own URL, added as an `atom:link rel="self"` |
 | `language` | `"en"` | The channel's `<language>` |
-| `limit` | all | Include at most this many articles |
+| `limit` | all | Include at most this many Documents |
 
 ## Wiring into your framework
 
@@ -31,12 +31,12 @@ The options:
   <Tab label="React Router v7/v8">
     ```ts
     // app/routes/feed.ts
-    import { fetchSite, generateFeed } from '@skyscribe-sdk/core';
+    import { fetchPublication, generateFeed } from '@skyscribe-sdk/core';
 
     export async function loader({ request }: { request: Request }) {
       const origin = new URL(request.url).origin;
-      const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal);
-      const xml = generateFeed(site, {
+      const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social', request.signal);
+      const xml = generateFeed(publication, {
         baseUrl: origin,
         feedUrl: `${origin}/feed.xml`,
       });
@@ -49,12 +49,12 @@ The options:
   <Tab label="Next.js App Router">
     ```ts
     // app/feed.xml/route.ts
-    import { fetchSite, generateFeed } from '@skyscribe-sdk/core';
+    import { fetchPublication, generateFeed } from '@skyscribe-sdk/core';
 
     export async function GET(request: Request) {
       const origin = new URL(request.url).origin;
-      const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal);
-      const xml = generateFeed(site, {
+      const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social', request.signal);
+      const xml = generateFeed(publication, {
         baseUrl: origin,
         feedUrl: `${origin}/feed.xml`,
       });
@@ -67,12 +67,12 @@ The options:
   <Tab label="SvelteKit">
     ```ts
     // src/routes/feed.xml/+server.ts
-    import { fetchSite, generateFeed } from '@skyscribe-sdk/core';
+    import { fetchPublication, generateFeed } from '@skyscribe-sdk/core';
     import type { RequestHandler } from './$types';
 
     export const GET: RequestHandler = async ({ url }) => {
-      const site = await fetchSite('alice.bsky.social', 'https://alice.bsky.social');
-      const xml = generateFeed(site, {
+      const publication = await fetchPublication('alice.bsky.social', 'https://alice.bsky.social');
+      const xml = generateFeed(publication, {
         baseUrl: url.origin,
         feedUrl: `${url.origin}/feed.xml`,
       });
@@ -90,13 +90,13 @@ The options:
 
 ## What gets included
 
-`generateFeed` includes the articles in the Site's Groups, which are its published articles. Items come out in Group order, then in each Group's article order, not sorted by date, and `limit` applies to that order. To get newest first, sort the Groups' articles by `publishedAt` before calling `generateFeed`.
+`generateFeed` includes the Documents in the Publication's Categories, which are its published Documents. Items come out in Category order, then in each Category's Document order, not sorted by date, and `limit` applies to that order. To get newest first, sort the Categories' Documents by `publishedAt` before calling `generateFeed`.
 
 Each item contains:
-- `<title>`: the article's title
-- `<description>`: the article's description (empty if none)
-- `<link>`: `{baseUrl}/{urlPrefix}/{group slug}/{article slug}`
-- `<pubDate>`: `publishedAt`, or `createdAt` if the article has no publish date
+- `<title>`: the Document's title
+- `<description>`: the Document's description (empty if none)
+- `<link>`: `{baseUrl}/{basePath}/{category slug}/{document slug}`
+- `<pubDate>`: `publishedAt`, or `createdAt` if the Document has no publish date
 - `<guid>`: the same URL as `<link>`
 
 ## Feed auto-discovery
@@ -112,4 +112,4 @@ Add a `<link>` tag in your HTML `<head>` so feed readers can discover the feed a
 />
 ```
 
-`siteMeta` and the other meta helpers don't add this tag, so add it in your root layout.
+`publicationMeta` and the other meta helpers don't add this tag, so add it in your root layout.

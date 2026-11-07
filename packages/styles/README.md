@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@skyscribe-sdk/styles)](https://www.npmjs.com/package/@skyscribe-sdk/styles)
 [![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/ACregan/skyscribe-sdk/blob/main/LICENSE)
 
-Base CSS for rendering [SkyScribe](https://skyscribe.app) article content in consumer sites. Pure CSS — no build step, no JavaScript.
+Base CSS for rendering [SkyScribe](https://skyscribe.app) Document content in consumer sites. Pure CSS — no build step, no JavaScript.
 
 All rules are scoped to `.scribe-content` so they cannot leak into the rest of your page. Override any `--scribe-*` custom property to theme the output.
 
@@ -17,18 +17,18 @@ npm install @skyscribe-sdk/styles
 
 ### With Vite / React / React Router
 
-Import the stylesheet once at the route that renders article content:
+Import the stylesheet once at the route that renders Document content:
 
 ```ts
 import "@skyscribe-sdk/styles";
 ```
 
-Then wrap your article HTML in an element with the `scribe-content` class:
+Then wrap your Document HTML in an element with the `scribe-content` class:
 
 ```tsx
 <div
   className="scribe-content"
-  dangerouslySetInnerHTML={{ __html: article.content }}
+  dangerouslySetInnerHTML={{ __html: document.content }}
 />
 ```
 
@@ -38,7 +38,7 @@ Or use the `<ScribeContent>` component from `@skyscribe-sdk/react`, which adds t
 import { ScribeContent } from "@skyscribe-sdk/react";
 import "@skyscribe-sdk/styles";
 
-<ScribeContent html={article.content} />
+<ScribeContent html={document.content} />
 ```
 
 ### With a `<link>` tag (CDN / no bundler)
@@ -62,7 +62,7 @@ import "@skyscribe-sdk/styles";
 | Checklists | `.scribe-content li[role="checkbox"]` |
 | Embeds, Posters and link cards | `.scribe-content figure[data-embed]` |
 
-Token classes (`token keyword`, `token string`, …) are the Prism-compatible class names that the SkyScribe editor emits when it serialises article content.
+Token classes (`token keyword`, `token string`, …) are the Prism-compatible class names that the SkyScribe editor emits when it serialises Document content.
 
 ## Theming
 

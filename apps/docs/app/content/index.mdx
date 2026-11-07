@@ -6,23 +6,23 @@ The SkyScribe SDK is a set of TypeScript packages for showing content written in
   You probably want a SkyScribe Site instead: pick a design, choose colours and fonts, and launch, with no coding and nothing to install. See [SkyScribe Sites vs. SDK-driven websites](https://skyscribe.app/users-guide/getting-started/skyscribe-sites-vs-your-own-frontend).
 </Callout>
 
-<Callout type="note" title="Coming from @scribe-atp?">
-  The packages were renamed from `@scribe-atp/*` to `@skyscribe-sdk/*`. Only the import paths change. See [Migrating from @scribe-atp](/migrating).
+<Callout type="note" title="Upgrading from 4.x?">
+  Version 5 renamed the API to the site.standard terms: Publication, Document and Category. See [Upgrading to 5.0](/upgrading-to-5). Coming from `@scribe-atp/*`? See [Migrating from @scribe-atp](/migrating).
 </Callout>
 
 ## What it does
 
-Published content is stored on the author's AT Protocol Personal Data Server (PDS): a public, decentralised data store. The SDK handles everything between "I have an author's handle" and "I have their articles":
+Published content is stored on the author's AT Protocol Personal Data Server (PDS): a public, decentralised data store. The SDK handles everything between "I have an author's handle" and "I have their Documents":
 
 - Resolving a handle (`alice.bsky.social`) to the author's permanent DID
 - Finding which server stores the author's data
-- Fetching the Site and Article records and turning them into typed objects
+- Fetching the Publication and Document records and turning them into typed objects
 - Wiring up request cancellation, so you don't have to
 
 It also works with content written in Scribe CMS, the older authoring tool, which writes the same records.
 
 <Callout type="note">
-  The SDK's API is older than SkyScribe's naming, so it uses different names: a **Site** is a Publication, a **Group** is a Category, and an **Article** is a Document. These docs use the SDK's names. [Concepts](/concepts#skyscribes-names-and-the-sdks-names) has the full mapping.
+  The SDK uses the same names as SkyScribe and the site.standard records: a **Publication** holds **Categories**, which hold **Documents**. See [Concepts](/concepts#names).
 </Callout>
 
 ## Which package do you need?
@@ -30,16 +30,16 @@ It also works with content written in Scribe CMS, the older authoring tool, whic
 | Package | For | Provides |
 | ------- | --- | -------- |
 | **`@skyscribe-sdk/core`** | Any framework, or none. Start here if unsure. | Plain async functions, no runtime dependencies |
-| **`@skyscribe-sdk/react`** | React SPAs and client-rendered components | `useSite`, `useArticleBySlug`, `useArticle` hooks |
+| **`@skyscribe-sdk/react`** | React SPAs and client-rendered components | `usePublication`, `useDocumentBySlug`, `useDocument` hooks |
 | **`@skyscribe-sdk/react-router-framework`** | React Router v7/v8 framework (server) mode | Loader factories that wire up `request.signal` |
 | **`@skyscribe-sdk/next`** | Next.js 13+ App Router | `generateStaticParams` / `generateMetadata` factories |
 | **`@skyscribe-sdk/nuxt`** | Nuxt 3+ | A full module: auto-imports and `useAsyncData` integration |
-| **`@skyscribe-sdk/vue`** | Vue 3+ | `useScribeSite`, `useScribeArticleBySlug`, `useScribeArticle` composables |
-| **`@skyscribe-sdk/angular`** | Angular 16+ | `ScribeService` (Observables), `injectSite` / `injectArticleBySlug` (Signals) |
+| **`@skyscribe-sdk/vue`** | Vue 3+ | `useScribePublication`, `useScribeDocumentBySlug`, `useScribeDocument` composables |
+| **`@skyscribe-sdk/angular`** | Angular 16+ | `ScribeService` (Observables), `injectPublication` / `injectDocumentBySlug` (Signals) |
 | **`@skyscribe-sdk/social`** | React | `LikeButton`, `SubscribeButton`, `ShareButton` for reader engagement |
-| **`@skyscribe-sdk/styles`** | Any framework | Themeable CSS for rendering article content |
+| **`@skyscribe-sdk/styles`** | Any framework | Themeable CSS for rendering Document content |
 
-For **SvelteKit**, **Astro**, or any other meta-framework that loads data on the server, install `@skyscribe-sdk/core` and call `fetchSite` / `fetchArticleBySlug` directly in your loaders or server components. See [Other frameworks](/frameworks/other).
+For **SvelteKit**, **Astro**, or any other meta-framework that loads data on the server, install `@skyscribe-sdk/core` and call `fetchPublication` / `fetchDocumentBySlug` directly in your loaders or server components. See [Other frameworks](/frameworks/other).
 
 ## Requirements
 
@@ -49,5 +49,5 @@ For **SvelteKit**, **Astro**, or any other meta-framework that loads data on the
 ## Next steps
 
 1. Read [Concepts](/concepts) for the AT Protocol identity model and how content is organised.
-2. Follow the [Quickstart](/quickstart) to fetch your first Site and Article.
+2. Follow the [Quickstart](/quickstart) to fetch your first Publication and Document.
 3. Switch to your framework's [guide](/frameworks/core) for idiomatic integration.

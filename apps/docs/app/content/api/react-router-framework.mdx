@@ -4,60 +4,60 @@ Loader factories and meta helpers for React Router v7/v8 framework mode. Install
 
 ## Functions
 
-### `createSiteLoader`
+### `createPublicationLoader`
 
 ```ts
-function createSiteLoader(
+function createPublicationLoader(
   author: string,
   publicationUrl: string,
-  deps?: { fetchSite?: typeof fetchSite }
-): (args: LoaderFunctionArgs) => Promise<Site>
+  deps?: { fetchPublication?: typeof fetchPublication }
+): (args: LoaderFunctionArgs) => Promise<StandardPublication>
 ```
 
-Returns a React Router loader that fetches a Site. It passes `request.signal` through, so the fetch is cancelled if the visitor navigates away.
+Returns a React Router loader that fetches a Publication. It passes `request.signal` through, so the fetch is cancelled if the visitor navigates away.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
-| `deps.fetchSite` | `function` | Optional. Replaces the fetch function, for testing |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `deps.fetchPublication` | `function` | Optional. Replaces the fetch function, for testing |
 
 ```ts
 // app/routes/blog.tsx
-export const loader = createSiteLoader('alice.bsky.social', 'https://alice.bsky.social');
+export const loader = createPublicationLoader('alice.bsky.social', 'https://alice.bsky.social');
 ```
 
 ---
 
-### `createArticleRouteLoader`
+### `createDocumentRouteLoader`
 
 ```ts
-function createArticleRouteLoader(
+function createDocumentRouteLoader(
   author: string,
   publicationUrl: string,
   slugParam?: string,
-  deps?: { fetchArticleBySlug?: typeof fetchArticleBySlug }
-): (args: LoaderFunctionArgs) => Promise<ArticleWithUri>
+  deps?: { fetchDocumentBySlug?: typeof fetchDocumentBySlug }
+): (args: LoaderFunctionArgs) => Promise<StandardDocument>
 ```
 
-Returns a React Router loader that reads the article's slug from the route params, fetches the article and its AT URI with `fetchArticleBySlug`, and returns an `ArticleWithUri`. It passes `request.signal` through.
+Returns a React Router loader that reads the Document's slug from the route params, fetches it with `fetchDocumentBySlug`, and returns the `StandardDocument` (its `uri` is the AT URI). It passes `request.signal` through.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
-| `slugParam` | `string` | Optional. URL param name to read the slug from. Defaults to `"articleSlug"` |
-| `deps.fetchArticleBySlug` | `function` | Optional. Replaces the fetch function, for testing |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `slugParam` | `string` | Optional. URL param name to read the slug from. Defaults to `"documentSlug"` |
+| `deps.fetchDocumentBySlug` | `function` | Optional. Replaces the fetch function, for testing |
 
 ```ts
-// app/routes/blog.$articleSlug.tsx
-export const loader = createArticleRouteLoader('alice.bsky.social', 'https://alice.bsky.social');
+// app/routes/blog.$categorySlug.$documentSlug.tsx
+export const loader = createDocumentRouteLoader('alice.bsky.social', 'https://alice.bsky.social');
 
 // custom param name:
-export const loader = createArticleRouteLoader('alice.bsky.social', 'https://alice.bsky.social', 'slug');
+export const loader = createDocumentRouteLoader('alice.bsky.social', 'https://alice.bsky.social', 'slug');
 ```
 
-The loader throws an `Error` if the slug param is missing (a route set-up mistake), and `NotFoundError` from `@skyscribe-sdk/core` if no published article has that slug. Catch `NotFoundError` and throw a 404 `Response` if you want React Router's 404 handling.
+The loader throws an `Error` naming the param if it's missing (a route set-up mistake: the route segment must be `:documentSlug`, or pass its name as `slugParam`), and `NotFoundError` from `@skyscribe-sdk/core` if no published Document has that slug. Catch `NotFoundError` and throw a 404 `Response` if you want React Router's 404 handling.
 
 ---
 
@@ -71,12 +71,12 @@ function createWellKnownLoader(
 ): (args: LoaderFunctionArgs) => Promise<Response>
 ```
 
-Returns a React Router loader that responds with the Site's AT URI as plain text. Serve it at `/.well-known/site.standard.publication`, where `site.standard` apps look to confirm that a website belongs to a Publication.
+Returns a React Router loader that responds with the Publication's AT URI as plain text. Serve it at `/.well-known/site.standard.publication`, where `site.standard` apps look to confirm that a website belongs to a Publication.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
 | `deps.resolvePublicationUri` | `function` | Optional. Replaces the lookup function, for testing |
 
 ```ts
@@ -89,47 +89,57 @@ export const loader = createWellKnownLoader('alice.bsky.social', 'https://alice.
 
 ---
 
-### `articleMeta`
+### `documentMeta`
 
 ```ts
-function articleMeta(article: Article, site: Site): MetaDescriptor[]
+function documentMeta(document: StandardDocument, publication: StandardPublication): MetaDescriptor[]
 ```
 
-Returns a `MetaDescriptor[]` to spread into a React Router `meta` function: the title, canonical link, Open Graph and Twitter Card tags, and JSON-LD structured data (the same set as core's `generateArticleMeta`).
+Returns a `MetaDescriptor[]` to spread into a React Router `meta` function: the title, canonical link, [site.standard link tags](/guides/meta-tags#sitestandard-link-tags), Open Graph and Twitter Card tags, and JSON-LD structured data (the same set as core's `generateDocumentMeta`).
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `article` | `Article` | The full article object |
-| `site` | `Site` | The site object |
+| `document` | `StandardDocument` | The full Document |
+| `publication` | `StandardPublication` | The Publication |
 
 ```ts
-import { articleMeta } from '@skyscribe-sdk/react-router-framework';
-import type { Route } from './+types/Article';
+import { documentMeta } from '@skyscribe-sdk/react-router-framework';
+import type { Route } from './+types/blog.$categorySlug.$documentSlug';
 
 export function meta({ loaderData }: Route.MetaArgs) {
   if (!loaderData) return [{ title: 'My Blog' }];
   return [
-    ...articleMeta(loaderData.article, loaderData.site),
-    { title: `${loaderData.article.title} — My Blog` },
+    ...documentMeta(loaderData.document, loaderData.publication),
+    { title: `${loaderData.document.title} — My Blog` },
   ];
 }
 ```
 
-Spread it first, so your own `{ title }` at the end wins in the browser tab while the Open Graph tags keep the plain article title. See the [meta tags guide](/guides/meta-tags).
+Spread it first, so your own `{ title }` at the end wins in the browser tab while the Open Graph tags keep the plain Document title. See the [meta tags guide](/guides/meta-tags).
 
 ---
 
-### `siteMeta`
+### `publicationMeta`
 
 ```ts
-function siteMeta(site: Site): MetaDescriptor[]
+function publicationMeta(publication: StandardPublication): MetaDescriptor[]
 ```
 
-Returns `MetaDescriptor[]` for a site index or group page, the same set as core's `generateSiteMeta`.
+Returns `MetaDescriptor[]` for a Publication's home or Category page, the same set as core's `generatePublicationMeta`.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `site` | `Site` | The site object |
+| `publication` | `StandardPublication` | The Publication |
+
+---
+
+### `standardSiteLinks`
+
+```ts
+function standardSiteLinks(publication: StandardPublication, document?: StandardDocument): MetaDescriptor[]
+```
+
+Just the [site.standard link tags](/guides/meta-tags#sitestandard-link-tags), for routes that don't use `documentMeta` or `publicationMeta`, such as Category pages.
 
 ---
 
@@ -139,22 +149,22 @@ All three factories accept an optional `deps` argument, so you can pass mock fun
 
 ```ts
 import { describe, it, expect, vi } from 'vitest';
-import { createSiteLoader, createArticleRouteLoader, createWellKnownLoader } from '@skyscribe-sdk/react-router-framework';
+import { createPublicationLoader, createDocumentRouteLoader, createWellKnownLoader } from '@skyscribe-sdk/react-router-framework';
 
 describe('blog loaders', () => {
-  it('fetches the site', async () => {
-    const fetchSite = vi.fn().mockResolvedValueOnce(mockSite);
-    const loader = createSiteLoader('alice.bsky.social', 'https://alice.bsky.social', { fetchSite });
+  it('fetches the publication', async () => {
+    const fetchPublication = vi.fn().mockResolvedValueOnce(mockPublication);
+    const loader = createPublicationLoader('alice.bsky.social', 'https://alice.bsky.social', { fetchPublication });
     const result = await loader({ request: new Request('https://example.com'), params: {}, context: {} });
-    expect(result).toEqual(mockSite);
-    expect(fetchSite).toHaveBeenCalled();
+    expect(result).toEqual(mockPublication);
+    expect(fetchPublication).toHaveBeenCalled();
   });
 
-  it('fetches an article by slug', async () => {
-    const fetchArticleBySlug = vi.fn().mockResolvedValueOnce({ article: mockArticle, uri: mockUri });
-    const loader = createArticleRouteLoader('alice.bsky.social', 'https://alice.bsky.social', 'articleSlug', { fetchArticleBySlug });
-    const result = await loader({ request: new Request('https://example.com'), params: { articleSlug: 'hello' }, context: {} });
-    expect(result).toEqual({ ...mockArticle, documentUri: mockUri });
+  it('fetches a Document by slug', async () => {
+    const fetchDocumentBySlug = vi.fn().mockResolvedValueOnce(mockDocument);
+    const loader = createDocumentRouteLoader('alice.bsky.social', 'https://alice.bsky.social', 'documentSlug', { fetchDocumentBySlug });
+    const result = await loader({ request: new Request('https://example.com'), params: { documentSlug: 'hello' }, context: {} });
+    expect(result).toEqual(mockDocument);
   });
 });
 ```
@@ -163,22 +173,14 @@ describe('blog loaders', () => {
 
 ## Types
 
-### `ArticleWithUri`
-
-The return type of `createArticleRouteLoader`: an `Article` plus the AT URI of its record.
+The main types from `@skyscribe-sdk/core` are re-exported:
 
 ```ts
-interface ArticleWithUri extends Article {
-  documentUri: string;  // AT URI, e.g. "at://did:plc:…/site.standard.document/3mp47vvkh342n"
-}
+import type { StandardPublication, StandardDocument, DocumentRef, Category } from '@skyscribe-sdk/react-router-framework';
 ```
 
-Pass `documentUri` to `@skyscribe-sdk/social`'s buttons.
+Pass a Document's `uri` to `@skyscribe-sdk/social`'s buttons. See the [core reference](/api/core#types) for full type definitions.
 
-The main types from `@skyscribe-sdk/core` are re-exported too:
+## Deprecated names
 
-```ts
-import type { Site, Article, ArticleRef, SiteGroup, ArticleWithUri } from '@skyscribe-sdk/react-router-framework';
-```
-
-See the [core reference](/api/core#types) for full type definitions.
+`createSiteLoader`, `createArticleRouteLoader` (still reading `params.articleSlug` and returning an `ArticleWithUri` with `documentUri`), `siteMeta` and `articleMeta` still work, marked `@deprecated`, until the next major. See [Upgrading to 5.0](/upgrading-to-5).

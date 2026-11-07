@@ -4,73 +4,73 @@ Framework-agnostic functions and types. Every other package is built on these. I
 
 ## Functions
 
-### `fetchSite`
+### `fetchPublication`
 
 ```ts
-function fetchSite(
+function fetchPublication(
   author: string,
   publicationUrl: string,
   signal?: AbortSignal
-): Promise<Site>
+): Promise<StandardPublication>
 ```
 
-Fetches a Site from the author's PDS: resolves the author to a DID, finds their PDS, looks up the Site record whose URL matches `publicationUrl`, and returns the `Site` with its Groups and ArticleRefs. Throws `NotFoundError` if no Site matches.
+Fetches a Publication from the author's PDS: resolves the author to a DID, finds their PDS, looks up the `site.standard.publication` record whose URL matches `publicationUrl`, and returns the `StandardPublication` with its Categories and DocumentRefs. Throws `NotFoundError` if no Publication matches.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle (`alice.bsky.social`) or DID (`did:plc:…`) |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
 | `signal` | `AbortSignal` | Optional. Cancel the request when the signal fires |
 
 ---
 
-### `fetchArticleBySlug`
+### `fetchDocumentBySlug`
 
 ```ts
-function fetchArticleBySlug(
+function fetchDocumentBySlug(
   author: string,
   publicationUrl: string,
-  articleSlug: string,
+  documentSlug: string,
   signal?: AbortSignal
-): Promise<ArticleResult>
+): Promise<StandardDocument>
 ```
 
-Fetches a full article and its AT URI by the article's slug. Fetches the Site first, finds the `ArticleRef` with that slug, then fetches the article from the account the ref points to (which can be a contributor's, not the site owner's). Throws `NotFoundError` if no published article has that slug.
+Fetches a full Document by its slug. Fetches the Publication first, finds the `DocumentRef` with that slug, then fetches the Document from the account the ref points to (which can be a contributor's, not the Publication owner's). Throws `NotFoundError` if no published Document has that slug.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
-| `articleSlug` | `string` | The article's slug, as in its URL. (For very old articles whose rkey was their slug, the rkey also matches.) |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL, e.g. `"https://alice.bsky.social"` |
+| `documentSlug` | `string` | The Document's slug, as in its URL. (For very old Documents whose rkey was their slug, the rkey also matches.) |
 | `signal` | `AbortSignal` | Optional. Cancel the request when the signal fires |
 
-Returns `{ article: Article, uri: string }`. `uri` is the full AT URI of the `site.standard.document` record: pass it to `@skyscribe-sdk/social`'s buttons.
+The Document's `uri` is the full AT URI of its `site.standard.document` record: pass it to `@skyscribe-sdk/social`'s buttons.
 
-This is the function to use for article pages, which usually have the slug from the URL.
+This is the function to use for Document pages, which usually have the slug from the URL.
 
 ---
 
-### `fetchArticle`
+### `fetchDocument`
 
 ```ts
-function fetchArticle(
+function fetchDocument(
   author: string,
   rkey: string,
   signal?: AbortSignal
-): Promise<Article>
+): Promise<StandardDocument>
 ```
 
-Fetches a single article record, including its full HTML content, by its **record key (rkey)**. Doesn't return the AT URI.
+Fetches a single Document, including its full HTML content, by its **record key (rkey)**.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `author` | `string` | Handle or DID of the account the article is stored in |
-| `rkey` | `string` | The article's record key. Get it from an `ArticleRef` with `slugFromUri(ref.uri)` |
+| `author` | `string` | Handle or DID of the account the Document is stored in |
+| `rkey` | `string` | The Document's record key. Get it from a `DocumentRef` with `slugFromUri(ref.uri)` |
+| `signal` | `AbortSignal` | Optional. Cancel the request when the signal fires |
 
 <Callout type="warning">
-  Articles published with current tooling have opaque rkeys like `3mp47vvkh342n`, so passing a human-readable slug only finds very old articles. Use `fetchArticleBySlug` when you have a slug. When you have an `ArticleRef`, take the account from its AT URI too (`ref.uri.split('/')[2]`), since an article can live in a contributor's account.
+  Documents published with current tooling have opaque rkeys like `3mp47vvkh342n`, so passing a human-readable slug only finds very old Documents. Use `fetchDocumentBySlug` when you have a slug. When you have a `DocumentRef`, take the account from its AT URI too (`ref.uri.split('/')[2]`), since a Document can live in a contributor's account.
 </Callout>
-| `signal` | `AbortSignal` | Optional. Cancel the request when the signal fires |
 
 ---
 
@@ -90,10 +90,10 @@ Fetches a Bluesky profile (display name, avatar, bio and related data) for a han
 | `handleOrDid` | `string` | Bluesky handle (`alice.bsky.social`) or DID (`did:plc:…`) |
 | `signal` | `AbortSignal` | Optional. Cancel the request when the signal fires |
 
-Use it to show contributors, for example a byline card for each `Writer` contributor on an article, falling back to the site owner's profile when there are none:
+Use it to show contributors, for example a byline card for each `Writer` contributor on a Document, falling back to the Publication owner's profile when there are none:
 
 ```ts
-const writers = article.contributors?.filter((c) => c.role === "Writer") ?? [];
+const writers = document.contributors?.filter((c) => c.role === "Writer") ?? [];
 const profiles = writers.length > 0
   ? await Promise.all(writers.map((w) => fetchProfile(w.did, signal)))
   : [await fetchProfile(SITE_AUTHOR, signal)];
@@ -111,15 +111,15 @@ function resolvePublicationUri(
 ): Promise<string>
 ```
 
-Returns the AT URI of the Site record for the author and URL, without fetching the whole Site's content. Results are cached in memory, so repeated calls with the same arguments make no further requests.
+Returns the AT URI of the Publication record for the author and URL, without fetching the whole Publication. Results are cached in memory, so repeated calls with the same arguments make no further requests.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
-| `publicationUrl` | `string` | The site's canonical HTTPS URL |
+| `publicationUrl` | `string` | The Publication's canonical HTTPS URL |
 | `signal` | `AbortSignal` | Optional. Cancel the request when the signal fires |
 
-Returns an AT URI, e.g. `"at://did:plc:.../site.standard.publication/3mp4nd46xwr2h"`. Pass it to `@skyscribe-sdk/social`'s buttons as `publicationUri`. (A fetched `Site` has the same value as `site.uri`.)
+Returns an AT URI, e.g. `"at://did:plc:.../site.standard.publication/3mp4nd46xwr2h"`. Pass it to `@skyscribe-sdk/social`'s buttons as `publicationUri`. (A fetched `StandardPublication` has the same value as `publication.uri`.)
 
 ---
 
@@ -140,7 +140,7 @@ Retries a failing async call with backoff. It's generic: it wraps any of the fet
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `fn` | `() => Promise<T>` | The call to retry, e.g. `() => fetchSite(author, publicationUrl, signal)` |
+| `fn` | `() => Promise<T>` | The call to retry, e.g. `() => fetchPublication(author, publicationUrl, signal)` |
 | `options.attempts` | `number` | Total attempts including the first. Default `5` |
 | `options.delaysMs` | `number[]` | Delay in ms before each retry. Default `[300, 600, 1200, 2400]` |
 | `options.signal` | `AbortSignal` | Optional. Stops retrying immediately once aborted |
@@ -149,46 +149,44 @@ Never retries `NotFoundError` or an aborted signal. Retries everything else, inc
 
 ---
 
-### `listSites`
+### `listPublications`
 
 ```ts
-function listSites(
+function listPublications(
   author: string,
   signal?: AbortSignal
-): Promise<SiteRecord[]>
+): Promise<StandardPublication[]>
 ```
 
-Returns every Site (publication record) in the author's account, following pagination automatically. Records without a `scribe` object (made by other `site.standard` tools) are skipped.
+Returns every Publication in the author's account, following pagination automatically. Records without a `scribe` object (made by other `site.standard` tools) are skipped.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle (`alice.bsky.social`) or DID (`did:plc:…`) |
 | `signal` | `AbortSignal` | Optional. Cancel the request when the signal fires |
 
-`SiteRecord` is the same shape as `Site`.
-
 ---
 
-### `listArticles`
+### `listDocuments`
 
 ```ts
-function listArticles(
+function listDocuments(
   author: string,
   signal?: AbortSignal
-): Promise<ArticleRef[]>
+): Promise<DocumentRef[]>
 ```
 
-Returns **every** article record in the author's account, drafts included, as lightweight `ArticleRef` objects without `content`. Follows pagination automatically.
+Returns **every** Document in the author's account, drafts included, as lightweight `DocumentRef` objects without `content`. Follows pagination automatically.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `author` | `string` | Author handle or DID |
 | `signal` | `AbortSignal` | Optional. Cancel the request when the signal fires |
 
-Each ref's `slug` comes from the last segment of the article's `path`; drafts, which have no path yet, get their rkey instead. `splashImageUrl` holds the article's cover image. To fetch an article's full content, pass its account and rkey (from `ref.uri`) to `fetchArticle`.
+Each ref's `slug` comes from the last segment of the Document's `path`; drafts, which have no path yet, get their rkey instead. `coverImageUrl` holds the Document's cover image. To fetch a Document's full content, pass its account and rkey (from `ref.uri`) to `fetchDocument`.
 
 <Callout type="note">
-  Use this to list everything an author has written, drafts included. To list what's published on a website, use `fetchSite` and its Groups, which have the authors' ordering.
+  Use this to list everything an author has written, drafts included. To list what's published on a website, use `fetchPublication` and its Categories, which have the author's ordering.
 </Callout>
 
 ---
@@ -206,7 +204,7 @@ toSlug('norobots.blog')        // → "norobots-blog"
 toSlug('anthonycregan.co.uk')  // → "anthonycregan-co-uk"
 ```
 
-No SDK function needs it any more: they all take the site's full URL. It's still exported for other uses.
+No SDK function needs it any more: they all take the Publication's full URL. It's still exported for other uses.
 
 ---
 
@@ -216,7 +214,7 @@ No SDK function needs it any more: they all take the site's full URL. It's still
 function slugFromUri(uri: string): string
 ```
 
-Returns the last segment of an AT URI: the record key (rkey). Despite the name, for current articles that's an opaque TID, not the human-readable slug.
+Returns the last segment of an AT URI: the record key (rkey). Despite the name, for current Documents that's an opaque TID, not the human-readable slug.
 
 ```ts
 slugFromUri('at://did:plc:abc/site.standard.document/3mp47vvkh342n') // → "3mp47vvkh342n"
@@ -224,18 +222,18 @@ slugFromUri('at://did:plc:abc/site.standard.document/3mp47vvkh342n') // → "3mp
 
 ---
 
-### `flattenArticles`
+### `flattenDocuments`
 
 ```ts
-function flattenArticles(
-  groups: Array<{ articles: ArticleRef[] }>
-): ArticleRef[]
+function flattenDocuments(
+  categories: Array<{ documents: DocumentRef[] }>
+): DocumentRef[]
 ```
 
-Flattens the `ArticleRef`s from all groups into one array, in Group order.
+Flattens the `DocumentRef`s from all Categories into one array, in Category order.
 
 ```ts
-const allArticles = flattenArticles(site.groups);
+const allDocuments = flattenDocuments(publication.categories);
 ```
 
 ---
@@ -243,16 +241,16 @@ const allArticles = flattenArticles(site.groups);
 ### `generateFeed`
 
 ```ts
-function generateFeed(site: Site, options: FeedOptions): string
+function generateFeed(publication: StandardPublication, options: FeedOptions): string
 ```
 
-Returns a complete RSS 2.0 XML string for the Site's published articles, in Group order.
+Returns a complete RSS 2.0 XML string for the Publication's published Documents, in Category order.
 
 **`FeedOptions`**
 
 | Property | Type | Required | Description |
 | -------- | ---- | -------- | ----------- |
-| `baseUrl` | `string` | Yes | Your site's origin, e.g. `"https://alice.example.com"` |
+| `baseUrl` | `string` | Yes | Your website's origin, e.g. `"https://alice.example.com"` |
 | `feedUrl` | `string` | No | The feed's own URL, used for the `<atom:link rel="self">` |
 | `language` | `string` | No | RSS `<language>` tag. Default: `"en"` |
 | `limit` | `number` | No | Maximum number of items to include |
@@ -265,25 +263,25 @@ See the [RSS feeds guide](/guides/rss) for usage examples.
 
 ```ts
 function getSitemapEntries(
-  site: Site,
+  publication: StandardPublication,
   options: GetSitemapEntriesOptions
 ): SitemapEntry[]
 ```
 
-Returns sitemap entries for the home page, the path-prefix root (if any), each Group page and each published article. Articles marked [`canonicalElsewhere`](#articleref) are left out: their canonical URL is the original's, on another site. So are articles marked [`noindex`](#articleref).
+Returns sitemap entries for the home page, the base path root (if any), each Category page and each published Document. Documents marked [`canonicalElsewhere`](#documentref) are left out: their canonical URL is the original's, on another website. So are Documents marked [`noindex`](#documentref).
 
 **`GetSitemapEntriesOptions`**
 
 | Property | Type | Required | Description |
 | -------- | ---- | -------- | ----------- |
-| `baseUrl` | `string` | Yes | Your site's origin, e.g. `"https://alice.example.com"` |
+| `baseUrl` | `string` | Yes | Your website's origin, e.g. `"https://alice.example.com"` |
 
 **`SitemapEntry`**
 
 ```ts
 interface SitemapEntry {
   url: string;
-  lastmod?: string; // date only, e.g. "2024-03-15" (articles only, from updatedAt)
+  lastmod?: string; // date only, e.g. "2024-03-15" (documents only, from updatedAt)
 }
 ```
 
@@ -291,113 +289,128 @@ See the [Sitemaps guide](/guides/sitemaps) for usage examples.
 
 ---
 
-### `generateArticleMeta`
+### `generateDocumentMeta`
 
 ```ts
-function generateArticleMeta(article: Article, site: Site): ScribeMetaTag[]
+function generateDocumentMeta(document: StandardDocument, publication: StandardPublication): ScribeMetaTag[]
 ```
 
-Returns a framework-neutral array of tag descriptors for an article page: the `<title>`, a canonical `<link>`, `description`, `og:type`, `og:title`, `og:url`, `og:site_name`, `og:description`, `og:image` (the cover image), `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, and JSON-LD structured data. The article's [SEO Settings](/guides/meta-tags#seo-settings) replace the title and description tags (not the JSON-LD `headline`) and add `robots: noindex` when set.
+Returns a framework-neutral array of tag descriptors for a Document page: the `<title>`, a canonical `<link>`, the [site.standard link tags](/guides/meta-tags#sitestandard-link-tags), `description`, `og:type`, `og:title`, `og:url`, `og:site_name`, `og:description`, `og:image` (the cover image), `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, and JSON-LD structured data. The Document's [SEO Settings](/guides/meta-tags#seo-settings) replace the title and description tags (not the JSON-LD `headline`) and add `robots: noindex` when set.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `article` | `Article` | The full article object, as returned by `fetchArticleBySlug` or `fetchArticle` |
-| `site` | `Site` | The site, used for `og:site_name`, the title and the publisher in the JSON-LD |
+| `document` | `StandardDocument` | The full Document, as returned by `fetchDocumentBySlug` or `fetchDocument` |
+| `publication` | `StandardPublication` | The Publication, used for `og:site_name`, the title, the link tags and the publisher in the JSON-LD |
 
-The framework packages have their own equivalents in their framework's format (`articleMeta` in `@skyscribe-sdk/react-router-framework`, `articleMetadata` in `@skyscribe-sdk/next`, `articleSeoMeta` in `@skyscribe-sdk/nuxt`). Use this one directly for other frameworks, converting each descriptor to your framework's format.
+The framework packages have their own equivalents in their framework's format (`documentMeta` in `@skyscribe-sdk/react-router-framework`, `documentMetadata` in `@skyscribe-sdk/next`, `documentSeoMeta` in `@skyscribe-sdk/nuxt`). Use this one directly for other frameworks, converting each descriptor to your framework's format.
 
-The structured data comes as a `{ "script:ld+json": ... }` descriptor built with `generateArticleJsonLd`, so you don't need to call that yourself unless your framework's metadata API has no room for a `<script>` tag (see below).
+The structured data comes as a `{ "script:ld+json": ... }` descriptor built with `generateDocumentJsonLd`, so you don't need to call that yourself unless your framework's metadata API has no room for a `<script>` tag (see below).
 
 See the [meta tags guide](/guides/meta-tags) for framework-specific usage.
 
 ---
 
-### `generateSiteMeta`
+### `generatePublicationMeta`
 
 ```ts
-function generateSiteMeta(site: Site): ScribeMetaTag[]
+function generatePublicationMeta(publication: StandardPublication): ScribeMetaTag[]
 ```
 
-Returns tag descriptors for a site's index or group pages: the title, a canonical `<link>`, `og:type` (`website`), `og:title`, `og:url`, `og:site_name` and Twitter Card tags, plus the description and splash image when set, and JSON-LD structured data from `generateSiteJsonLd`.
+Returns tag descriptors for a Publication's home or Category pages: the title, a canonical `<link>`, the `site.standard.publication` link tag, `og:type` (`website`), `og:title`, `og:url`, `og:site_name` and Twitter Card tags, plus the description and splash image when set, and JSON-LD structured data from `generatePublicationJsonLd`.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `site` | `Site` | The site object |
+| `publication` | `StandardPublication` | The Publication |
+
+---
+
+### `standardSiteLinks`
+
+```ts
+function standardSiteLinks(
+  publication: StandardPublication,
+  document?: StandardDocument
+): StandardSiteLink[]
+
+type StandardSiteLink = { tagName: "link"; rel: string; href: string };
+```
+
+Returns just the `<link rel="site.standard.publication">` tag, plus `<link rel="site.standard.document">` when given a Document. Bluesky needs them, server-rendered, to show its Standard.site link card. The two meta helpers above include them already; use this on pages that don't use those (Category pages, custom heads). See [site.standard link tags](/guides/meta-tags#sitestandard-link-tags).
 
 ---
 
 ### `buildCanonicalUrl`
 
 ```ts
-function buildCanonicalUrl(article: Article, site: Site): string
+function buildCanonicalUrl(document: StandardDocument, publication: StandardPublication): string
 ```
 
-Returns an article's full canonical URL: the `canonicalUrl` SkyScribe stored when the article was published. For very old records without one, it builds it from `site.url` and `article.path`, adding `site.urlPrefix` only if the path doesn't already start with it.
+Returns a Document's full canonical URL: the `canonicalUrl` SkyScribe stored when the Document was published. For very old records without one, it builds it from `publication.domain` and `document.path`, adding `publication.basePath` only if the path doesn't already start with it.
 
 ```ts
-buildCanonicalUrl(article, site);
+buildCanonicalUrl(document, publication);
 // → "https://alice.bsky.social/blog/essays/my-first-post"
 ```
 
 ---
 
-### `buildSiteUrl`
+### `buildPublicationUrl`
 
 ```ts
-function buildSiteUrl(site: Site): string
+function buildPublicationUrl(publication: StandardPublication): string
 ```
 
-Returns the full URL of a site's index page, from `site.url` and `site.urlPrefix`.
+Returns the full URL of a Publication's home page, from `publication.domain` and `publication.basePath`.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `site` | `Site` | The site object |
+| `publication` | `StandardPublication` | The Publication |
 
 ```ts
-buildSiteUrl(site);
+buildPublicationUrl(publication);
 // → "https://alice.bsky.social/blog"
 ```
 
 ---
 
-### `generateArticleJsonLd`
+### `generateDocumentJsonLd`
 
 ```ts
-function generateArticleJsonLd(article: Article, site: Site): JsonLdObject
+function generateDocumentJsonLd(document: StandardDocument, publication: StandardPublication): JsonLdObject
 ```
 
-Returns a [schema.org `BlogPosting`](https://schema.org/BlogPosting) as a plain, JSON-serialisable object: headline, publish and modified dates, author (the first contributor's name, or the site's title), publisher, and the description, cover image and keywords when present. `generateArticleMeta` already includes it, so you rarely need to call it directly.
+Returns a [schema.org `BlogPosting`](https://schema.org/BlogPosting) as a plain, JSON-serialisable object: headline, publish and modified dates, author (the first contributor's name, or the Publication's name), publisher, and the description, cover image and keywords when present. `generateDocumentMeta` already includes it, so you rarely need to call it directly.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `article` | `Article` | The full article object |
-| `site` | `Site` | The site object |
+| `document` | `StandardDocument` | The full Document |
+| `publication` | `StandardPublication` | The Publication |
 
-Call it directly when your framework's metadata API has no place for a `<script>` tag, so you render `<script type="application/ld+json">` yourself. Next.js's `Metadata` object is one example. It isn't re-exported from `@skyscribe-sdk/next`, so import it from `@skyscribe-sdk/core` even in a Next.js project:
+Call it directly when your framework's metadata API has no place for a `<script>` tag, so you render `<script type="application/ld+json">` yourself. Next.js's `Metadata` object is one example (`@skyscribe-sdk/next` re-exports it):
 
 ```ts
-import { generateArticleJsonLd } from '@skyscribe-sdk/core';
+import { generateDocumentJsonLd } from '@skyscribe-sdk/core';
 
 // in your page component
 <script
   type="application/ld+json"
-  dangerouslySetInnerHTML={{ __html: JSON.stringify(generateArticleJsonLd(article, site)) }}
+  dangerouslySetInnerHTML={{ __html: JSON.stringify(generateDocumentJsonLd(document, publication)) }}
 />
 ```
 
 ---
 
-### `generateSiteJsonLd`
+### `generatePublicationJsonLd`
 
 ```ts
-function generateSiteJsonLd(site: Site): JsonLdObject
+function generatePublicationJsonLd(publication: StandardPublication): JsonLdObject
 ```
 
-Returns a [schema.org `WebSite`](https://schema.org/WebSite) object: name, URL, and the description if present. `generateSiteMeta` already includes it; call it directly for the same reason as `generateArticleJsonLd` above.
+Returns a [schema.org `WebSite`](https://schema.org/WebSite) object: name, URL, and the description if present. `generatePublicationMeta` already includes it; call it directly for the same reason as `generateDocumentJsonLd` above.
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
-| `site` | `Site` | The site object |
+| `publication` | `StandardPublication` | The Publication |
 
 ---
 
@@ -414,16 +427,16 @@ function crossPostToBluesky(
 ): Promise<StrongRef>
 ```
 
-Creates a Bluesky post (`app.bsky.feed.post`) with a link card pointing at the article, plus `associatedRefs` linking the post back to its `site.standard.document` and `site.standard.publication` records. The result is what goes in an article's [`bskyPostRef`](/guides/cross-posted-articles).
+Creates a Bluesky post (`app.bsky.feed.post`) with a link card pointing at the Document, plus `associatedRefs` linking the post back to its `site.standard.document` and `site.standard.publication` records. The result is what goes in a Document's [`bskyPostRef`](/guides/cross-posted-articles).
 
 | Parameter | Type | Description |
 | --------- | ---- | ----------- |
 | `agent` | `AtpAgentLike` | An authenticated AT Protocol agent with `com.atproto.repo.createRecord`, e.g. an `@atproto/api` `Agent` with an OAuth session for the author's own account |
 | `params` | `CrossPostParams` | See below |
 
-Returns a `StrongRef` (`{ uri, cid }`) for the new post. Write it to the document's `bskyPostRef` field yourself, so websites can link to the post.
+Returns a `StrongRef` (`{ uri, cid }`) for the new post. Write it to the Document's `bskyPostRef` field yourself, so websites can link to the post.
 
-This is a low-level building block for your own publishing tool. SkyScribe does the same thing when an author uses **Share to Bluesky**, so websites that only display content never need it. The document and publication URIs and CIDs come from your tool's own `createRecord` / `getRecord` responses: the SDK's `Article` and `Site` types don't carry CIDs.
+This is a low-level building block for your own publishing tool. SkyScribe does the same thing when an author uses **Share to Bluesky**, so websites that only display content never need it. The document and publication URIs and CIDs come from your tool's own `createRecord` / `getRecord` responses: the SDK's `StandardDocument` and `StandardPublication` types don't carry CIDs.
 
 ```ts
 import { crossPostToBluesky, buildCanonicalUrl } from '@skyscribe-sdk/core';
@@ -434,10 +447,10 @@ const ref = await crossPostToBluesky(agent, {
   documentCid,
   publicationUri,
   publicationCid,
-  canonicalUrl: buildCanonicalUrl(article, site),
-  title: article.title,
-  text: `New post: ${article.title}`,
-  description: article.description,
+  canonicalUrl: buildCanonicalUrl(document, publication),
+  title: document.title,
+  text: `New post: ${document.title}`,
+  description: document.description,
 });
 // ref → { uri: "at://did:plc:.../app.bsky.feed.post/3mp...", cid: "..." }
 ```
@@ -446,7 +459,7 @@ const ref = await crossPostToBluesky(agent, {
 
 ## Embeds
 
-An Embed is a video, a piece of music, a code pen, a Bluesky post or a link card in an article. SkyScribe stores each one in the article's HTML as a working link, marked with its kind:
+An Embed is a video, a piece of music, a code pen, a Bluesky post or a link card in a Document. SkyScribe stores each one in the Document's HTML as a working link, marked with its kind:
 
 ```html
 <figure data-embed="youtube">
@@ -584,7 +597,7 @@ The beacon as data, for frameworks that build head tags from objects. `SITE_ANAL
 class NotFoundError extends Error {}
 ```
 
-Thrown when the request worked but the site or article doesn't exist. Retrying won't help: treat it like an HTTP 404.
+Thrown when the request worked but the Publication or Document doesn't exist. Retrying won't help: treat it like an HTTP 404.
 
 ### `PdsFetchError`
 
@@ -610,74 +623,78 @@ Thrown when a request never got a response: DNS failure, connection refused, tim
 
 ## Types
 
-### `Site`
+### `StandardPublication`
+
+A `site.standard.publication` record.
 
 ```ts
-interface Site {
+interface StandardPublication {
   uri: string;          // AT URI of the publication record
-  title: string;
-  url: string;          // Domain without protocol, e.g. "alice.bsky.social"
-  urlPrefix: string;    // Path prefix, e.g. "blog", or "" if content is at the root
+  name: string;         // The spec's name
+  domain: string;       // Bare domain, no protocol, e.g. "alice.bsky.social"
+  basePath: string;     // Path prefix, e.g. "blog", or "" if Documents are at the root
   description?: string;
   splashImageUrl?: string;
   logoImageUrl?: string;
-  groups: SiteGroup[];
-  ungroupedArticles: ArticleRef[]; // legacy: empty for current content (see Concepts)
+  categories: Category[];
 }
 ```
 
-### `SiteGroup`
+### `Category`
+
+A named, ordered set of Documents within a Publication. A SkyScribe extension: the spec has no equivalent.
 
 ```ts
-interface SiteGroup {
+interface Category {
   slug: string;
   title: string;
-  articles: ArticleRef[];
+  documents: DocumentRef[];
 }
 ```
 
-### `ArticleRef`
+### `DocumentRef`
 
-A lightweight snapshot of an article's metadata, stored in the Site record so you can list articles without fetching each one. Doesn't include `content`.
+A lightweight snapshot of a Document, stored in its Publication's record so you can list Documents without fetching each one. Doesn't include `content`.
 
 ```ts
-interface ArticleRef {
+interface DocumentRef {
   uri: string;            // AT URI, e.g. "at://did:plc:…/site.standard.document/3mp47vvkh342n"
   title: string;
-  slug?: string;          // Human-readable slug, as in the article's URL
-  splashImageUrl: string | null;
+  slug?: string;          // Human-readable slug, as in the Document's URL
+  coverImageUrl: string | null;
   description?: string | null;
   tags?: string[];
-  contributors?: ArticleContributor[];
+  contributors?: DocumentContributor[];
   createdAt: string;      // ISO 8601
   publishedAt?: string;   // ISO 8601
   updatedAt?: string;     // ISO 8601
-  canonicalElsewhere?: true; // Canonical URL is another site's; see below
+  canonicalElsewhere?: true; // Canonical URL is another website's; see below
   noindex?: true;          // The author asked search engines to leave it out
 }
 ```
 
-`canonicalElsewhere` is set on an article that was imported into SkyScribe from another app (Leaflet, pckt, …) when its author chose to keep the original as the canonical URL. Your copy still renders as normal, but search engines should index the original: `getSitemapEntries` leaves these articles out.
+`canonicalElsewhere` is set on a Document that was imported into SkyScribe from another app (Leaflet, pckt, …) when its author chose to keep the original as the canonical URL. Your copy still renders as normal, but search engines should index the original: `getSitemapEntries` leaves these Documents out.
 
-`noindex` is set when the article's author turned on noindex in its [SEO Settings](/guides/meta-tags#seo-settings). `getSitemapEntries` leaves it out too; it still belongs on your site and in your feed.
+`noindex` is set when the Document's author turned on noindex in its [SEO Settings](/guides/meta-tags#seo-settings). `getSitemapEntries` leaves it out too; it still belongs on your website and in your feed.
 
-### `Article`
+### `StandardDocument`
 
-The full article, including its HTML content. Returned by `fetchArticle` and `fetchArticleBySlug`.
+A `site.standard.document` record: the full Document, including its HTML content. Returned by `fetchDocument` and `fetchDocumentBySlug`.
 
 ```ts
-interface Article {
+interface StandardDocument {
+  uri: string;             // AT URI of the document record
   title: string;
   content: string;         // HTML, as stored. Sanitise it if you render accounts you don't control
   textContent?: string;    // Plain-text version of content (HTML tags stripped)
   path: string;            // e.g. "/blog/creative-writing/my-post"
-  site: string;            // AT URI of the publication, e.g. "at://did:plc:…/site.standard.publication/3abc"
-  canonicalUrl?: string;   // Fully-qualified article URL, e.g. "https://myblog.com/blog/my-article"
+  site: string;            // The spec's field: AT URI of the publication, e.g. "at://did:plc:…/site.standard.publication/3abc"
+  canonicalUrl?: string;   // Fully-qualified URL, e.g. "https://myblog.com/blog/creative-writing/my-post"
   coverImageUrl?: string;  // URL of the cover image
   description?: string;
   tags?: string[];
-  contributors?: ArticleContributor[];
-  bskyPostRef?: { uri: string; cid: string };  // set if the article was shared to Bluesky
+  contributors?: DocumentContributor[];
+  bskyPostRef?: { uri: string; cid: string };  // set if the Document was shared to Bluesky
   seo?: DocumentSeo;       // The author's SEO Settings; absent when none are set
   createdAt?: string;      // ISO 8601
   publishedAt: string;     // ISO 8601
@@ -687,22 +704,22 @@ interface Article {
 
 ### `DocumentSeo`
 
-An article's [SEO Settings](/guides/meta-tags#seo-settings), as `Article.seo`. Only valid values are kept: a field over its limit (`SEO_TITLE_MAX` = 200, `SEO_DESCRIPTION_MAX` = 500 characters) or of the wrong type is dropped. `readDocumentSeo(raw)` does the same for a raw record's `scribe.seo`.
+A Document's [SEO Settings](/guides/meta-tags#seo-settings), as `document.seo`. Only valid values are kept: a field over its limit (`SEO_TITLE_MAX` = 200, `SEO_DESCRIPTION_MAX` = 500 characters) or of the wrong type is dropped. `readDocumentSeo(raw)` does the same for a raw record's `scribe.seo`.
 
 ```ts
 interface DocumentSeo {
   title?: string;        // Replaces the title in <title>, og:title and twitter:title
   description?: string;  // Replaces the description in the description tags
-  noindex?: true;        // Ask search engines to leave the article out
+  noindex?: true;        // Ask search engines to leave the document out
 }
 ```
 
-### `ArticleContributor`
+### `DocumentContributor`
 
-People credited on an article's byline, such as a co-writer, editor or illustrator, added by the author. SkyScribe calls them Contributors. They're not the same as SkyScribe's Collaborators, who are people invited to work on a Publication.
+People credited on a Document's byline, such as a co-writer, editor or illustrator, added by the author. SkyScribe calls them Contributors. They're not the same as SkyScribe's Collaborators, who are people invited to work on a Publication.
 
 ```ts
-interface ArticleContributor {
+interface DocumentContributor {
   did: string;           // AT Protocol DID of the contributor
   role?: string;         // e.g. "author", "editor", "illustrator"
   displayName?: string;  // Human-readable name
@@ -771,28 +788,9 @@ interface ProfileStatus {
 }
 ```
 
-### `SiteRecord`
-
-Returned by `listSites`. The same shape as `Site`, kept as a separate name for compatibility.
-
-```ts
-interface SiteRecord extends Site {}
-```
-
-### `ArticleResult`
-
-Returned by `fetchArticleBySlug`. Contains the full article and its AT URI.
-
-```ts
-interface ArticleResult {
-  article: Article;
-  uri: string;  // AT URI, e.g. "at://did:plc:…/site.standard.document/3abc123"
-}
-```
-
 ### `ScribeMetaTag`
 
-The element type of `generateArticleMeta` and `generateSiteMeta`'s output. One of five shapes:
+The element type of `generateDocumentMeta` and `generatePublicationMeta`'s output. One of five shapes:
 
 ```ts
 type ScribeMetaTag =
@@ -803,7 +801,7 @@ type ScribeMetaTag =
   | { "script:ld+json": JsonLdObject };
 ```
 
-You only handle it directly for frameworks without an SDK package. The `script:ld+json` shape carries the structured data from `generateArticleJsonLd`.
+You only handle it directly for frameworks without an SDK package. The `link` shape covers the canonical link and the [site.standard link tags](#standardsitelinks). The `script:ld+json` shape carries the structured data from `generateDocumentJsonLd`.
 
 ### `JsonLdObject`
 
@@ -826,7 +824,7 @@ interface CrossPostParams {
   documentCid: string;
   publicationUri: string;   // AT URI of the owning site.standard.publication
   publicationCid: string;
-  canonicalUrl: string;     // The article's canonical URL: the link card's target
+  canonicalUrl: string;     // The document's canonical URL: the link card's target
   title: string;
   text: string;             // The post's own text content
   description?: string;
@@ -836,7 +834,7 @@ interface CrossPostParams {
 
 ### `StrongRef`
 
-An AT Protocol reference to one specific version of a record: its URI plus the CID of that version. Returned by `crossPostToBluesky`, and the shape of `Article.bskyPostRef`.
+An AT Protocol reference to one specific version of a record: its URI plus the CID of that version. Returned by `crossPostToBluesky`, and the shape of `StandardDocument.bskyPostRef`.
 
 ```ts
 interface StrongRef {
@@ -844,3 +842,7 @@ interface StrongRef {
   cid: string;
 }
 ```
+
+## Deprecated names
+
+The 4.x names still work, marked `@deprecated`, until the next major: `fetchSite`, `fetchArticle`, `fetchArticleBySlug` (still returning `{ article, uri }`), `listSites`, `listArticles`, `flattenArticles`, `generateSiteMeta`, `generateArticleMeta`, `generateSiteJsonLd`, `generateArticleJsonLd`, `buildSiteUrl`, and the types `Site`, `Article`, `SiteGroup`, `ArticleRef`, `ArticleContributor` and `ArticleResult`. See [Upgrading to 5.0](/upgrading-to-5).

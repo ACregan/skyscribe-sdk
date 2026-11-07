@@ -71,7 +71,7 @@ interface RawProfile {
 }
 
 // `actor` accepts a handle or a DID interchangeably — Bluesky's AppView
-// resolves either, so (unlike fetchSite/fetchArticle) there's no need to
+// resolves either, so (unlike fetchPublication/fetchDocument) there's no need to
 // call resolveIdentifier first.
 export async function fetchProfile(
   handleOrDid: string,

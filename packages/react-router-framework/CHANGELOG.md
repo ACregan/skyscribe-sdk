@@ -1,5 +1,24 @@
 # @skyscribe-sdk/react-router-framework
 
+## 3.0.0
+
+### Major Changes
+
+- Requires `@skyscribe-sdk/core` 5 and uses its site.standard names (ADR 0005); see "Upgrading to 5.0" on sdk.skyscribe.app.
+
+  - react: `usePublication`, `useDocument`, `useDocumentBySlug` (returning `{ publication }` / `{ document }`).
+  - react-router-framework: `createPublicationLoader`, `createDocumentRouteLoader` (reads `params.documentSlug` by default), `publicationMeta`, `documentMeta`, `standardSiteLinks`.
+  - next: `createScribePublication` (its `generate*Params` return `{ categorySlug, documentSlug }`), `publicationMetadata`, `documentMetadata`, `standardSiteLinks`.
+  - vue / nuxt: `useScribePublication`, `useScribeDocument`, `useScribeDocumentBySlug`; nuxt `publicationSeoMeta`, `documentSeoMeta`, `standardSiteLinks`.
+  - angular: `injectPublication`, `injectDocument`, `injectDocumentBySlug`; `ScribeService.getPublication` / `getDocument` / `getDocumentBySlug`.
+
+  The old names still work, marked `@deprecated`, until the next major, and keep their old result keys and route params (`site`, `article`, `uri`, `articleSlug`, `groupSlug`), so upgrading alone changes nothing at runtime apart from core's renamed fields.
+
+### Patch Changes
+
+- Updated dependencies
+  - @skyscribe-sdk/core@5.0.0
+
 ## 2.1.4
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 import { inject, DestroyRef, signal } from "@angular/core";
 import type { Signal } from "@angular/core";
-import { fetchArticleBySlug } from "@skyscribe-sdk/core";
+import { fetchDocumentBySlug } from "@skyscribe-sdk/core";
 
 interface InjectDocumentUriResult {
   uri: Signal<string | null>;
@@ -11,7 +11,7 @@ interface InjectDocumentUriResult {
 export function injectDocumentUri(
   author: string,
   publicationUrl: string,
-  articleSlug: string
+  documentSlug: string
 ): InjectDocumentUriResult {
   const uri = signal<string | null>(null);
   const loading = signal(true);
@@ -20,7 +20,7 @@ export function injectDocumentUri(
   const destroyRef = inject(DestroyRef);
   const controller = new AbortController();
 
-  fetchArticleBySlug(author, publicationUrl, articleSlug, controller.signal)
+  fetchDocumentBySlug(author, publicationUrl, documentSlug, controller.signal)
     .then(({ uri: documentUri }) => {
       uri.set(documentUri);
       loading.set(false);

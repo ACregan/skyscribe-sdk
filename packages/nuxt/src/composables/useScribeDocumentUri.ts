@@ -1,16 +1,16 @@
 import { useAsyncData } from "#app";
 import type { AsyncDataOptions } from "#app";
-import { fetchArticleBySlug } from "@skyscribe-sdk/core";
+import { fetchDocumentBySlug } from "@skyscribe-sdk/core";
 
 export function useScribeDocumentUri(
   author: string,
   publicationUrl: string,
-  articleSlug: string,
+  documentSlug: string,
   options?: AsyncDataOptions<string>
 ) {
   return useAsyncData<string>(
-    `scribe:document-uri:${author}:${publicationUrl}:${articleSlug}`,
-    () => fetchArticleBySlug(author, publicationUrl, articleSlug).then(({ uri }) => uri),
+    `scribe:document-uri:${author}:${publicationUrl}:${documentSlug}`,
+    () => fetchDocumentBySlug(author, publicationUrl, documentSlug).then(({ uri }) => uri),
     options
   );
 }

@@ -18,60 +18,63 @@ Requires React 18 or later.
 
 The components need AT URIs: permanent identifiers for specific AT Protocol records.
 
-- `LikeButton` and `ShareButton` both need the **document URI**: the AT URI of the `site.standard.document` article record.
-- All three need the **publication URI**: the AT URI of the `site.standard.publication` Site record.
+- `LikeButton` and `ShareButton` both need the **document URI**: the AT URI of the `site.standard.document` record, which is `document.uri`.
+- All three need the **publication URI**: the AT URI of the `site.standard.publication` record, which is `publication.uri`.
 
-Your article page loader should fetch both. The exact approach depends on your framework:
+Your Document page loader should fetch both. The exact approach depends on your framework:
 
 <Tabs>
   <Tab label="React Router v7/v8">
-    `createArticleRouteLoader` returns `documentUri` alongside the article. Fetch the site separately to get the publication URI:
+    `createDocumentRouteLoader` returns the Document, with its `uri`. Fetch the Publication alongside it:
 
     ```ts
-    // app/routes/blog.$articleSlug.tsx
-    import { createArticleRouteLoader } from '@skyscribe-sdk/react-router-framework';
-    import { fetchSite } from '@skyscribe-sdk/core';
+    // app/routes/blog.$categorySlug.$documentSlug.tsx
+    import { createDocumentRouteLoader } from '@skyscribe-sdk/react-router-framework';
+    import { fetchPublication } from '@skyscribe-sdk/core';
     import type { LoaderFunctionArgs } from 'react-router';
 
-    export async function loader({ request, params }: LoaderFunctionArgs) {
-      const [articleData, site] = await Promise.all([
-        createArticleRouteLoader('alice.bsky.social', 'https://alice.bsky.social')({ request, params }),
-        fetchSite('alice.bsky.social', 'https://alice.bsky.social', request.signal),
+    const loadDocument = createDocumentRouteLoader('alice.bsky.social', 'https://alice.bsky.social');
+
+    export async function loader(args: LoaderFunctionArgs) {
+      const [document, publication] = await Promise.all([
+        loadDocument(args),
+        fetchPublication('alice.bsky.social', 'https://alice.bsky.social', args.request.signal),
       ]);
-      return { ...articleData, publicationUri: site.uri };
+      return { document, documentUri: document.uri, publicationUri: publication.uri };
     }
     ```
   </Tab>
   <Tab label="Next.js App Router">
     ```ts
-    import { fetchArticleBySlug, fetchSite } from '@skyscribe-sdk/core';
+    import { fetchDocumentBySlug, fetchPublication } from '@skyscribe-sdk/core';
 
-    const { articleSlug } = await params;
-    const [{ article, uri: documentUri }, site] = await Promise.all([
-      fetchArticleBySlug('alice.bsky.social', 'https://alice.bsky.social', articleSlug),
-      fetchSite('alice.bsky.social', 'https://alice.bsky.social'),
+    const { documentSlug } = await params;
+    const [document, publication] = await Promise.all([
+      fetchDocumentBySlug('alice.bsky.social', 'https://alice.bsky.social', documentSlug),
+      fetchPublication('alice.bsky.social', 'https://alice.bsky.social'),
     ]);
-
-    // documentUri → LikeButton, ShareButton
-    // site.uri    → LikeButton, ShareButton, SubscribeButton
+    const documentUri = document.uri;       // → LikeButton, ShareButton
+    const publicationUri = publication.uri; // → LikeButton, ShareButton, SubscribeButton
     ```
   </Tab>
   <Tab label="Nuxt 3">
     ```ts
-    import { fetchArticleBySlug, fetchSite } from '@skyscribe-sdk/core';
+    import { fetchDocumentBySlug, fetchPublication } from '@skyscribe-sdk/core';
 
     const route = useRoute();
-    const [{ article, uri: documentUri }, site] = await Promise.all([
-      fetchArticleBySlug('alice.bsky.social', 'https://alice.bsky.social', route.params.slug as string),
-      fetchSite('alice.bsky.social', 'https://alice.bsky.social'),
+    const [document, publication] = await Promise.all([
+      fetchDocumentBySlug('alice.bsky.social', 'https://alice.bsky.social', route.params.slug as string),
+      fetchPublication('alice.bsky.social', 'https://alice.bsky.social'),
     ]);
+    const documentUri = document.uri;
+    const publicationUri = publication.uri;
     ```
   </Tab>
 </Tabs>
 
 ## Rendering the buttons
 
-Once you have the URIs, render the components in your article template:
+Once you have the URIs, render the components in your Document page:
 
 ```tsx
 import { LikeButton, ShareButton, SubscribeButton } from '@skyscribe-sdk/social';
@@ -80,14 +83,14 @@ import { LikeButton, ShareButton, SubscribeButton } from '@skyscribe-sdk/social'
   <LikeButton
     documentUri={documentUri}
     publicationUri={publicationUri}
-    title={article.title}
+    title={document.title}
   />
 )}
 {documentUri && (
   <ShareButton
     documentUri={documentUri}
     publicationUri={publicationUri}
-    title={article.title}
+    title={document.title}
   />
 )}
 {publicationUri && (
@@ -96,12 +99,12 @@ import { LikeButton, ShareButton, SubscribeButton } from '@skyscribe-sdk/social'
 ```
 
 <Callout>
-  Render the buttons conditionally: `documentUri` only exists once the article is fetched, and some routes (404 pages, for example) won't have one.
+  Render the buttons conditionally: `documentUri` only exists once the Document is fetched, and some routes (404 pages, for example) won't have one.
 </Callout>
 
 ## What happens when clicked
 
-1. A 480×640 popup opens at `social.skyscribe.app`, showing the article title (or the site's name, for Follow).
+1. A 480×640 popup opens at `social.skyscribe.app`, showing the Document's title (or the Publication's name, for Follow).
 2. The reader signs in with their Bluesky account.
 3. The service writes the matching AT Protocol record to the reader's own account, then tells your page through `postMessage`.
 4. The button switches to its confirmed state. For Like and Follow, that state is saved in `localStorage`.
@@ -111,7 +114,7 @@ import { LikeButton, ShareButton, SubscribeButton } from '@skyscribe-sdk/social'
 </Callout>
 
 <Callout>
-  `ShareButton` opens a box for the reader to write their post. Pass `confirm={false}` (since 1.7.0) to post the title and link straight after sign-in instead. `ShareButton` doesn't save anything to `localStorage`. After a successful share it resets after 3 seconds, so the reader can share again. By default the shared post links to the current page's URL; pass `canonicalUrl` to link somewhere else, such as the article's canonical URL.
+  `ShareButton` opens a box for the reader to write their post. Pass `confirm={false}` (since 1.7.0) to post the title and link straight after sign-in instead. `ShareButton` doesn't save anything to `localStorage`. After a successful share it resets after 3 seconds, so the reader can share again. By default the shared post links to the current page's URL; pass `canonicalUrl` to link somewhere else, such as the Document's canonical URL.
 </Callout>
 
 ## Customising the label
@@ -119,23 +122,23 @@ import { LikeButton, ShareButton, SubscribeButton } from '@skyscribe-sdk/social'
 All three buttons accept `children` to replace the default label. Pass a **function** to get the button's state, for different text before and after the action:
 
 ```tsx
-<LikeButton documentUri={documentUri} publicationUri={publicationUri} title={article.title}>
+<LikeButton documentUri={documentUri} publicationUri={publicationUri} title={document.title}>
   {(isLiked) => (isLiked ? "Loved it ✓" : "Did you enjoy this?")}
 </LikeButton>
 
-<ShareButton documentUri={documentUri} publicationUri={publicationUri} title={article.title}>
+<ShareButton documentUri={documentUri} publicationUri={publicationUri} title={document.title}>
   {(isShared) => (isShared ? "Shared! ✓" : "Share on Bluesky")}
 </ShareButton>
 
 <SubscribeButton publicationUri={publicationUri} title="My Site">
-  {(isSubscribed) => (isSubscribed ? "Following ✓" : "Follow this site")}
+  {(isSubscribed) => (isSubscribed ? "Following ✓" : "Follow this publication")}
 </SubscribeButton>
 ```
 
 Or pass a **static node** if the label doesn't need to change:
 
 ```tsx
-<LikeButton documentUri={documentUri} publicationUri={publicationUri} title={article.title}>
+<LikeButton documentUri={documentUri} publicationUri={publicationUri} title={document.title}>
   ♥ Recommend
 </LikeButton>
 ```
@@ -152,7 +155,7 @@ Each button renders a plain, unstyled `<button>` with a base CSS class (`scribe-
 <LikeButton
   documentUri={documentUri}
   publicationUri={publicationUri}
-  title={article.title}
+  title={document.title}
   className="btn btn-outline"
 />
 ```
@@ -184,7 +187,7 @@ All three buttons accept an `onSuccess` callback, called once the action complet
 <LikeButton
   documentUri={documentUri}
   publicationUri={publicationUri}
-  title={article.title}
+  title={document.title}
   onSuccess={() => toast("Thanks for the like!")}
 />
 
@@ -197,7 +200,7 @@ All three buttons accept an `onSuccess` callback, called once the action complet
 <ShareButton
   documentUri={documentUri}
   publicationUri={publicationUri}
-  title={article.title}
+  title={document.title}
   onSuccess={() => toast("Article shared to Bluesky!")}
 />
 ```
@@ -219,11 +222,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-// In your article component:
+// In your document component:
 <LikeButton
   documentUri={documentUri}
   publicationUri={publicationUri}
-  title={article.title}
+  title={document.title}
   defaultLiked={defaultLiked}
 />
 <SubscribeButton

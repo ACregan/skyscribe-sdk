@@ -4,19 +4,19 @@ import { mount } from "@vue/test-utils";
 import { useScribeDocumentUri } from "./useScribeDocumentUri.js";
 
 vi.mock("@skyscribe-sdk/core", () => ({
-  fetchArticleBySlug: vi.fn(),
+  fetchDocumentBySlug: vi.fn(),
 }));
 
-import { fetchArticleBySlug } from "@skyscribe-sdk/core";
-const mockFetchArticleBySlug = vi.mocked(fetchArticleBySlug);
+import { fetchDocumentBySlug } from "@skyscribe-sdk/core";
+const mockFetchArticleBySlug = vi.mocked(fetchDocumentBySlug);
 
 const DOCUMENT_URI = "at://did:plc:abc/site.standard.document/3jxtctq7kqm2y";
 
-function makeWrapper(author: string, publicationUrl: string, articleSlug: string) {
+function makeWrapper(author: string, publicationUrl: string, documentSlug: string) {
   let result: ReturnType<typeof useScribeDocumentUri>;
   const Component = defineComponent({
     setup() {
-      result = useScribeDocumentUri(author, publicationUrl, articleSlug);
+      result = useScribeDocumentUri(author, publicationUrl, documentSlug);
       return result;
     },
     template: "<div/>",
@@ -39,7 +39,7 @@ describe("useScribeDocumentUri", () => {
   });
 
   it("sets uri and clears loading on resolve", async () => {
-    mockFetchArticleBySlug.mockResolvedValueOnce({ article: {} as never, uri: DOCUMENT_URI });
+    mockFetchArticleBySlug.mockResolvedValueOnce({ uri: DOCUMENT_URI } as never);
     const { getResult } = makeWrapper("alice.bsky.social", "https://alice.bsky.social", "hello");
     await nextTick();
     await nextTick();

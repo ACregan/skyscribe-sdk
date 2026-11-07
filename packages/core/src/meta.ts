@@ -1,4 +1,4 @@
-import type { Article, Site } from "./types.js";
+import type { StandardDocument, StandardPublication } from "./types.js";
 
 // A plain, JSON-serializable object — matches the shape consuming frameworks'
 // own JSON-LD types expect (e.g. React Router's LdJsonObject) without this
@@ -14,83 +14,111 @@ export type ScribeMetaTag =
   | { tagName: "link"; rel: string; href: string }
   | { "script:ld+json": JsonLdObject };
 
-export function buildCanonicalUrl(article: Article, site: Site): string {
-  if (article.canonicalUrl) return article.canonicalUrl;
-  const base = `https://${site.url.replace(/\/$/, "")}`;
-  const path = article.path.startsWith("/") ? article.path : `/${article.path}`;
+/** A `<link>` tag, as the meta helpers describe one. */
+export type StandardSiteLink = { tagName: "link"; rel: string; href: string };
+
+export function buildCanonicalUrl(
+  document: StandardDocument,
+  publication: StandardPublication
+): string {
+  if (document.canonicalUrl) return document.canonicalUrl;
+  const base = `https://${publication.domain.replace(/\/$/, "")}`;
+  const path = document.path.startsWith("/") ? document.path : `/${document.path}`;
   // Publishing writes `path` with the base path already in it
-  // ("/blog/essays/my-post"), so only add the prefix when it's missing.
+  // ("/blog/essays/my-post"), so only add the base path when it's missing.
   // Prepending it unconditionally produced "/blog/blog/essays/my-post".
-  const prefix = site.urlPrefix ? `/${site.urlPrefix}` : "";
+  const prefix = publication.basePath ? `/${publication.basePath}` : "";
   const hasPrefix = prefix !== "" && (path === prefix || path.startsWith(`${prefix}/`));
   return `${base}${hasPrefix ? "" : prefix}${path}`;
 }
 
-export function buildSiteUrl(site: Site): string {
-  return `https://${site.url}${site.urlPrefix ? `/${site.urlPrefix}` : ""}`;
+export function buildPublicationUrl(publication: StandardPublication): string {
+  return `https://${publication.domain}${publication.basePath ? `/${publication.basePath}` : ""}`;
+}
+
+/** The `<link rel="site.standard.publication">` tag (and, given a Document,
+ * `<link rel="site.standard.document">`) that tell other apps which records
+ * a page shows. Bluesky needs them, server-rendered, to draw its
+ * Standard.site link card. The meta helpers include them already; use this
+ * on pages that don't use the meta helpers (Category pages, custom heads). */
+export function standardSiteLinks(
+  publication: StandardPublication,
+  document?: StandardDocument
+): StandardSiteLink[] {
+  const links: StandardSiteLink[] = [
+    { tagName: "link", rel: "site.standard.publication", href: publication.uri },
+  ];
+  if (document) {
+    links.push({ tagName: "link", rel: "site.standard.document", href: document.uri });
+  }
+  return links;
 }
 
 // Standalone so frameworks whose metadata API has no room for a raw
 // <script> tag (e.g. Next.js's Metadata object) can still get the
 // structured-data payload and render it themselves.
-export function generateArticleJsonLd(article: Article, site: Site): JsonLdObject {
-  const canonicalUrl = buildCanonicalUrl(article, site);
-  const authorName = article.contributors?.[0]?.displayName ?? site.title;
+export function generateDocumentJsonLd(
+  document: StandardDocument,
+  publication: StandardPublication
+): JsonLdObject {
+  const canonicalUrl = buildCanonicalUrl(document, publication);
+  const authorName = document.contributors?.[0]?.displayName ?? publication.name;
 
   const jsonLd: JsonLdObject = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: article.title,
-    datePublished: article.publishedAt,
-    dateModified: article.updatedAt,
+    headline: document.title,
+    datePublished: document.publishedAt,
+    dateModified: document.updatedAt,
     mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
     author: { "@type": "Person", name: authorName },
     publisher: {
       "@type": "Organization",
-      name: site.title,
-      ...(site.logoImageUrl
-        ? { logo: { "@type": "ImageObject", url: site.logoImageUrl } }
+      name: publication.name,
+      ...(publication.logoImageUrl
+        ? { logo: { "@type": "ImageObject", url: publication.logoImageUrl } }
         : {}),
     },
   };
-  if (article.description) jsonLd.description = article.description;
-  if (article.coverImageUrl) jsonLd.image = article.coverImageUrl;
-  if (article.tags?.length) jsonLd.keywords = article.tags.join(", ");
+  if (document.description) jsonLd.description = document.description;
+  if (document.coverImageUrl) jsonLd.image = document.coverImageUrl;
+  if (document.tags?.length) jsonLd.keywords = document.tags.join(", ");
   return jsonLd;
 }
 
-export function generateSiteJsonLd(site: Site): JsonLdObject {
+export function generatePublicationJsonLd(publication: StandardPublication): JsonLdObject {
   const jsonLd: JsonLdObject = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: site.title,
-    url: buildSiteUrl(site),
+    name: publication.name,
+    url: buildPublicationUrl(publication),
   };
-  if (site.description) jsonLd.description = site.description;
+  if (publication.description) jsonLd.description = publication.description;
   return jsonLd;
 }
 
-export function generateArticleMeta(
-  article: Article,
-  site: Site,
+export function generateDocumentMeta(
+  document: StandardDocument,
+  publication: StandardPublication
 ): ScribeMetaTag[] {
-  const canonicalUrl = buildCanonicalUrl(article, site);
+  const canonicalUrl = buildCanonicalUrl(document, publication);
   // SEO Settings (ADR 0004) replace the title and description in the head
-  // only: the JSON-LD headline keeps the article's own title.
-  const title = article.seo?.title ?? article.title;
-  const description = article.seo?.description ?? article.description;
+  // only: the JSON-LD headline keeps the Document's own title.
+  const title = document.seo?.title ?? document.title;
+  const description = document.seo?.description ?? document.description;
 
   const tags: ScribeMetaTag[] = [
-    { title: `${title} — ${site.title}` },
+    { title: `${title} — ${publication.name}` },
     { tagName: "link", rel: "canonical", href: canonicalUrl },
+    ...standardSiteLinks(publication, document),
     { property: "og:type", content: "article" },
     { property: "og:title", content: title },
     { property: "og:url", content: canonicalUrl },
-    { property: "og:site_name", content: site.title },
+    { property: "og:site_name", content: publication.name },
     { name: "twitter:title", content: title },
     {
       name: "twitter:card",
-      content: article.coverImageUrl ? "summary_large_image" : "summary",
+      content: document.coverImageUrl ? "summary_large_image" : "summary",
     },
   ];
 
@@ -100,48 +128,62 @@ export function generateArticleMeta(
     tags.push({ name: "twitter:description", content: description });
   }
 
-  if (article.seo?.noindex) {
+  if (document.seo?.noindex) {
     tags.push({ name: "robots", content: "noindex" });
   }
 
-  if (article.coverImageUrl) {
-    tags.push({ property: "og:image", content: article.coverImageUrl });
-    tags.push({ name: "twitter:image", content: article.coverImageUrl });
+  if (document.coverImageUrl) {
+    tags.push({ property: "og:image", content: document.coverImageUrl });
+    tags.push({ name: "twitter:image", content: document.coverImageUrl });
   }
 
-  tags.push({ "script:ld+json": generateArticleJsonLd(article, site) });
+  tags.push({ "script:ld+json": generateDocumentJsonLd(document, publication) });
 
   return tags;
 }
 
-export function generateSiteMeta(site: Site): ScribeMetaTag[] {
-  const siteUrl = buildSiteUrl(site);
+export function generatePublicationMeta(publication: StandardPublication): ScribeMetaTag[] {
+  const url = buildPublicationUrl(publication);
   const tags: ScribeMetaTag[] = [
-    { title: site.title },
-    { tagName: "link", rel: "canonical", href: siteUrl },
+    { title: publication.name },
+    { tagName: "link", rel: "canonical", href: url },
+    ...standardSiteLinks(publication),
     { property: "og:type", content: "website" },
-    { property: "og:title", content: site.title },
-    { property: "og:url", content: siteUrl },
-    { property: "og:site_name", content: site.title },
-    { name: "twitter:title", content: site.title },
+    { property: "og:title", content: publication.name },
+    { property: "og:url", content: url },
+    { property: "og:site_name", content: publication.name },
+    { name: "twitter:title", content: publication.name },
     {
       name: "twitter:card",
-      content: site.splashImageUrl ? "summary_large_image" : "summary",
+      content: publication.splashImageUrl ? "summary_large_image" : "summary",
     },
   ];
 
-  if (site.description) {
-    tags.push({ name: "description", content: site.description });
-    tags.push({ property: "og:description", content: site.description });
-    tags.push({ name: "twitter:description", content: site.description });
+  if (publication.description) {
+    tags.push({ name: "description", content: publication.description });
+    tags.push({ property: "og:description", content: publication.description });
+    tags.push({ name: "twitter:description", content: publication.description });
   }
 
-  if (site.splashImageUrl) {
-    tags.push({ property: "og:image", content: site.splashImageUrl });
-    tags.push({ name: "twitter:image", content: site.splashImageUrl });
+  if (publication.splashImageUrl) {
+    tags.push({ property: "og:image", content: publication.splashImageUrl });
+    tags.push({ name: "twitter:image", content: publication.splashImageUrl });
   }
 
-  tags.push({ "script:ld+json": generateSiteJsonLd(site) });
+  tags.push({ "script:ld+json": generatePublicationJsonLd(publication) });
 
   return tags;
 }
+
+// ── Deprecated names (ADR 0005): removed in the next major ──────────────
+
+/** @deprecated Use `buildPublicationUrl`. */
+export const buildSiteUrl = buildPublicationUrl;
+/** @deprecated Use `generateDocumentJsonLd`. */
+export const generateArticleJsonLd = generateDocumentJsonLd;
+/** @deprecated Use `generatePublicationJsonLd`. */
+export const generateSiteJsonLd = generatePublicationJsonLd;
+/** @deprecated Use `generateDocumentMeta`. */
+export const generateArticleMeta = generateDocumentMeta;
+/** @deprecated Use `generatePublicationMeta`. */
+export const generateSiteMeta = generatePublicationMeta;
