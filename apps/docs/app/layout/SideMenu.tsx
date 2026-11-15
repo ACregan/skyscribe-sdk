@@ -97,6 +97,22 @@ export default function SideMenu({ menuExpanded }: { menuExpanded: boolean }) {
           external
         />
         <MenuItem
+          label="Reader"
+          path="https://reader.skyscribe.app"
+          icon="ReaderLogo"
+          active={false}
+          menuExpanded={menuExpanded}
+          external
+        />
+        <MenuItem
+          label="Blog"
+          path="https://skyscribe.blog"
+          icon="BlogLogo"
+          active={false}
+          menuExpanded={menuExpanded}
+          external
+        />
+        <MenuItem
           label="npm"
           path="https://www.npmjs.com/org/skyscribe-sdk"
           icon="OpenInNewTab"

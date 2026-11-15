@@ -22,12 +22,44 @@ export const SvgImageList = {
   DarkMode: "DarkMode",
   LightMode: "LightMode",
   SkyScribeLogo: "SkyScribeLogo",
+  ReaderLogo: "ReaderLogo",
+  BlogLogo: "BlogLogo",
   SkyScribeLogoAndText: "SkyScribeLogoAndText",
   Burger: "Burger",
   Close: "Close",
 } as const;
 
 export type SvgImageListTypes = keyof typeof SvgImageList;
+
+// The SkyScribe nib mark, filled with one colour.
+function logoMark(colour: string, className?: string) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      stroke="currentColor"
+      strokeLinejoin="round"
+      strokeWidth="2.9"
+      viewBox="0 0 54 54"
+      className={className}
+    >
+      <path
+        fill={colour}
+        fillRule="evenodd"
+        stroke="none"
+        d="M35.21 1.285a8.83 30.626 0 0 1-1.759 9.623C31.974 9.205 29.78 8.25 27 8.25s-4.974.955-6.451 2.658a8.83 30.626 0 0 1-1.756-9.59A27 27 0 0 0 0 27a27 27 0 0 0 27 27 27 27 0 0 0 27-27A27 27 0 0 0 35.21 1.285"
+      />
+      <path
+        fill={colour}
+        stroke="#fff"
+        d="M27 8.25c5.4 0 8.6 3.6 8.6 9.3v6.9c0 5.4-3.2 12.4-8.6 21.3-5.4-8.9-8.6-15.9-8.6-21.3v-6.9c0-5.7 3.2-9.3 8.6-9.3z"
+      />
+      <circle cx="27" cy="18.45" r="2.5" stroke="#fff" />
+      <path fill="#fff" stroke="#fff" strokeLinecap="round" d="M27 21.65v20" />
+    </svg>
+  );
+}
+
 
 type SVGiconProp = {
   name: SvgImageListTypes;
@@ -259,36 +291,13 @@ const SvgIcon: React.FC<SVGiconProp> = ({
         </svg>
       );
     case SvgImageList.SkyScribeLogo:
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          stroke="currentColor"
-          strokeLinejoin="round"
-          strokeWidth="2.9"
-          viewBox="0 0 54 54"
-          className={className}
-        >
-          <path
-            fill="#0070f3"
-            fillRule="evenodd"
-            stroke="none"
-            d="M35.21 1.285a8.83 30.626 0 0 1-1.759 9.623C31.974 9.205 29.78 8.25 27 8.25s-4.974.955-6.451 2.658a8.83 30.626 0 0 1-1.756-9.59A27 27 0 0 0 0 27a27 27 0 0 0 27 27 27 27 0 0 0 27-27A27 27 0 0 0 35.21 1.285"
-          />
-          <path
-            fill="#0070f3"
-            stroke="#fff"
-            d="M27 8.25c5.4 0 8.6 3.6 8.6 9.3v6.9c0 5.4-3.2 12.4-8.6 21.3-5.4-8.9-8.6-15.9-8.6-21.3v-6.9c0-5.7 3.2-9.3 8.6-9.3z"
-          />
-          <circle cx="27" cy="18.45" r="2.5" stroke="#fff" />
-          <path
-            fill="#fff"
-            stroke="#fff"
-            strokeLinecap="round"
-            d="M27 21.65v20"
-          />
-        </svg>
-      );
+      return logoMark("#0070f3", className);
+    // The same mark in each product's own colour: orange for the SkyScribe
+    // Reader (its favicon), green for the SkyScribe blog (skyscribe.blog).
+    case SvgImageList.ReaderLogo:
+      return logoMark("#e6501b", className);
+    case SvgImageList.BlogLogo:
+      return logoMark("#00796b", className);
     case SvgImageList.SkyScribeLogoAndText:
       return (
         <svg
