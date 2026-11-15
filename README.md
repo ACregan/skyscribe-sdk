@@ -9,6 +9,8 @@ It handles the parts that are easy to get wrong: resolving an author's handle to
 
 **Documentation: [sdk.skyscribe.app](https://sdk.skyscribe.app)**
 
+Also: [SkyScribe](https://skyscribe.app) (the app) · [SkyScribe Reader](https://reader.skyscribe.app) (read any author's Publications) · [SkyScribe blog](https://skyscribe.blog) (news and releases)
+
 ## Names
 
 The SDK uses the same names as SkyScribe and the records: a **Publication** (`site.standard.publication`, the `StandardPublication` type) holds **Categories**, which hold **Documents** (`site.standard.document`, the `StandardDocument` type). Categories are SkyScribe's extension to the spec.

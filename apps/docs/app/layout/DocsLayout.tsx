@@ -109,6 +109,7 @@ export default function DocsLayout() {
           <nav className={styles.footerLinks} aria-label="Footer">
             <a href="https://www.npmjs.com/org/skyscribe-sdk">npm</a>
             <a href="https://github.com/ACregan/skyscribe-sdk">GitHub</a>
+            <a href="https://skyscribe.blog">Blog</a>
             <a href="https://skyscribe.app/privacy">Privacy</a>
           </nav>
         </footer>
