@@ -55,6 +55,7 @@ import "@skyscribe-sdk/styles";
 | Inline code | `.scribe-content :not(pre) > code` |
 | Syntax tokens | `.scribe-content .token.keyword` etc. |
 | Images | `.scribe-content img` |
+| Image Position (Left, Right, Centre) | `.scribe-content img[data-position]` |
 | Blockquotes | `.scribe-content blockquote` |
 | Horizontal rules | `.scribe-content hr` |
 | Tables | `.scribe-content table`, `th`, `td` |

@@ -161,6 +161,50 @@
   display: block;
 }
 
+/* ── Image Position ─────────────────────────────────────────────────────────
+ * SkyScribe writes an image's position twice: a data-position marker and an
+ * inline style that draws the same thing (SkyScribe app ADR 0114). These
+ * rules repeat the inline style, for HTML whose styles were stripped, and
+ * adjust it: below 600px a Left or Right image shows centred instead, and
+ * a new section starts below a floated image rather than beside it. */
+
+/* Keeps a float in the last paragraph inside the content. Only when there
+ * is one: flow-root stops the first and last margins collapsing, which
+ * would shift every other Document's spacing. */
+.scribe-content:has(img[data-position="left"], img[data-position="right"]) {
+  display: flow-root;
+}
+
+.scribe-content img[data-position="left"] {
+  float: left;
+  max-width: 50%;
+  margin: 0.25em 1.5em 1em 0;
+}
+
+.scribe-content img[data-position="right"] {
+  float: right;
+  max-width: 50%;
+  margin: 0.25em 0 1em 1.5em;
+}
+
+.scribe-content img[data-position="center"] {
+  margin-inline: auto;
+}
+
+.scribe-content
+  :is(h1, h2, h3, h4, h5, h6, hr, pre, figure, table, img, p:has(> img)) {
+  clear: both;
+}
+
+@media (max-width: 599px) {
+  /* !important: the inline style written with the marker floats it. */
+  .scribe-content img:is([data-position="left"], [data-position="right"]) {
+    float: none !important;
+    max-width: 100% !important;
+    margin: 0.8em auto !important;
+  }
+}
+
 /* ── Blockquotes ────────────────────────────────────────────────────────────── */
 
 .scribe-content blockquote {
@@ -336,14 +380,18 @@
 
 /* Beside a square thumbnail, not over it, with the button on the
    thumbnail like an album's play button. */
-.scribe-content a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"] .scribe-embed-poster-text {
+.scribe-content
+  a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"]
+  .scribe-embed-poster-text {
   inset: 0 0 0 min(var(--scribe-embed-poster-image-width), 50%);
   justify-content: center;
   background: none;
   color: inherit;
 }
 
-.scribe-content a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"] .scribe-embed-poster-button {
+.scribe-content
+  a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"]
+  .scribe-embed-poster-button {
   left: calc(min(var(--scribe-embed-poster-image-width), 50%) / 2);
 }
 
@@ -387,13 +435,21 @@
   padding-right: 9em;
 }
 
-.scribe-content .scribe-embed-bandcamp a.scribe-embed-poster:hover .scribe-embed-poster-button,
-.scribe-content .scribe-embed-bandcamp a.scribe-embed-poster:focus-visible .scribe-embed-poster-button {
+.scribe-content
+  .scribe-embed-bandcamp
+  a.scribe-embed-poster:hover
+  .scribe-embed-poster-button,
+.scribe-content
+  .scribe-embed-bandcamp
+  a.scribe-embed-poster:focus-visible
+  .scribe-embed-poster-button {
   transform: translateY(-50%) scale(1.06);
 }
 
 .scribe-content a.scribe-embed-poster:hover .scribe-embed-poster-button,
-.scribe-content a.scribe-embed-poster:focus-visible .scribe-embed-poster-button {
+.scribe-content
+  a.scribe-embed-poster:focus-visible
+  .scribe-embed-poster-button {
   transform: translate(-50%, -50%) scale(1.06);
 }
 
@@ -436,4 +492,3 @@
   color: var(--scribe-embed-muted);
   font-size: 0.9em;
 }
-
