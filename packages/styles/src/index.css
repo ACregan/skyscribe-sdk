@@ -191,7 +191,8 @@
   margin-inline: auto;
 }
 
-.scribe-content :is(h1, h2, h3, h4, h5, h6, hr, pre, figure, table, img) {
+.scribe-content
+  :is(h1, h2, h3, h4, h5, h6, hr, pre, figure, table, img, p:has(> img)) {
   clear: both;
 }
 
@@ -379,14 +380,18 @@
 
 /* Beside a square thumbnail, not over it, with the button on the
    thumbnail like an album's play button. */
-.scribe-content a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"] .scribe-embed-poster-text {
+.scribe-content
+  a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"]
+  .scribe-embed-poster-text {
   inset: 0 0 0 min(var(--scribe-embed-poster-image-width), 50%);
   justify-content: center;
   background: none;
   color: inherit;
 }
 
-.scribe-content a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"] .scribe-embed-poster-button {
+.scribe-content
+  a.scribe-embed-poster[style*="--scribe-embed-poster-image-width"]
+  .scribe-embed-poster-button {
   left: calc(min(var(--scribe-embed-poster-image-width), 50%) / 2);
 }
 
@@ -430,13 +435,21 @@
   padding-right: 9em;
 }
 
-.scribe-content .scribe-embed-bandcamp a.scribe-embed-poster:hover .scribe-embed-poster-button,
-.scribe-content .scribe-embed-bandcamp a.scribe-embed-poster:focus-visible .scribe-embed-poster-button {
+.scribe-content
+  .scribe-embed-bandcamp
+  a.scribe-embed-poster:hover
+  .scribe-embed-poster-button,
+.scribe-content
+  .scribe-embed-bandcamp
+  a.scribe-embed-poster:focus-visible
+  .scribe-embed-poster-button {
   transform: translateY(-50%) scale(1.06);
 }
 
 .scribe-content a.scribe-embed-poster:hover .scribe-embed-poster-button,
-.scribe-content a.scribe-embed-poster:focus-visible .scribe-embed-poster-button {
+.scribe-content
+  a.scribe-embed-poster:focus-visible
+  .scribe-embed-poster-button {
   transform: translate(-50%, -50%) scale(1.06);
 }
 
@@ -479,4 +492,3 @@
   color: var(--scribe-embed-muted);
   font-size: 0.9em;
 }
-
