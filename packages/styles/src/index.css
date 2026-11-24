@@ -168,13 +168,11 @@
  * adjust it: below 600px a Left or Right image shows centred instead, and
  * a new section starts below a floated image rather than beside it. */
 
-/* Keeps a float in the last paragraph inside the content. A clearfix, not
- * display: flow-root, which would stop the first and last margins
- * collapsing and shift every existing site's spacing. */
-.scribe-content::after {
-  content: "";
-  display: table;
-  clear: both;
+/* Keeps a float in the last paragraph inside the content. Only when there
+ * is one: flow-root stops the first and last margins collapsing, which
+ * would shift every other Document's spacing. */
+.scribe-content:has(img[data-position="left"], img[data-position="right"]) {
+  display: flow-root;
 }
 
 .scribe-content img[data-position="left"] {

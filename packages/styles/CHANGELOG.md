@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- Image Position (skyscribe-app ADR 0114). SkyScribe authors can now place an image Left or Right, with text wrapping beside it, or Centre. The HTML carries a `data-position` marker and an inline style that draws it on its own; these styles repeat it, and below 600px wide show a Left or Right image centred instead. Headings, rules, code blocks, tables, embeds and other images start below a floated image, and `.scribe-content` keeps floats inside itself (a clearfix `::after`, so existing spacing is unchanged).
+- Image Position (skyscribe-app ADR 0114). SkyScribe authors can now place an image Left or Right, with text wrapping beside it, or Centre. The HTML carries a `data-position` marker and an inline style that draws it on its own; these styles repeat it, and below 600px wide show a Left or Right image centred instead. Headings, rules, code blocks, tables, embeds and other images start below a floated image, and `.scribe-content` keeps floats inside itself (only when it holds one, so other Documents' spacing is unchanged).
 
 ## 1.4.0
 
