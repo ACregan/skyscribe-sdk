@@ -41,12 +41,15 @@ Without React, add the class to whatever element you render the HTML into:
 | Inline code | `.scribe-content :not(pre) > code` |
 | Syntax tokens | `.scribe-content .token.keyword` etc. |
 | Images | `.scribe-content img` |
+| Image Position (Left, Right, Centre) | `.scribe-content img[data-position]` |
 | Blockquotes | `.scribe-content blockquote` |
 | Horizontal rules | `.scribe-content hr` |
 | Tables | `.scribe-content table`, `th`, `td` |
 | Ordered / unordered lists | `.scribe-content ul`, `.scribe-content ol` |
 | Checklists | `.scribe-content li[role="checkbox"]` |
 | Embeds, Posters and link cards | `.scribe-content figure[data-embed]` |
+
+**Image Position.** A SkyScribe author can place an image Left or Right, with text wrapping beside it, or Centre. The image carries `data-position="left"`, `"right"` or `"center"` and an inline style that draws the same thing, so it works even without these styles. The styles add two things: below 600px wide, a Left or Right image shows centred instead, and headings, rules, code blocks, tables, embeds and other images start below a floated image rather than beside it. `.scribe-content` keeps a float in its last paragraph inside itself.
 
 The syntax token classes (`token keyword`, `token string`, …) are the Prism-compatible class names the SkyScribe editor puts on highlighted code. The default colours match Prism's light theme.
 

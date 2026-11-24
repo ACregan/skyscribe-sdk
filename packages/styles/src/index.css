@@ -161,6 +161,51 @@
   display: block;
 }
 
+/* ── Image Position ─────────────────────────────────────────────────────────
+ * SkyScribe writes an image's position twice: a data-position marker and an
+ * inline style that draws the same thing (SkyScribe app ADR 0114). These
+ * rules repeat the inline style, for HTML whose styles were stripped, and
+ * adjust it: below 600px a Left or Right image shows centred instead, and
+ * a new section starts below a floated image rather than beside it. */
+
+/* Keeps a float in the last paragraph inside the content. A clearfix, not
+ * display: flow-root, which would stop the first and last margins
+ * collapsing and shift every existing site's spacing. */
+.scribe-content::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.scribe-content img[data-position="left"] {
+  float: left;
+  max-width: 50%;
+  margin: 0.25em 1.5em 1em 0;
+}
+
+.scribe-content img[data-position="right"] {
+  float: right;
+  max-width: 50%;
+  margin: 0.25em 0 1em 1.5em;
+}
+
+.scribe-content img[data-position="center"] {
+  margin-inline: auto;
+}
+
+.scribe-content :is(h1, h2, h3, h4, h5, h6, hr, pre, figure, table, img) {
+  clear: both;
+}
+
+@media (max-width: 599px) {
+  /* !important: the inline style written with the marker floats it. */
+  .scribe-content img:is([data-position="left"], [data-position="right"]) {
+    float: none !important;
+    max-width: 100% !important;
+    margin: 0.8em auto !important;
+  }
+}
+
 /* ── Blockquotes ────────────────────────────────────────────────────────────── */
 
 .scribe-content blockquote {
