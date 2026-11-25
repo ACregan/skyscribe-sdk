@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "group:allNonMajor"],
+  "labels": ["dependencies"],
+  "timezone": "Asia/Singapore",
+  "schedule": ["on monday"],
+  "prHourlyLimit": 0,
+  "vulnerabilityAlerts": {
+    "schedule": ["at any time"]
+  },
+  "major": {
+    "dependencyDashboardApproval": true
+  },
+  "packageRules": [
+    {
+      "description": "Only the lockfile moves for in-range updates: the ranges in the published packages' package.json are what consumers install against, so widening or raising one is a release decision made by hand with a changeset, not a Renovate update.",
+      "matchFileNames": ["packages/**"],
+      "rangeStrategy": "update-lockfile"
+    },
+    {
+      "description": "Peer ranges (react, react-router, next, nuxt, @angular/core, rxjs) say which framework versions each adapter supports. They change only in a deliberate release, once the adapter is tested against the new major.",
+      "matchDepTypes": ["peerDependencies"],
+      "enabled": false
+    },
+    {
+      "description": "The SDK's own packages link to each other through the workspace; changesets owns their versions.",
+      "matchPackageNames": ["@skyscribe-sdk/**"],
+      "enabled": false
+    },
+    {
+      "description": "Vite and Vitest move together: Vitest hoists its own Vite, and the docs app's @react-router/dev must use that same copy (CLAUDE.md, 'Vite 7, not 8'). One MR when either takes a new major.",
+      "matchPackageNames": ["vite", "vitest", "@vitest/**"],
+      "groupName": "vite and vitest"
+    },
+    {
+      "description": "Hold TypeScript below 7: 7.0 ships no programmatic API, which tsup's declaration build (and the app's typescript-eslint) needs. Remove once 7.1 is out and tsup supports it, matching skyscribe-app's rule.",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "description": "CI runs on Node 22, the lowest version package.json's engines field supports, so the packages are tested where consumers' oldest supported runtime is. Raise the CI image, @types/node and engines together, in a release.",
+      "matchPackageNames": ["node", "@types/node"],
+      "matchCurrentValue": "/^\\^?22/",
+      "allowedVersions": "<23"
+    },
+    {
+      "description": "The renovate CI job's own image runs Renovate, which needs Node 24; keep it on the 24 line.",
+      "matchPackageNames": ["node"],
+      "matchCurrentValue": "/^24/",
+      "allowedVersions": "<25"
+    }
+  ]
+}
