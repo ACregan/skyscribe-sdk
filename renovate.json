@@ -8,15 +8,11 @@
   "vulnerabilityAlerts": {
     "schedule": ["at any time"]
   },
+  "rangeStrategy": "update-lockfile",
   "major": {
     "dependencyDashboardApproval": true
   },
   "packageRules": [
-    {
-      "description": "Only the lockfile moves for in-range updates: the ranges in the published packages' package.json are what consumers install against, so widening or raising one is a release decision made by hand with a changeset, not a Renovate update.",
-      "matchFileNames": ["packages/**"],
-      "rangeStrategy": "update-lockfile"
-    },
     {
       "description": "Peer ranges (react, react-router, next, nuxt, @angular/core, rxjs) say which framework versions each adapter supports. They change only in a deliberate release, once the adapter is tested against the new major.",
       "matchDepTypes": ["peerDependencies"],
