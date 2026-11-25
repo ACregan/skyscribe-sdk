@@ -33,6 +33,12 @@
       "groupName": "vite and vitest"
     },
     {
+      "description": "zone.js is pre-1.0, so a 'minor' can break the Angular tests; take it with an Angular major, on approval.",
+      "matchPackageNames": ["zone.js"],
+      "matchUpdateTypes": ["minor"],
+      "dependencyDashboardApproval": true
+    },
+    {
       "description": "Hold TypeScript below 7: 7.0 ships no programmatic API, which tsup's declaration build (and the app's typescript-eslint) needs. Remove once 7.1 is out and tsup supports it, matching skyscribe-app's rule.",
       "matchPackageNames": ["typescript"],
       "allowedVersions": "<7"
