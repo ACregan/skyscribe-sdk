@@ -33,9 +33,10 @@
       "groupName": "vite and vitest"
     },
     {
-      "description": "zone.js is pre-1.0, so a 'minor' can break the Angular tests; take it with an Angular major, on approval.",
+      "description": "zone.js is pre-1.0, so a 'minor' can break the Angular tests; take it with an Angular major, on approval. Its own group, because approval applies to a whole branch: inside the weekly minor/patch group it held that group back too.",
       "matchPackageNames": ["zone.js"],
       "matchUpdateTypes": ["minor"],
+      "groupName": "zone.js",
       "dependencyDashboardApproval": true
     },
     {
