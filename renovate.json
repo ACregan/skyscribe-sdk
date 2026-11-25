@@ -8,15 +8,16 @@
   "vulnerabilityAlerts": {
     "schedule": ["at any time"]
   },
+  "rangeStrategy": "update-lockfile",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["on monday"],
+    "description": "Renovate reads locked versions only for the root package.json, so in-range updates in the workspaces (apps/docs, packages/*) never show up as updates (react-router 8.4.0 stayed put though 8.5.3 fits ^8.4.0). A weekly refresh of package-lock.json picks them all up, ranges unchanged."
+  },
   "major": {
     "dependencyDashboardApproval": true
   },
   "packageRules": [
-    {
-      "description": "Only the lockfile moves for in-range updates: the ranges in the published packages' package.json are what consumers install against, so widening or raising one is a release decision made by hand with a changeset, not a Renovate update.",
-      "matchFileNames": ["packages/**"],
-      "rangeStrategy": "update-lockfile"
-    },
     {
       "description": "Peer ranges (react, react-router, next, nuxt, @angular/core, rxjs) say which framework versions each adapter supports. They change only in a deliberate release, once the adapter is tested against the new major.",
       "matchDepTypes": ["peerDependencies"],
