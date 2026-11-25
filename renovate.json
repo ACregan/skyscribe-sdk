@@ -9,6 +9,11 @@
     "schedule": ["at any time"]
   },
   "rangeStrategy": "update-lockfile",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["on monday"],
+    "description": "Renovate reads locked versions only for the root package.json, so in-range updates in the workspaces (apps/docs, packages/*) never show up as updates (react-router 8.4.0 stayed put though 8.5.3 fits ^8.4.0). A weekly refresh of package-lock.json picks them all up, ranges unchanged."
+  },
   "major": {
     "dependencyDashboardApproval": true
   },
