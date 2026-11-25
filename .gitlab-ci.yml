@@ -8,6 +8,7 @@ stages:
   - test
   - publish
   - deploy
+  - maintenance
 
 # Docs jobs (apps/docs, sdk.skyscribe.app; ADR 0003) only run when the docs
 # or this file changed, so package-only MRs don't pay for a docs build.
@@ -38,6 +39,8 @@ publish:
   stage: publish
   when: manual
   rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
     - if: $CI_COMMIT_BRANCH == "main"
   # Stages unpublished versions; a maintainer approves them with 2FA
   # (ADR 0003). `npm stage` needs npm 11.15+, newer than node:22 bundles.
@@ -94,6 +97,8 @@ docs:deploy:
     name: docs
     url: https://sdk.skyscribe.app
   rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
     - if: $CI_COMMIT_BRANCH == "main"
       changes: *docs-changes
       when: manual
@@ -101,3 +106,27 @@ docs:deploy:
     - npm ci
     - npm run docs:build
     - npm run deploy --workspace=apps/docs
+
+# Renovate (renovate.json): one grouped minor/patch MR on Mondays, majors
+# only once approved on the Dependency Dashboard issue, security fixes any
+# day. Mostly dev tooling and the docs app, so its MRs need no changeset:
+# the published packages' ranges are left alone and only the lockfile
+# moves. A docs app update reaches sdk.skyscribe.app on the next
+# `docs:deploy`.
+#
+# Setup (GitLab schedules aren't declared in YAML): a daily schedule on
+# main with SCHEDULED_JOB=renovate, and masked CI variables
+# GITLAB_PUSH_TOKEN (a project access token, Developer role, scopes api
+# and write_repository) and GITHUB_COM_TOKEN (read-only, for changelogs).
+# Schedules skip publish and docs:deploy, which would otherwise wait as
+# manual jobs on every run.
+renovate:
+  stage: maintenance
+  # Renovate 44 needs Node 24 (it calls RegExp.escape); the other jobs stay
+  # on 22, the lowest Node the packages support.
+  image: node:24
+  needs: []
+  script:
+    - npx --yes renovate@44 --platform=gitlab --endpoint="https://${CI_SERVER_HOST}/api/v4" --token="$GITLAB_PUSH_TOKEN" "$CI_PROJECT_PATH"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_JOB == "renovate"

@@ -42,6 +42,12 @@ tags:
 
 Add this to the `default` block in `.gitlab-ci.yml` so it applies to every job automatically.
 
+### Dependency updates (Renovate)
+
+The scheduled `renovate` job (`SCHEDULED_JOB=renovate`) opens one grouped minor/patch MR on Mondays; majors wait on the Dependency Dashboard issue until approved there. Rules (`renovate.json`): the published packages' ranges and all `peerDependencies` are never touched (only the lockfile moves), the `@skyscribe-sdk/*` packages are left to changesets, Vite and Vitest move together, TypeScript stays below 7, and CI stays on Node 22, the lowest version `engines` supports. So a Renovate MR needs no changeset and no npm publish. When one changes the docs app's dependencies, run `docs:deploy` after merging.
+
+Supporting a new framework major (a "Next 16" dashboard item, say) is a release, not a Renovate merge: approve it, check the adapter against it, widen the peer range by hand and add a changeset.
+
 ## Stack
 
 - **TypeScript** — strict mode; ESM + CJS dual output via `tsup`
