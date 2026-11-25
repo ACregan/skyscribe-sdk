@@ -10,6 +10,7 @@ import {
 import type { TocEntry } from "./mdx/remark-toc";
 import { DocsArticle } from "./components/DocsArticle";
 import { mdxComponents } from "./components/mdx-components";
+import { shareMeta } from "./shareCard";
 import "./docs.css";
 
 // Production URL for <link rel="canonical">, whatever origin served it.
@@ -97,16 +98,18 @@ export function meta({ params }: Route.MetaArgs) {
   if (!page) {
     return [{ title: "Page not found — SkyScribe SDK" }];
   }
+  const title = slug === "" ? "SkyScribe SDK" : `${page.title} — SkyScribe SDK`;
+  const url = `${CANONICAL_ORIGIN}${docsHref(slug)}`;
   return [
-    {
-      title: slug === "" ? "SkyScribe SDK" : `${page.title} — SkyScribe SDK`,
-    },
+    { title },
     { name: "description", content: page.description },
-    {
-      tagName: "link",
-      rel: "canonical",
-      href: `${CANONICAL_ORIGIN}${docsHref(slug)}`,
-    },
+    { tagName: "link", rel: "canonical", href: url },
+    ...shareMeta({
+      origin: CANONICAL_ORIGIN,
+      title,
+      description: page.description,
+      url,
+    }),
   ];
 }
 
@@ -119,8 +122,8 @@ export default function DocsRoute({ params }: Route.ComponentProps) {
       <DocsArticle slug={slug} toc={[]} prev={null} next={null}>
         <h1>Page not found</h1>
         <p>
-          There's no docs page at this address. Use the menu or the search
-          bar to find what you're looking for.
+          There's no docs page at this address. Use the menu or the search bar
+          to find what you're looking for.
         </p>
       </DocsArticle>
     );
