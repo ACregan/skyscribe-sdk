@@ -109,7 +109,11 @@ docs:deploy:
 
 # Renovate (renovate.json): one grouped minor/patch MR on Mondays, majors
 # only once approved on the Dependency Dashboard issue, security fixes any
-# day. Mostly dev tooling and the docs app, so its MRs need no changeset:
+# day (osvVulnerabilityAlerts, the osv.dev database: vulnerabilityAlerts
+# reads GitHub's alerts only, so on GitLab it never did this; found
+# 2026-11-27). updateNotScheduled is false so the daily run leaves the
+# week's open MRs alone mid-week. Mostly dev tooling and the docs app, so
+# its MRs need no changeset:
 # the published packages' ranges are left alone and only the lockfile
 # moves. A docs app update reaches sdk.skyscribe.app on the next
 # `docs:deploy`.

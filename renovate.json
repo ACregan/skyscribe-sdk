@@ -5,6 +5,8 @@
   "timezone": "Asia/Singapore",
   "schedule": ["on monday"],
   "prHourlyLimit": 0,
+  "updateNotScheduled": false,
+  "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
     "schedule": ["at any time"]
   },
